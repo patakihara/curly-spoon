@@ -75,7 +75,9 @@ a menu, its sorts the items: `items={data.sort.options} onSelect={<Choose ref={d
 hands the chosen sort's key to the library or show its ref names. The web gives it to the verbs the page is
 handed, `useChoose()` in `web/src/choose`, which give none on the canvas or while the menu holds
 no item, so the menu's button draws disabled; Android leaves it unbound until it has lists to act
-on, and its menu draws disabled too.
+on, and its menu draws disabled too. Search's song rows hold one key, `keep`, "Add to library":
+it keeps the song its ref names in the household's library (`POST /keep`), and the row then shows
+its keep's status, its menu empty.
 
 `onRequest={<Request ref={book.ref} />}`, or `onClick` on a `Button`, asks for an item the library
 lacks: a card's Request, or Search's outside book row. Books are registered behind the endpoint,

@@ -1,0 +1,2990 @@
+{
+  "upstream": "musicbrainz",
+  "upstreamVersion": "MusicBrainz web service 2",
+  "call": "release-dame-tu-cosita",
+  "request": {
+    "method": "GET",
+    "path": "/ws/2/release/a0a19da2-a9b5-4776-8bb9-438addf49126",
+    "query": {
+      "fmt": "json",
+      "inc": "recordings+artist-credits+release-groups+media"
+    },
+    "headers": {
+      "accept": "application/json",
+      "user-agent": "Auralis/0.0.0 ( https://github.com/patakihara/curly-spoon )"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "barcode": "0617465964459",
+        "media": [
+          {
+            "tracks": [
+              {
+                "length": 152000,
+                "title": "Dame tu cosita",
+                "id": "b3e17761-f0e5-4be9-9596-df62ca16d7ba",
+                "position": 1,
+                "artist-credit": [
+                  {
+                    "joinphrase": " feat. ",
+                    "artist": {
+                      "type-id": "b6e035f4-3ce9-331c-97df-83397230b0df",
+                      "country": "PA",
+                      "id": "ba74b590-e83f-4f1d-ba35-b9a3c37d54b1",
+                      "disambiguation": "Rodney Sebastian Clark Donalds, panamanian producer",
+                      "type": "Person",
+                      "name": "El Chombo",
+                      "sort-name": "Chombo, El"
+                    },
+                    "name": "El Chombo"
+                  },
+                  {
+                    "name": "Cutty Ranks",
+                    "joinphrase": "",
+                    "artist": {
+                      "id": "0372006b-dcf8-4fb9-8694-d5ea3d2540f0",
+                      "country": "JM",
+                      "disambiguation": "",
+                      "type": "Person",
+                      "type-id": "b6e035f4-3ce9-331c-97df-83397230b0df",
+                      "sort-name": "Cutty Ranks",
+                      "name": "Cutty Ranks"
+                    }
+                  }
+                ],
+                "recording": {
+                  "disambiguation": "",
+                  "id": "a421d4cc-8f05-4eae-8b83-47707a08bf04",
+                  "title": "Dame tu cosita",
+                  "length": 152000,
+                  "video": false,
+                  "first-release-date": "2018-05-09",
+                  "artist-credit": [
+                    {
+                      "joinphrase": " feat. ",
+                      "artist": {
+                        "id": "ba74b590-e83f-4f1d-ba35-b9a3c37d54b1",
+                        "country": "PA",
+                        "disambiguation": "Rodney Sebastian Clark Donalds, panamanian producer",
+                        "type": "Person",
+                        "type-id": "b6e035f4-3ce9-331c-97df-83397230b0df",
+                        "name": "El Chombo",
+                        "sort-name": "Chombo, El"
+                      },
+                      "name": "El Chombo"
+                    },
+                    {
+                      "name": "Cutty Ranks",
+                      "joinphrase": "",
+                      "artist": {
+                        "type-id": "b6e035f4-3ce9-331c-97df-83397230b0df",
+                        "id": "0372006b-dcf8-4fb9-8694-d5ea3d2540f0",
+                        "country": "JM",
+                        "type": "Person",
+                        "disambiguation": "",
+                        "sort-name": "Cutty Ranks",
+                        "name": "Cutty Ranks"
+                      }
+                    }
+                  ]
+                },
+                "number": "1"
+              }
+            ],
+            "format": "Digital Media",
+            "track-count": 1,
+            "format-id": "907a28d9-b3b2-3ef6-89a8-7b18d91d4794",
+            "title": "",
+            "id": "56789dda-1233-316e-957a-7d1637280d10",
+            "position": 1,
+            "track-offset": 0
+          }
+        ],
+        "date": "2018-05-09",
+        "id": "a0a19da2-a9b5-4776-8bb9-438addf49126",
+        "title": "Dame tu cosita",
+        "country": "US",
+        "text-representation": {
+          "script": "Latn",
+          "language": "spa"
+        },
+        "quality": "normal",
+        "release-group": {
+          "artist-credit": [
+            {
+              "artist": {
+                "sort-name": "Chombo, El",
+                "name": "El Chombo",
+                "type-id": "b6e035f4-3ce9-331c-97df-83397230b0df",
+                "disambiguation": "Rodney Sebastian Clark Donalds, panamanian producer",
+                "type": "Person",
+                "id": "ba74b590-e83f-4f1d-ba35-b9a3c37d54b1",
+                "country": "PA"
+              },
+              "joinphrase": " feat. ",
+              "name": "El Chombo"
+            },
+            {
+              "name": "Cutty Ranks",
+              "artist": {
+                "id": "0372006b-dcf8-4fb9-8694-d5ea3d2540f0",
+                "country": "JM",
+                "type": "Person",
+                "disambiguation": "",
+                "type-id": "b6e035f4-3ce9-331c-97df-83397230b0df",
+                "name": "Cutty Ranks",
+                "sort-name": "Cutty Ranks"
+              },
+              "joinphrase": ""
+            }
+          ],
+          "primary-type-id": "d6038452-8ee0-3f68-affc-2de9a1ede0b9",
+          "first-release-date": "2018-05-09",
+          "title": "Dame tu cosita",
+          "id": "ee77aba3-ac0e-4d0a-8d6f-72060c01d54a",
+          "primary-type": "Single",
+          "disambiguation": "",
+          "secondary-types": [],
+          "secondary-type-ids": []
+        },
+        "status": "Official",
+        "artist-credit": [
+          {
+            "name": "El Chombo",
+            "joinphrase": " feat. ",
+            "artist": {
+              "name": "El Chombo",
+              "sort-name": "Chombo, El",
+              "disambiguation": "Rodney Sebastian Clark Donalds, panamanian producer",
+              "type": "Person",
+              "id": "ba74b590-e83f-4f1d-ba35-b9a3c37d54b1",
+              "country": "PA",
+              "type-id": "b6e035f4-3ce9-331c-97df-83397230b0df"
+            }
+          },
+          {
+            "name": "Cutty Ranks",
+            "joinphrase": "",
+            "artist": {
+              "sort-name": "Cutty Ranks",
+              "name": "Cutty Ranks",
+              "country": "JM",
+              "id": "0372006b-dcf8-4fb9-8694-d5ea3d2540f0",
+              "type": "Person",
+              "disambiguation": "",
+              "type-id": "b6e035f4-3ce9-331c-97df-83397230b0df"
+            }
+          }
+        ],
+        "disambiguation": "",
+        "cover-art-archive": {
+          "count": 1,
+          "artwork": true,
+          "darkened": false,
+          "back": false,
+          "front": true
+        },
+        "packaging": "None",
+        "status-id": "4e304316-386d-3409-af2e-78857eec5cfe",
+        "release-events": [
+          {
+            "area": {
+              "id": "489ce91b-6658-3307-9877-795b68554c98",
+              "type": null,
+              "disambiguation": "",
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "US"
+              ],
+              "sort-name": "United States",
+              "name": "United States"
+            },
+            "date": "2018-05-09"
+          },
+          {
+            "area": {
+              "sort-name": "Afghanistan",
+              "name": "Afghanistan",
+              "iso-3166-1-codes": [
+                "AF"
+              ],
+              "type-id": null,
+              "disambiguation": "",
+              "type": null,
+              "id": "aa95182f-df0a-3ad6-8bfb-4b63482cd276"
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "sort-name": "Albania",
+              "name": "Albania",
+              "iso-3166-1-codes": [
+                "AL"
+              ],
+              "type-id": null,
+              "disambiguation": "",
+              "type": null,
+              "id": "1c69b790-b46b-3e92-b6b4-93b4364badbc"
+            }
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "type-id": null,
+              "id": "28242750-534a-326b-8ed6-1b03dfb88cd0",
+              "type": null,
+              "disambiguation": "",
+              "name": "Algeria",
+              "sort-name": "Algeria",
+              "iso-3166-1-codes": [
+                "DZ"
+              ]
+            }
+          },
+          {
+            "area": {
+              "iso-3166-1-codes": [
+                "AD"
+              ],
+              "name": "Andorra",
+              "sort-name": "Andorra",
+              "disambiguation": "",
+              "type": null,
+              "id": "e01da61e-99a8-3c76-a27d-774c3f4982f0",
+              "type-id": null
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "area": {
+              "type": null,
+              "disambiguation": "",
+              "id": "2afd5d6a-5fee-3836-8783-44d0ec9ac115",
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "AO"
+              ],
+              "sort-name": "Angola",
+              "name": "Angola"
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "id": "eed9e8bb-b48f-30af-95f5-f178762ee515",
+              "type": null,
+              "disambiguation": "",
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "AI"
+              ],
+              "name": "Anguilla",
+              "sort-name": "Anguilla"
+            }
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "iso-3166-1-codes": [
+                "AG"
+              ],
+              "name": "Antigua and Barbuda",
+              "sort-name": "Antigua and Barbuda",
+              "type": null,
+              "disambiguation": "",
+              "id": "2a8cc14f-8d47-389b-b54d-e94312b23d27",
+              "type-id": null
+            }
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "iso-3166-1-codes": [
+                "AR"
+              ],
+              "sort-name": "Argentina",
+              "name": "Argentina",
+              "id": "0df04709-c7d8-3b55-a6ea-f3e5069a947b",
+              "disambiguation": "",
+              "type": null,
+              "type-id": null
+            }
+          },
+          {
+            "area": {
+              "name": "Armenia",
+              "sort-name": "Armenia",
+              "iso-3166-1-codes": [
+                "AM"
+              ],
+              "type-id": null,
+              "id": "6474fa20-e0d6-3ef2-95ce-a6f73408cd5e",
+              "type": null,
+              "disambiguation": ""
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "area": {
+              "type": null,
+              "disambiguation": "",
+              "id": "106e0bec-b638-3b37-b731-f53d507dc00e",
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "AU"
+              ],
+              "name": "Australia",
+              "sort-name": "Australia"
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "area": {
+              "sort-name": "Austria",
+              "name": "Austria",
+              "iso-3166-1-codes": [
+                "AT"
+              ],
+              "type-id": null,
+              "id": "caac77d1-a5c8-3e6e-8e27-90b44dcc1446",
+              "disambiguation": "",
+              "type": null
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "iso-3166-1-codes": [
+                "AZ"
+              ],
+              "name": "Azerbaijan",
+              "sort-name": "Azerbaijan",
+              "disambiguation": "",
+              "type": null,
+              "id": "b211ad01-2f7d-32e9-80ed-cfd6c9eb6845",
+              "type-id": null
+            }
+          },
+          {
+            "area": {
+              "iso-3166-1-codes": [
+                "BS"
+              ],
+              "sort-name": "Bahamas",
+              "name": "Bahamas",
+              "disambiguation": "",
+              "type": null,
+              "id": "f8b33963-7364-33be-8c6c-5ab2e1075ae1",
+              "type-id": null
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "area": {
+              "id": "65f4f7a6-d3c1-3a6b-a726-85e147d555b7",
+              "type": null,
+              "disambiguation": "",
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "BH"
+              ],
+              "sort-name": "Bahrain",
+              "name": "Bahrain"
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "id": "20395c3e-610c-34fd-9995-6b6f299121f2",
+              "disambiguation": "",
+              "type": null,
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "BD"
+              ],
+              "sort-name": "Bangladesh",
+              "name": "Bangladesh"
+            }
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "iso-3166-1-codes": [
+                "BB"
+              ],
+              "name": "Barbados",
+              "sort-name": "Barbados",
+              "id": "e5d8d205-81d3-3cd3-8956-d5aaa0c0173f",
+              "type": null,
+              "disambiguation": "",
+              "type-id": null
+            }
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "iso-3166-1-codes": [
+                "BY"
+              ],
+              "sort-name": "Belarus",
+              "name": "Belarus",
+              "id": "660e3c48-b301-3c8c-9708-0f71d5d094d6",
+              "disambiguation": "",
+              "type": null,
+              "type-id": null
+            }
+          },
+          {
+            "area": {
+              "type": null,
+              "disambiguation": "",
+              "id": "5b8a5ee5-0bb3-34cf-9a75-c27c44e341fc",
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "BE"
+              ],
+              "sort-name": "Belgium",
+              "name": "Belgium"
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "area": {
+              "name": "Belize",
+              "sort-name": "Belize",
+              "iso-3166-1-codes": [
+                "BZ"
+              ],
+              "type-id": null,
+              "type": null,
+              "disambiguation": "",
+              "id": "6bf45af6-f1bf-357c-91b5-9593a9c32cb0"
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "type-id": null,
+              "disambiguation": "",
+              "type": null,
+              "id": "1f72ee74-2d3f-3a40-846b-e3d780b73dd2",
+              "sort-name": "Benin",
+              "name": "Benin",
+              "iso-3166-1-codes": [
+                "BJ"
+              ]
+            }
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "id": "df3bbd94-6a4c-3fc3-bb6e-cd701623db8a",
+              "disambiguation": "",
+              "type": null,
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "BM"
+              ],
+              "name": "Bermuda",
+              "sort-name": "Bermuda"
+            }
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "type": null,
+              "disambiguation": "",
+              "id": "2cbd5484-647d-3752-8acd-933ced4f9a24",
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "BT"
+              ],
+              "name": "Bhutan",
+              "sort-name": "Bhutan"
+            }
+          },
+          {
+            "area": {
+              "iso-3166-1-codes": [
+                "BO"
+              ],
+              "sort-name": "Bolivia",
+              "name": "Bolivia",
+              "id": "a5aed4a3-8ce1-3ab3-bfee-b008cff6b857",
+              "disambiguation": "",
+              "type": null,
+              "type-id": null
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "area": {
+              "iso-3166-1-codes": [
+                "BA"
+              ],
+              "sort-name": "Bosnia and Herzegovina",
+              "name": "Bosnia and Herzegovina",
+              "type": null,
+              "disambiguation": "",
+              "id": "f2b64f81-6d36-35b3-94b9-5ba53d693914",
+              "type-id": null
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "area": {
+              "disambiguation": "",
+              "type": null,
+              "id": "e5e11b08-d26d-341c-af28-69d3c26607f7",
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "BW"
+              ],
+              "sort-name": "Botswana",
+              "name": "Botswana"
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "iso-3166-1-codes": [
+                "BR"
+              ],
+              "sort-name": "Brazil",
+              "name": "Brazil",
+              "disambiguation": "",
+              "type": null,
+              "id": "f45b47f8-5796-386e-b172-6c31b009a5d8",
+              "type-id": null
+            }
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "sort-name": "British Virgin Islands",
+              "name": "British Virgin Islands",
+              "iso-3166-1-codes": [
+                "VG"
+              ],
+              "type-id": null,
+              "disambiguation": "",
+              "type": null,
+              "id": "8562c2e5-eabb-3fad-96f2-f536a93a2957"
+            }
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "type-id": null,
+              "id": "5d1fe672-9c9a-3d58-a221-4b23e9274709",
+              "disambiguation": "",
+              "type": null,
+              "name": "Brunei",
+              "sort-name": "Brunei",
+              "iso-3166-1-codes": [
+                "BN"
+              ]
+            }
+          },
+          {
+            "area": {
+              "id": "114c14ad-9776-34e9-81b0-6299507f3771",
+              "disambiguation": "",
+              "type": null,
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "BG"
+              ],
+              "sort-name": "Bulgaria",
+              "name": "Bulgaria"
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "name": "Burkina Faso",
+              "sort-name": "Burkina Faso",
+              "iso-3166-1-codes": [
+                "BF"
+              ],
+              "type-id": null,
+              "id": "5f886d01-5c12-3abb-b8be-d758b282ab05",
+              "disambiguation": "",
+              "type": null
+            }
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "iso-3166-1-codes": [
+                "BI"
+              ],
+              "sort-name": "Burundi",
+              "name": "Burundi",
+              "id": "bd96f09c-c2a8-3996-b52f-291521b688c0",
+              "type": null,
+              "disambiguation": "",
+              "type-id": null
+            }
+          },
+          {
+            "area": {
+              "iso-3166-1-codes": [
+                "KH"
+              ],
+              "name": "Cambodia",
+              "sort-name": "Cambodia",
+              "id": "ee26e886-87f5-33a2-8e8e-f9591490426d",
+              "disambiguation": "",
+              "type": null,
+              "type-id": null
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "id": "bf132644-e3ee-3bfc-9323-7f82824e4945",
+              "disambiguation": "",
+              "type": null,
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "CM"
+              ],
+              "sort-name": "Cameroon",
+              "name": "Cameroon"
+            }
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "name": "Canada",
+              "sort-name": "Canada",
+              "iso-3166-1-codes": [
+                "CA"
+              ],
+              "type-id": null,
+              "id": "71bbafaa-e825-3e15-8ca9-017dcad1748b",
+              "type": null,
+              "disambiguation": ""
+            }
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "iso-3166-1-codes": [
+                "CV"
+              ],
+              "name": "Cape Verde",
+              "sort-name": "Cape Verde",
+              "id": "41d328a3-01da-35c2-b26e-69c56d7121d1",
+              "type": null,
+              "disambiguation": "",
+              "type-id": null
+            }
+          },
+          {
+            "area": {
+              "id": "5dd25184-711c-3e6a-b089-572cd095f287",
+              "type": null,
+              "disambiguation": "",
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "KY"
+              ],
+              "name": "Cayman Islands",
+              "sort-name": "Cayman Islands"
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "area": {
+              "type-id": null,
+              "type": null,
+              "disambiguation": "",
+              "id": "863f49fc-16d0-3fa8-beae-242fc8ab114b",
+              "sort-name": "Central African Republic",
+              "name": "Central African Republic",
+              "iso-3166-1-codes": [
+                "CF"
+              ]
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "type": null,
+              "disambiguation": "",
+              "id": "6ce82d72-8123-3365-ab34-7b20581a34cf",
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "TD"
+              ],
+              "name": "Chad",
+              "sort-name": "Chad"
+            }
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "sort-name": "Chile",
+              "name": "Chile",
+              "iso-3166-1-codes": [
+                "CL"
+              ],
+              "type-id": null,
+              "id": "82d5f4d6-aed4-3ff5-81d1-5363ac6e97a7",
+              "type": null,
+              "disambiguation": ""
+            }
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "name": "China",
+              "sort-name": "China",
+              "iso-3166-1-codes": [
+                "CN"
+              ],
+              "type-id": null,
+              "disambiguation": "",
+              "type": null,
+              "id": "7c81bb69-a99b-3487-b6d4-0f76d7a29ca0"
+            }
+          },
+          {
+            "area": {
+              "sort-name": "Colombia",
+              "name": "Colombia",
+              "iso-3166-1-codes": [
+                "CO"
+              ],
+              "type-id": null,
+              "disambiguation": "",
+              "type": null,
+              "id": "02b60d8d-7164-339d-868d-22d147d9f74a"
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "id": "f8002d93-3b43-3bb7-84dd-4766ff7e5b3b",
+              "disambiguation": "",
+              "type": null,
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "KM"
+              ],
+              "name": "Comoros",
+              "sort-name": "Comoros"
+            }
+          },
+          {
+            "area": {
+              "type": null,
+              "disambiguation": "",
+              "id": "185bc3c4-4c5a-3f69-9384-7c280dfdf072",
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "CG"
+              ],
+              "name": "Congo",
+              "sort-name": "Congo"
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "area": {
+              "name": "Costa Rica",
+              "sort-name": "Costa Rica",
+              "iso-3166-1-codes": [
+                "CR"
+              ],
+              "type-id": null,
+              "id": "ba544658-8266-36cb-ac0e-3bdfbf52cb00",
+              "disambiguation": "",
+              "type": null
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "id": "e56e3d7a-4b90-3546-8450-49548050924a",
+              "disambiguation": "",
+              "type": null,
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "CI"
+              ],
+              "sort-name": "Côte d'Ivoire",
+              "name": "Côte d'Ivoire"
+            }
+          },
+          {
+            "area": {
+              "id": "7d30afff-e425-356a-873e-17ae9745b31d",
+              "type": null,
+              "disambiguation": "",
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "HR"
+              ],
+              "name": "Croatia",
+              "sort-name": "Croatia"
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "area": {
+              "type-id": null,
+              "iso-3166-2-codes": [
+                "NL-CW"
+              ],
+              "id": "53ccc8be-1551-3e28-965b-7f95465f2093",
+              "disambiguation": "",
+              "type": null,
+              "sort-name": "Curaçao",
+              "name": "Curaçao",
+              "iso-3166-1-codes": [
+                "CW"
+              ]
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "area": {
+              "iso-3166-1-codes": [
+                "CY"
+              ],
+              "name": "Cyprus",
+              "sort-name": "Cyprus",
+              "type": null,
+              "disambiguation": "",
+              "id": "a75b525f-8c01-31f6-975e-4a32a2b001d5",
+              "type-id": null
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "type-id": null,
+              "disambiguation": "",
+              "type": null,
+              "id": "51d34c28-61bf-3d21-849f-7492672a9d44",
+              "sort-name": "Czechia",
+              "name": "Czechia",
+              "iso-3166-1-codes": [
+                "CZ"
+              ]
+            }
+          },
+          {
+            "area": {
+              "name": "Democratic Republic of the Congo",
+              "sort-name": "Democratic Republic of the Congo",
+              "iso-3166-1-codes": [
+                "CD"
+              ],
+              "type-id": null,
+              "type": null,
+              "disambiguation": "",
+              "id": "d1733e16-9064-3181-961d-d56f8599969b"
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "area": {
+              "type-id": null,
+              "disambiguation": "",
+              "type": null,
+              "id": "4757b525-2a60-324a-b060-578765d2c993",
+              "sort-name": "Denmark",
+              "name": "Denmark",
+              "iso-3166-1-codes": [
+                "DK"
+              ]
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "id": "aa560de1-9e56-38ab-8d20-6133be7f3f2a",
+              "type": null,
+              "disambiguation": "",
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "DJ"
+              ],
+              "name": "Djibouti",
+              "sort-name": "Djibouti"
+            }
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "iso-3166-1-codes": [
+                "DM"
+              ],
+              "name": "Dominica",
+              "sort-name": "Dominica",
+              "type": null,
+              "disambiguation": "",
+              "id": "9898ec17-2174-3a61-9e3b-3f51b3ee4de1",
+              "type-id": null
+            }
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "type": null,
+              "disambiguation": "",
+              "id": "696cb3e0-5084-30ab-9916-65ece70adbf6",
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "DO"
+              ],
+              "name": "Dominican Republic",
+              "sort-name": "Dominican Republic"
+            }
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "disambiguation": "",
+              "type": null,
+              "id": "967abc0e-f680-3cde-95d0-0b79b977d410",
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "EC"
+              ],
+              "name": "Ecuador",
+              "sort-name": "Ecuador"
+            }
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "sort-name": "Egypt",
+              "name": "Egypt",
+              "iso-3166-1-codes": [
+                "EG"
+              ],
+              "type-id": null,
+              "id": "8e0551f2-95c2-3cc0-a0a9-f2d344f10667",
+              "type": null,
+              "disambiguation": ""
+            }
+          },
+          {
+            "area": {
+              "type": null,
+              "disambiguation": "",
+              "id": "f2fa4bfb-97aa-3db4-8d49-cc64969ce1a7",
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "SV"
+              ],
+              "sort-name": "El Salvador",
+              "name": "El Salvador"
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "area": {
+              "id": "218e28fc-7e19-3700-b4d5-5d9199a59418",
+              "disambiguation": "",
+              "type": null,
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "GQ"
+              ],
+              "name": "Equatorial Guinea",
+              "sort-name": "Equatorial Guinea"
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "id": "2005d841-29df-3445-8b5c-c981de756bd3",
+              "disambiguation": "",
+              "type": null,
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "ER"
+              ],
+              "sort-name": "Eritrea",
+              "name": "Eritrea"
+            }
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "name": "Estonia",
+              "sort-name": "Estonia",
+              "iso-3166-1-codes": [
+                "EE"
+              ],
+              "type-id": null,
+              "id": "e1c1215f-dcc0-35b4-b840-d2ca2151593b",
+              "type": null,
+              "disambiguation": ""
+            }
+          },
+          {
+            "area": {
+              "iso-3166-1-codes": [
+                "SZ"
+              ],
+              "name": "Eswatini",
+              "sort-name": "Eswatini",
+              "disambiguation": "",
+              "type": null,
+              "id": "564741c6-943e-313b-86fa-9819d595281b",
+              "type-id": null
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "area": {
+              "type-id": null,
+              "disambiguation": "",
+              "type": null,
+              "id": "96699ab4-4bbf-332e-b037-b0119821f792",
+              "name": "Ethiopia",
+              "sort-name": "Ethiopia",
+              "iso-3166-1-codes": [
+                "ET"
+              ]
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "name": "Federated States of Micronesia",
+              "sort-name": "Federated States of Micronesia",
+              "iso-3166-1-codes": [
+                "FM"
+              ],
+              "type-id": null,
+              "disambiguation": "",
+              "type": null,
+              "id": "aabae773-4997-37ba-950a-394c06847631"
+            }
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "type-id": null,
+              "id": "031eba2b-79b5-3314-a14b-288407ad42ab",
+              "disambiguation": "",
+              "type": null,
+              "sort-name": "Fiji",
+              "name": "Fiji",
+              "iso-3166-1-codes": [
+                "FJ"
+              ]
+            }
+          },
+          {
+            "area": {
+              "sort-name": "Finland",
+              "name": "Finland",
+              "iso-3166-1-codes": [
+                "FI"
+              ],
+              "type-id": null,
+              "id": "6a264f94-6ff1-30b1-9a81-41f7bfabd616",
+              "disambiguation": "",
+              "type": null
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "area": {
+              "type-id": null,
+              "id": "d14441fe-3bce-34b5-aed5-dfbe987329c9",
+              "disambiguation": "",
+              "type": null,
+              "name": "Gabon",
+              "sort-name": "Gabon",
+              "iso-3166-1-codes": [
+                "GA"
+              ]
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "iso-3166-1-codes": [
+                "GM"
+              ],
+              "name": "Gambia",
+              "sort-name": "Gambia",
+              "id": "52641fae-20e3-3698-9fa9-1849f2c79ab8",
+              "disambiguation": "",
+              "type": null,
+              "type-id": null
+            }
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "type-id": null,
+              "id": "7e081aa0-817b-3ae0-9fe2-4bb4e3b3cc95",
+              "disambiguation": "",
+              "type": null,
+              "name": "Georgia",
+              "sort-name": "Georgia",
+              "iso-3166-1-codes": [
+                "GE"
+              ]
+            }
+          },
+          {
+            "area": {
+              "name": "Germany",
+              "sort-name": "Germany",
+              "iso-3166-1-codes": [
+                "DE"
+              ],
+              "type-id": null,
+              "id": "85752fda-13c4-31a3-bee5-0e5cb1f51dad",
+              "disambiguation": "",
+              "type": null
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "area": {
+              "iso-3166-1-codes": [
+                "GH"
+              ],
+              "name": "Ghana",
+              "sort-name": "Ghana",
+              "disambiguation": "",
+              "type": null,
+              "id": "cf48f4b4-28f0-39ab-9104-650324a1d1c8",
+              "type-id": null
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "area": {
+              "type": null,
+              "disambiguation": "",
+              "id": "803db0ca-b6ed-3bbc-aeb8-f89efd0a2168",
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "GR"
+              ],
+              "sort-name": "Greece",
+              "name": "Greece"
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "area": {
+              "iso-3166-1-codes": [
+                "GD"
+              ],
+              "name": "Grenada",
+              "sort-name": "Grenada",
+              "disambiguation": "",
+              "type": null,
+              "id": "217e2eb3-0a3a-3b59-9eaa-a7465c1417ff",
+              "type-id": null
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "sort-name": "Guatemala",
+              "name": "Guatemala",
+              "iso-3166-1-codes": [
+                "GT"
+              ],
+              "type-id": null,
+              "id": "01448ddc-6ee3-3fa4-b136-507d984e31ee",
+              "type": null,
+              "disambiguation": ""
+            }
+          },
+          {
+            "area": {
+              "type-id": null,
+              "disambiguation": "",
+              "type": null,
+              "id": "a58af0f8-b238-3da2-a57b-4aa0ff4ab574",
+              "name": "Guinea",
+              "sort-name": "Guinea",
+              "iso-3166-1-codes": [
+                "GN"
+              ]
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "area": {
+              "iso-3166-1-codes": [
+                "GW"
+              ],
+              "name": "Guinea-Bissau",
+              "sort-name": "Guinea-Bissau",
+              "type": null,
+              "disambiguation": "",
+              "id": "4f01a1af-02ca-3b28-a64f-f38c36c08879",
+              "type-id": null
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "type": null,
+              "disambiguation": "",
+              "id": "c4a33ce9-580e-3d57-9c32-f75daf2f75ef",
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "GY"
+              ],
+              "sort-name": "Guyana",
+              "name": "Guyana"
+            }
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "disambiguation": "",
+              "type": null,
+              "id": "cf25d306-7da5-3878-a2b1-a0370f847308",
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "HT"
+              ],
+              "name": "Haiti",
+              "sort-name": "Haiti"
+            }
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "id": "0c3ea915-4e49-34fc-b702-debb216fd7fa",
+              "disambiguation": "",
+              "type": null,
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "HN"
+              ],
+              "sort-name": "Honduras",
+              "name": "Honduras"
+            }
+          },
+          {
+            "area": {
+              "iso-3166-1-codes": [
+                "HK"
+              ],
+              "name": "Hong Kong",
+              "sort-name": "Hong Kong",
+              "disambiguation": "",
+              "type": null,
+              "id": "0373cdff-eac8-3fbc-92dc-36a607da06d1",
+              "iso-3166-2-codes": [
+                "CN-91"
+              ],
+              "type-id": null
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "area": {
+              "sort-name": "Hungary",
+              "name": "Hungary",
+              "iso-3166-1-codes": [
+                "HU"
+              ],
+              "type-id": null,
+              "id": "312bc5bb-7e43-3e63-81c6-b4d712b37b2c",
+              "disambiguation": "",
+              "type": null
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "id": "48802a32-075a-3805-a183-277c66047693",
+              "disambiguation": "",
+              "type": null,
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "IS"
+              ],
+              "name": "Iceland",
+              "sort-name": "Iceland"
+            }
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "name": "India",
+              "sort-name": "India",
+              "iso-3166-1-codes": [
+                "IN"
+              ],
+              "type-id": null,
+              "id": "d31a9a15-537f-3669-ad53-25753ddd2772",
+              "type": null,
+              "disambiguation": ""
+            }
+          },
+          {
+            "area": {
+              "id": "d3a68bd0-7419-3f99-a5bd-204d6e057089",
+              "disambiguation": "",
+              "type": null,
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "ID"
+              ],
+              "name": "Indonesia",
+              "sort-name": "Indonesia"
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "area": {
+              "name": "Iraq",
+              "sort-name": "Iraq",
+              "iso-3166-1-codes": [
+                "IQ"
+              ],
+              "type-id": null,
+              "type": null,
+              "disambiguation": "",
+              "id": "b0525ccb-15e9-3c56-81fa-471db3b31cfa"
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "type-id": null,
+              "id": "390b05d4-11ec-3bce-a343-703a366b34a5",
+              "disambiguation": "",
+              "type": null,
+              "sort-name": "Ireland",
+              "name": "Ireland",
+              "iso-3166-1-codes": [
+                "IE"
+              ]
+            }
+          },
+          {
+            "area": {
+              "type-id": null,
+              "id": "03691455-bb46-37e3-91d2-cb064a35ffcc",
+              "type": null,
+              "disambiguation": "",
+              "sort-name": "Israel",
+              "name": "Israel",
+              "iso-3166-1-codes": [
+                "IL"
+              ]
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "iso-3166-1-codes": [
+                "IT"
+              ],
+              "sort-name": "Italy",
+              "name": "Italy",
+              "type": null,
+              "disambiguation": "",
+              "id": "c6500277-9a3d-349b-bf30-41afdbf42add",
+              "type-id": null
+            }
+          },
+          {
+            "area": {
+              "iso-3166-1-codes": [
+                "JM"
+              ],
+              "sort-name": "Jamaica",
+              "name": "Jamaica",
+              "disambiguation": "",
+              "type": null,
+              "id": "2dd47a64-91d5-3b13-bc94-80043ed063d7",
+              "type-id": null
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "area": {
+              "sort-name": "Japan",
+              "name": "Japan",
+              "iso-3166-1-codes": [
+                "JP"
+              ],
+              "type-id": null,
+              "id": "2db42837-c832-3c27-b4a3-08198f75693c",
+              "disambiguation": "",
+              "type": null
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "disambiguation": "",
+              "type": null,
+              "id": "2e40127e-0b8a-3a01-bfbc-58c7fcdba532",
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "JO"
+              ],
+              "sort-name": "Jordan",
+              "name": "Jordan"
+            }
+          },
+          {
+            "area": {
+              "disambiguation": "",
+              "type": null,
+              "id": "92d52542-3363-351c-a8b6-d991e0bccb8f",
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "KZ"
+              ],
+              "sort-name": "Kazakhstan",
+              "name": "Kazakhstan"
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "type": null,
+              "disambiguation": "",
+              "id": "023da4a0-acee-3fb1-b91e-5de74ccf787b",
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "KE"
+              ],
+              "name": "Kenya",
+              "sort-name": "Kenya"
+            }
+          },
+          {
+            "area": {
+              "iso-3166-1-codes": [
+                "KI"
+              ],
+              "name": "Kiribati",
+              "sort-name": "Kiribati",
+              "disambiguation": "",
+              "type": null,
+              "id": "2b425457-0a4f-3282-9d2f-0a0e0f7db2e5",
+              "type-id": null
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "sort-name": "Kosovo",
+              "name": "Kosovo",
+              "iso-3166-1-codes": [
+                "XK"
+              ],
+              "iso-3166-2-codes": [
+                "RS-KM"
+              ],
+              "type-id": null,
+              "id": "7b6ae6b7-6f4f-43df-aab8-0c72531ea8ae",
+              "type": null,
+              "disambiguation": ""
+            }
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "sort-name": "Kuwait",
+              "name": "Kuwait",
+              "iso-3166-1-codes": [
+                "KW"
+              ],
+              "type-id": null,
+              "id": "f03f2625-dc7d-38b2-a058-4e9ca0e10424",
+              "disambiguation": "",
+              "type": null
+            }
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "type-id": null,
+              "type": null,
+              "disambiguation": "",
+              "id": "188b4a6b-a4d8-3864-ba46-8446c7b658b4",
+              "sort-name": "Kyrgyzstan",
+              "name": "Kyrgyzstan",
+              "iso-3166-1-codes": [
+                "KG"
+              ]
+            }
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "iso-3166-1-codes": [
+                "LA"
+              ],
+              "sort-name": "Laos",
+              "name": "Laos",
+              "type": null,
+              "disambiguation": "",
+              "id": "c81cb1f4-0858-3f28-9082-c06e2ce24bea",
+              "type-id": null
+            }
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "sort-name": "Latvia",
+              "name": "Latvia",
+              "iso-3166-1-codes": [
+                "LV"
+              ],
+              "type-id": null,
+              "id": "66eb3e73-d69e-3581-9a23-a73b4c64c8dd",
+              "disambiguation": "",
+              "type": null
+            }
+          },
+          {
+            "area": {
+              "iso-3166-1-codes": [
+                "LB"
+              ],
+              "sort-name": "Lebanon",
+              "name": "Lebanon",
+              "id": "8138206e-5786-3f86-a53b-19a7303e7419",
+              "disambiguation": "",
+              "type": null,
+              "type-id": null
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "area": {
+              "type-id": null,
+              "id": "c5011696-e744-3946-a2c1-e3fe7e6dde37",
+              "disambiguation": "",
+              "type": null,
+              "name": "Lesotho",
+              "sort-name": "Lesotho",
+              "iso-3166-1-codes": [
+                "LS"
+              ]
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "type-id": null,
+              "type": null,
+              "disambiguation": "",
+              "id": "d66e68e6-6410-3d34-a8aa-9242045ed593",
+              "sort-name": "Liberia",
+              "name": "Liberia",
+              "iso-3166-1-codes": [
+                "LR"
+              ]
+            }
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "iso-3166-1-codes": [
+                "LY"
+              ],
+              "name": "Libya",
+              "sort-name": "Libya",
+              "disambiguation": "",
+              "type": null,
+              "id": "1509aaae-8271-30cb-89c1-d8660cf73975",
+              "type-id": null
+            }
+          },
+          {
+            "area": {
+              "sort-name": "Liechtenstein",
+              "name": "Liechtenstein",
+              "iso-3166-1-codes": [
+                "LI"
+              ],
+              "type-id": null,
+              "id": "d2007481-eefe-37c0-be71-2256dfe148cb",
+              "disambiguation": "",
+              "type": null
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "area": {
+              "id": "0785dc14-96af-3dc4-bde4-dcdfc2e2d0d6",
+              "disambiguation": "",
+              "type": null,
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "LT"
+              ],
+              "name": "Lithuania",
+              "sort-name": "Lithuania"
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "area": {
+              "iso-3166-1-codes": [
+                "LU"
+              ],
+              "sort-name": "Luxembourg",
+              "name": "Luxembourg",
+              "id": "563d21b7-4a8e-35e2-83a7-7804baefbfa7",
+              "type": null,
+              "disambiguation": "",
+              "type-id": null
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "area": {
+              "type-id": null,
+              "iso-3166-2-codes": [
+                "CN-92"
+              ],
+              "type": null,
+              "disambiguation": "",
+              "id": "ed4e8ad9-2b33-3133-b105-28bb719d6ce8",
+              "sort-name": "Macao",
+              "name": "Macao",
+              "iso-3166-1-codes": [
+                "MO"
+              ]
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "type-id": null,
+              "type": null,
+              "disambiguation": "",
+              "id": "f3a30678-3d23-3f42-8056-d32ebe58c66d",
+              "sort-name": "Madagascar",
+              "name": "Madagascar",
+              "iso-3166-1-codes": [
+                "MG"
+              ]
+            }
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "id": "b4d3ff41-ead2-300f-9c11-f73f8ad39678",
+              "type": null,
+              "disambiguation": "",
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "MW"
+              ],
+              "sort-name": "Malawi",
+              "name": "Malawi"
+            }
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "type-id": null,
+              "id": "305d19c7-c040-349c-8d5f-6ac75d2d2a09",
+              "disambiguation": "",
+              "type": null,
+              "sort-name": "Malaysia",
+              "name": "Malaysia",
+              "iso-3166-1-codes": [
+                "MY"
+              ]
+            }
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "name": "Maldives",
+              "sort-name": "Maldives",
+              "iso-3166-1-codes": [
+                "MV"
+              ],
+              "type-id": null,
+              "disambiguation": "",
+              "type": null,
+              "id": "a195ee41-7f39-3a60-83ca-4a6f91cd4d2e"
+            }
+          },
+          {
+            "area": {
+              "iso-3166-1-codes": [
+                "ML"
+              ],
+              "name": "Mali",
+              "sort-name": "Mali",
+              "id": "c35e6d5e-9011-32e5-a23f-9e7639b7350c",
+              "type": null,
+              "disambiguation": "",
+              "type-id": null
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "id": "050c94f7-1413-3a34-bb90-4a94f3bb2084",
+              "type": null,
+              "disambiguation": "",
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "MT"
+              ],
+              "name": "Malta",
+              "sort-name": "Malta"
+            }
+          },
+          {
+            "area": {
+              "type-id": null,
+              "id": "bf8c2e6f-2401-3a52-aad2-7e8baa8b447e",
+              "disambiguation": "",
+              "type": null,
+              "name": "Marshall Islands",
+              "sort-name": "Marshall Islands",
+              "iso-3166-1-codes": [
+                "MH"
+              ]
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "disambiguation": "",
+              "type": null,
+              "id": "657e69c5-cda0-3592-9d39-85b55610bc40",
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "MR"
+              ],
+              "name": "Mauritania",
+              "sort-name": "Mauritania"
+            }
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "iso-3166-1-codes": [
+                "MU"
+              ],
+              "name": "Mauritius",
+              "sort-name": "Mauritius",
+              "id": "bb019165-42ef-3470-bcb8-36d1b45e4bc1",
+              "type": null,
+              "disambiguation": "",
+              "type-id": null
+            }
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "type-id": null,
+              "id": "3e08b2cd-69f3-317c-b1e4-e71be581839e",
+              "type": null,
+              "disambiguation": "",
+              "sort-name": "Mexico",
+              "name": "Mexico",
+              "iso-3166-1-codes": [
+                "MX"
+              ]
+            }
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "type-id": null,
+              "disambiguation": "",
+              "type": null,
+              "id": "560ddb6d-4304-3938-8407-c96605226fad",
+              "sort-name": "Moldova",
+              "name": "Moldova",
+              "iso-3166-1-codes": [
+                "MD"
+              ]
+            }
+          },
+          {
+            "area": {
+              "type": null,
+              "disambiguation": "",
+              "id": "6f26d528-4467-3ecb-b105-10daf3466b40",
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "MC"
+              ],
+              "name": "Monaco",
+              "sort-name": "Monaco"
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "id": "84360c54-1763-3146-ae38-a439c72fd4ea",
+              "type": null,
+              "disambiguation": "",
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "MN"
+              ],
+              "name": "Mongolia",
+              "sort-name": "Mongolia"
+            }
+          },
+          {
+            "area": {
+              "iso-3166-1-codes": [
+                "ME"
+              ],
+              "sort-name": "Montenegro",
+              "name": "Montenegro",
+              "id": "6f8faf25-44cb-313b-9162-77145cdc192d",
+              "type": null,
+              "disambiguation": "",
+              "type-id": null
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "area": {
+              "id": "290ea438-1cb6-35e1-9755-6ab123214293",
+              "type": null,
+              "disambiguation": "",
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "MS"
+              ],
+              "sort-name": "Montserrat",
+              "name": "Montserrat"
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "id": "b84d8617-249a-3a06-849d-fc5c25e2249b",
+              "type": null,
+              "disambiguation": "",
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "MA"
+              ],
+              "name": "Morocco",
+              "sort-name": "Morocco"
+            }
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "sort-name": "Mozambique",
+              "name": "Mozambique",
+              "iso-3166-1-codes": [
+                "MZ"
+              ],
+              "type-id": null,
+              "id": "325ce9a0-d58f-3564-b24e-647b33098767",
+              "disambiguation": "",
+              "type": null
+            }
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "disambiguation": "",
+              "type": null,
+              "id": "cd4fadac-d701-3401-8516-420de2cb4e5c",
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "NA"
+              ],
+              "name": "Namibia",
+              "sort-name": "Namibia"
+            }
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "type": null,
+              "disambiguation": "",
+              "id": "7784f515-5886-3831-9b33-a7f665795d7f",
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "NR"
+              ],
+              "sort-name": "Nauru",
+              "name": "Nauru"
+            }
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "name": "Nepal",
+              "sort-name": "Nepal",
+              "iso-3166-1-codes": [
+                "NP"
+              ],
+              "type-id": null,
+              "type": null,
+              "disambiguation": "",
+              "id": "8815c87e-cf3f-362c-a5c6-05ce853a4c79"
+            }
+          },
+          {
+            "area": {
+              "iso-3166-1-codes": [
+                "NL"
+              ],
+              "name": "Netherlands",
+              "sort-name": "Netherlands",
+              "id": "ef1b7cc0-cd26-36f4-8ea0-04d9623786c7",
+              "type": null,
+              "disambiguation": "",
+              "type-id": null
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "area": {
+              "type-id": null,
+              "id": "8524c7d9-f472-3890-a458-f28d5081d9c4",
+              "disambiguation": "",
+              "type": null,
+              "sort-name": "New Zealand",
+              "name": "New Zealand",
+              "iso-3166-1-codes": [
+                "NZ"
+              ]
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "area": {
+              "type-id": null,
+              "id": "d2b87acd-06ce-3c71-b3ff-a35d914bbabe",
+              "type": null,
+              "disambiguation": "",
+              "sort-name": "Nicaragua",
+              "name": "Nicaragua",
+              "iso-3166-1-codes": [
+                "NI"
+              ]
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "iso-3166-1-codes": [
+                "NE"
+              ],
+              "sort-name": "Niger",
+              "name": "Niger",
+              "id": "f27e792b-ddd2-3a70-bdd4-41fb11534b57",
+              "disambiguation": "",
+              "type": null,
+              "type-id": null
+            }
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "id": "1e23d84b-202e-3fc8-8c49-debc71e9eb16",
+              "disambiguation": "",
+              "type": null,
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "NG"
+              ],
+              "sort-name": "Nigeria",
+              "name": "Nigeria"
+            }
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "type-id": null,
+              "disambiguation": "",
+              "type": null,
+              "id": "fa75cdb9-cbc4-35de-8bf4-a21e7b811484",
+              "sort-name": "North Macedonia",
+              "name": "North Macedonia",
+              "iso-3166-1-codes": [
+                "MK"
+              ]
+            }
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "type-id": null,
+              "disambiguation": "",
+              "type": null,
+              "id": "6743d351-6f37-3049-9724-5041161fff4d",
+              "name": "Norway",
+              "sort-name": "Norway",
+              "iso-3166-1-codes": [
+                "NO"
+              ]
+            }
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "type-id": null,
+              "type": null,
+              "disambiguation": "",
+              "id": "7ccdff29-2e00-3e50-9520-b9ea1e918bc2",
+              "name": "Oman",
+              "sort-name": "Oman",
+              "iso-3166-1-codes": [
+                "OM"
+              ]
+            }
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "iso-3166-1-codes": [
+                "PK"
+              ],
+              "name": "Pakistan",
+              "sort-name": "Pakistan",
+              "id": "7c87112d-504d-31f1-8147-11ff45fc3bfd",
+              "type": null,
+              "disambiguation": "",
+              "type-id": null
+            }
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "id": "9d800529-1ef8-39bb-9e42-1fa74f2eac97",
+              "type": null,
+              "disambiguation": "",
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "PW"
+              ],
+              "name": "Palau",
+              "sort-name": "Palau"
+            }
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "type-id": null,
+              "id": "7d24dd34-a00f-37a1-8307-f2ef1dd3dbcd",
+              "type": null,
+              "disambiguation": "",
+              "name": "Palestine",
+              "sort-name": "Palestine",
+              "iso-3166-1-codes": [
+                "PS"
+              ]
+            }
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "iso-3166-1-codes": [
+                "PA"
+              ],
+              "name": "Panama",
+              "sort-name": "Panama",
+              "type": null,
+              "disambiguation": "",
+              "id": "6f85633b-dff4-3fb4-babd-fb89b3628041",
+              "type-id": null
+            }
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "disambiguation": "",
+              "type": null,
+              "id": "2366f623-b236-3073-bbfe-c26d6d6f195f",
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "PG"
+              ],
+              "name": "Papua New Guinea",
+              "sort-name": "Papua New Guinea"
+            }
+          },
+          {
+            "area": {
+              "id": "0a750c98-a7a5-3d55-bd52-f6e9011b1537",
+              "type": null,
+              "disambiguation": "",
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "PY"
+              ],
+              "name": "Paraguay",
+              "sort-name": "Paraguay"
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "area": {
+              "disambiguation": "",
+              "type": null,
+              "id": "719f6082-95c7-3dd5-9503-e143010a6cc1",
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "PE"
+              ],
+              "name": "Peru",
+              "sort-name": "Peru"
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "area": {
+              "name": "Philippines",
+              "sort-name": "Philippines",
+              "iso-3166-1-codes": [
+                "PH"
+              ],
+              "type-id": null,
+              "disambiguation": "",
+              "type": null,
+              "id": "786532a5-2e36-315a-bdf2-221dc1b64b72"
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "area": {
+              "iso-3166-1-codes": [
+                "PN"
+              ],
+              "name": "Pitcairn",
+              "sort-name": "Pitcairn",
+              "id": "27b5df20-d817-3126-b3a0-1be6a75f7496",
+              "disambiguation": "",
+              "type": null,
+              "type-id": null
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "area": {
+              "sort-name": "Poland",
+              "name": "Poland",
+              "iso-3166-1-codes": [
+                "PL"
+              ],
+              "type-id": null,
+              "disambiguation": "",
+              "type": null,
+              "id": "dd7f80c8-f017-3d01-8608-2a8c9c32b954"
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "area": {
+              "iso-3166-1-codes": [
+                "PT"
+              ],
+              "sort-name": "Portugal",
+              "name": "Portugal",
+              "type": null,
+              "disambiguation": "",
+              "id": "781b0c54-3d54-362d-a941-8a617def4992",
+              "type-id": null
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "type": null,
+              "disambiguation": "",
+              "id": "348dcc25-7bb6-3f75-8739-97eabc84a330",
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "QA"
+              ],
+              "name": "Qatar",
+              "sort-name": "Qatar"
+            }
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "name": "Romania",
+              "sort-name": "Romania",
+              "iso-3166-1-codes": [
+                "RO"
+              ],
+              "type-id": null,
+              "id": "61ed84b8-5a10-30a7-8376-ccd51801d6d1",
+              "type": null,
+              "disambiguation": ""
+            }
+          },
+          {
+            "area": {
+              "iso-3166-1-codes": [
+                "RU"
+              ],
+              "name": "Russia",
+              "sort-name": "Russia",
+              "disambiguation": "",
+              "type": null,
+              "id": "1f1fc3a4-9500-39b8-9f10-f0a465557eef",
+              "type-id": null
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "area": {
+              "iso-3166-1-codes": [
+                "RW"
+              ],
+              "sort-name": "Rwanda",
+              "name": "Rwanda",
+              "id": "5921efcf-344c-3e55-829d-34fca714fcde",
+              "disambiguation": "",
+              "type": null,
+              "type-id": null
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "type-id": null,
+              "disambiguation": "",
+              "type": null,
+              "id": "b1439904-121a-38fb-8708-0573cb42e2ef",
+              "sort-name": "Saint Kitts and Nevis",
+              "name": "Saint Kitts and Nevis",
+              "iso-3166-1-codes": [
+                "KN"
+              ]
+            }
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "type-id": null,
+              "disambiguation": "",
+              "type": null,
+              "id": "178709ab-9e22-39ae-a93c-55e66a8183c2",
+              "name": "Saint Lucia",
+              "sort-name": "Saint Lucia",
+              "iso-3166-1-codes": [
+                "LC"
+              ]
+            }
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "name": "Saint Vincent and The Grenadines",
+              "sort-name": "Saint Vincent and The Grenadines",
+              "iso-3166-1-codes": [
+                "VC"
+              ],
+              "type-id": null,
+              "id": "7f9f87ec-3c1e-300d-9bb8-fa93f0754e6b",
+              "type": null,
+              "disambiguation": ""
+            }
+          },
+          {
+            "area": {
+              "disambiguation": "",
+              "type": null,
+              "id": "2cc3ea35-b05a-3ec0-a5a2-88e8a482854a",
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "WS"
+              ],
+              "sort-name": "Samoa",
+              "name": "Samoa"
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "area": {
+              "type-id": null,
+              "type": null,
+              "disambiguation": "",
+              "id": "d4dd44b6-fa46-30f5-b331-ce9e88d06242",
+              "sort-name": "San Marino",
+              "name": "San Marino",
+              "iso-3166-1-codes": [
+                "SM"
+              ]
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "iso-3166-1-codes": [
+                "ST"
+              ],
+              "sort-name": "Sao Tome and Principe",
+              "name": "Sao Tome and Principe",
+              "type": null,
+              "disambiguation": "",
+              "id": "dcb0e217-84cb-3772-b98f-a7a7a1dbe185",
+              "type-id": null
+            }
+          },
+          {
+            "area": {
+              "type-id": null,
+              "type": null,
+              "disambiguation": "",
+              "id": "9705be0d-51fb-3990-8726-ec9f56c66ba0",
+              "sort-name": "Saudi Arabia",
+              "name": "Saudi Arabia",
+              "iso-3166-1-codes": [
+                "SA"
+              ]
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "area": {
+              "id": "122bb81f-191e-3798-8be2-4b54ffd7ffa4",
+              "disambiguation": "",
+              "type": null,
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "SN"
+              ],
+              "sort-name": "Senegal",
+              "name": "Senegal"
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "sort-name": "Serbia",
+              "name": "Serbia",
+              "iso-3166-1-codes": [
+                "RS"
+              ],
+              "type-id": null,
+              "disambiguation": "",
+              "type": null,
+              "id": "424c1b50-57f8-34af-ab97-313e2ad40058"
+            }
+          },
+          {
+            "area": {
+              "name": "Seychelles",
+              "sort-name": "Seychelles",
+              "iso-3166-1-codes": [
+                "SC"
+              ],
+              "type-id": null,
+              "id": "be43ea01-053a-3b23-b03d-2df8317a57ff",
+              "type": null,
+              "disambiguation": ""
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "sort-name": "Sierra Leone",
+              "name": "Sierra Leone",
+              "iso-3166-1-codes": [
+                "SL"
+              ],
+              "type-id": null,
+              "id": "2b547f54-a97c-3481-9625-7ad9a670b1e6",
+              "type": null,
+              "disambiguation": ""
+            }
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "iso-3166-1-codes": [
+                "SG"
+              ],
+              "name": "Singapore",
+              "sort-name": "Singapore",
+              "type": null,
+              "disambiguation": "",
+              "id": "aa344640-fd57-3960-afb4-84d0d3b69d3d",
+              "type-id": null
+            }
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "iso-3166-1-codes": [
+                "SK"
+              ],
+              "name": "Slovakia",
+              "sort-name": "Slovakia",
+              "id": "eb52ca74-dd11-37a1-a3fa-154430bf2df2",
+              "disambiguation": "",
+              "type": null,
+              "type-id": null
+            }
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "iso-3166-1-codes": [
+                "SI"
+              ],
+              "sort-name": "Slovenia",
+              "name": "Slovenia",
+              "type": null,
+              "disambiguation": "",
+              "id": "5b0b6225-584c-3942-b69d-5efceb9989af",
+              "type-id": null
+            }
+          },
+          {
+            "area": {
+              "type": null,
+              "disambiguation": "",
+              "id": "7fe4001e-eda5-3b5b-bbd8-0f773e76d09c",
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "SB"
+              ],
+              "name": "Solomon Islands",
+              "sort-name": "Solomon Islands"
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "type-id": null,
+              "type": null,
+              "disambiguation": "",
+              "id": "d58b9eb1-c88d-3529-bb4c-b66c96b18c45",
+              "sort-name": "Somalia",
+              "name": "Somalia",
+              "iso-3166-1-codes": [
+                "SO"
+              ]
+            }
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "type": null,
+              "disambiguation": "",
+              "id": "50cc7852-862e-30ae-aa82-385fe7135b7f",
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "ZA"
+              ],
+              "name": "South Africa",
+              "sort-name": "South Africa"
+            }
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "id": "b9f7d640-46e8-313e-b158-ded6d18593b3",
+              "disambiguation": "",
+              "type": null,
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "KR"
+              ],
+              "sort-name": "South Korea",
+              "name": "South Korea"
+            }
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "sort-name": "Spain",
+              "name": "Spain",
+              "iso-3166-1-codes": [
+                "ES"
+              ],
+              "type-id": null,
+              "id": "471c46a7-afc5-31c4-923c-d0444f5053a4",
+              "disambiguation": "",
+              "type": null
+            }
+          },
+          {
+            "area": {
+              "type-id": null,
+              "id": "6e2d562d-a754-3036-8484-7ac576606e27",
+              "disambiguation": "",
+              "type": null,
+              "name": "Sri Lanka",
+              "sort-name": "Sri Lanka",
+              "iso-3166-1-codes": [
+                "LK"
+              ]
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "area": {
+              "type": null,
+              "disambiguation": "",
+              "id": "9d1049fb-7b2d-3862-a26d-3cc58c8c7b5b",
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "SR"
+              ],
+              "sort-name": "Suriname",
+              "name": "Suriname"
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "area": {
+              "id": "23d10872-f5ae-3f0c-bf55-332788a16ecb",
+              "type": null,
+              "disambiguation": "",
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "SE"
+              ],
+              "sort-name": "Sweden",
+              "name": "Sweden"
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "area": {
+              "type-id": null,
+              "id": "1333ff06-8e3d-3c8e-9f3a-13a2a38b41df",
+              "disambiguation": "",
+              "type": null,
+              "name": "Switzerland",
+              "sort-name": "Switzerland",
+              "iso-3166-1-codes": [
+                "CH"
+              ]
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "name": "Taiwan",
+              "sort-name": "Taiwan",
+              "iso-3166-1-codes": [
+                "TW"
+              ],
+              "iso-3166-2-codes": [
+                "CN-71"
+              ],
+              "type-id": null,
+              "id": "41637cec-9a4f-389c-86d2-fc6abf3357b5",
+              "disambiguation": "",
+              "type": null
+            }
+          },
+          {
+            "area": {
+              "type": null,
+              "disambiguation": "",
+              "id": "8259e91f-10fa-3c38-92fb-8e6822c279d5",
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "TJ"
+              ],
+              "sort-name": "Tajikistan",
+              "name": "Tajikistan"
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "area": {
+              "iso-3166-1-codes": [
+                "TZ"
+              ],
+              "sort-name": "Tanzania",
+              "name": "Tanzania",
+              "type": null,
+              "disambiguation": "",
+              "id": "c2676abd-2ac7-351a-94a9-a802b3434737",
+              "type-id": null
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "type-id": null,
+              "id": "ce209e56-cda5-358e-96db-830e3405b675",
+              "type": null,
+              "disambiguation": "",
+              "sort-name": "Thailand",
+              "name": "Thailand",
+              "iso-3166-1-codes": [
+                "TH"
+              ]
+            }
+          },
+          {
+            "area": {
+              "type": null,
+              "disambiguation": "",
+              "id": "738aed7d-cc30-3a90-af20-21477ba1e8cc",
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "TL"
+              ],
+              "name": "Timor-Leste",
+              "sort-name": "Timor-Leste"
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "area": {
+              "id": "9a4a20b1-eff0-364a-a157-dc709b07eadc",
+              "disambiguation": "",
+              "type": null,
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "TG"
+              ],
+              "name": "Togo",
+              "sort-name": "Togo"
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "iso-3166-1-codes": [
+                "TO"
+              ],
+              "sort-name": "Tonga",
+              "name": "Tonga",
+              "disambiguation": "",
+              "type": null,
+              "id": "a2b8e506-3570-3a56-826e-939049c59428",
+              "type-id": null
+            }
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "name": "Trinidad and Tobago",
+              "sort-name": "Trinidad and Tobago",
+              "iso-3166-1-codes": [
+                "TT"
+              ],
+              "type-id": null,
+              "type": null,
+              "disambiguation": "",
+              "id": "6c290168-f3b9-3adb-9889-b856feb2c26c"
+            }
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "id": "58955071-67c1-3491-8dec-48d28f824bda",
+              "disambiguation": "",
+              "type": null,
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "TN"
+              ],
+              "name": "Tunisia",
+              "sort-name": "Tunisia"
+            }
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "type-id": null,
+              "type": null,
+              "disambiguation": "",
+              "id": "d3be28b4-41f7-3752-8a05-ed45e1d1e492",
+              "sort-name": "Türkiye",
+              "name": "Türkiye",
+              "iso-3166-1-codes": [
+                "TR"
+              ]
+            }
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "iso-3166-1-codes": [
+                "TM"
+              ],
+              "name": "Turkmenistan",
+              "sort-name": "Turkmenistan",
+              "id": "98e38a45-b90e-3575-943e-23e26ce3a69f",
+              "type": null,
+              "disambiguation": "",
+              "type-id": null
+            }
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "name": "Turks and Caicos Islands",
+              "sort-name": "Turks and Caicos Islands",
+              "iso-3166-1-codes": [
+                "TC"
+              ],
+              "type-id": null,
+              "type": null,
+              "disambiguation": "",
+              "id": "a2d01b31-5184-382e-aab5-63b5944195b7"
+            }
+          },
+          {
+            "area": {
+              "disambiguation": "",
+              "type": null,
+              "id": "529117db-25de-3d09-9722-b54937a17590",
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "TV"
+              ],
+              "name": "Tuvalu",
+              "sort-name": "Tuvalu"
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "area": {
+              "iso-3166-1-codes": [
+                "UG"
+              ],
+              "name": "Uganda",
+              "sort-name": "Uganda",
+              "disambiguation": "",
+              "type": null,
+              "id": "1ac655f1-12d1-351a-a2b2-8404167e0e0b",
+              "type-id": null
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "area": {
+              "type-id": null,
+              "id": "904768d0-61ca-3c40-93ac-93adc36fef4b",
+              "type": null,
+              "disambiguation": "",
+              "name": "Ukraine",
+              "sort-name": "Ukraine",
+              "iso-3166-1-codes": [
+                "UA"
+              ]
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "area": {
+              "disambiguation": "",
+              "type": null,
+              "id": "fe40c648-ba74-3e17-b768-58181d5ee563",
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "AE"
+              ],
+              "sort-name": "United Arab Emirates",
+              "name": "United Arab Emirates"
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "name": "United Kingdom",
+              "sort-name": "United Kingdom",
+              "iso-3166-1-codes": [
+                "GB"
+              ],
+              "type-id": null,
+              "id": "8a754a16-0027-3a29-b6d7-2b40ea0481ed",
+              "disambiguation": "",
+              "type": null
+            }
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "iso-3166-1-codes": [
+                "UY"
+              ],
+              "name": "Uruguay",
+              "sort-name": "Uruguay",
+              "type": null,
+              "disambiguation": "",
+              "id": "ea88d395-87c9-3c47-b49a-114cad41fd39",
+              "type-id": null
+            }
+          },
+          {
+            "area": {
+              "name": "Uzbekistan",
+              "sort-name": "Uzbekistan",
+              "iso-3166-1-codes": [
+                "UZ"
+              ],
+              "type-id": null,
+              "disambiguation": "",
+              "type": null,
+              "id": "95c0c3ee-ed52-31c4-83e6-19ced497e6d0"
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "area": {
+              "sort-name": "Vanuatu",
+              "name": "Vanuatu",
+              "iso-3166-1-codes": [
+                "VU"
+              ],
+              "type-id": null,
+              "type": null,
+              "disambiguation": "",
+              "id": "c2021af8-7645-3f38-aa1b-ada0a13d4faf"
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "area": {
+              "type": null,
+              "disambiguation": "",
+              "id": "2ac90d6b-04fa-3006-8a91-89da01032365",
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "VE"
+              ],
+              "sort-name": "Venezuela",
+              "name": "Venezuela"
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "type-id": null,
+              "id": "0158e991-c3c6-374a-9b9d-024bbaff6980",
+              "type": null,
+              "disambiguation": "",
+              "name": "Vietnam",
+              "sort-name": "Vietnam",
+              "iso-3166-1-codes": [
+                "VN"
+              ]
+            }
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "id": "e8e9ecdc-19d3-360b-8f1a-9c80e6c12830",
+              "disambiguation": "",
+              "type": null,
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "YE"
+              ],
+              "name": "Yemen",
+              "sort-name": "Yemen"
+            }
+          },
+          {
+            "area": {
+              "disambiguation": "",
+              "type": null,
+              "id": "d662dd74-1fc1-3e36-b427-bbbe29684618",
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "ZM"
+              ],
+              "sort-name": "Zambia",
+              "name": "Zambia"
+            },
+            "date": "2018-05-10"
+          },
+          {
+            "date": "2018-05-10",
+            "area": {
+              "id": "691e8ad6-2cc8-3678-8495-1ac96bbede55",
+              "disambiguation": "",
+              "type": null,
+              "type-id": null,
+              "iso-3166-1-codes": [
+                "ZW"
+              ],
+              "name": "Zimbabwe",
+              "sort-name": "Zimbabwe"
+            }
+          }
+        ],
+        "asin": null,
+        "packaging-id": "119eba76-b343-3e02-a292-f0f00644bb9b"
+      }
+    }
+  }
+}

@@ -42,7 +42,8 @@ import org.junit.runners.Parameterized
  * route and every node's semantics as they were. An enabled one does something of its own: it
  * changes the route, its own semantics (selected, state, expanded, text, a field's typed value),
  * opens a menu, dialog or field, or hands the app an action (sign in, play). A selected tab or the destination showing,
- * pressed again, may leave things as they are: it already shows. web/e2e/page-controls.spec.ts
+ * pressed again, may leave things as they are: it already shows. No disabled control holds one
+ * that acts, so a press on it never lands on a live one. web/e2e/page-controls.spec.ts
  * presses every control of every web page the same way.
  */
 @RunWith(Parameterized::class)
@@ -248,6 +249,20 @@ class PageControlsTest(private val page: String) {
         }
         Log.i("PageControlsTest", "$page: pressed ${controls.size} controls and $revealedPressed revealed ones${if (revealedNames.isEmpty()) "" else ": " + revealedNames.joinToString()}")
         assertTrue("controls on $page:\n${faults.joinToString("\n")}", faults.isEmpty())
+    }
+
+    /** Every node under [node] in the merged tree: each control it holds, and theirs. */
+    private fun under(node: SemanticsNode): List<SemanticsNode> = node.children.flatMap { listOf(it) + under(it) }
+
+    @Test
+    fun M0_states_d_noDisabledControlHoldsOneThatActs() {
+        open()
+        val held = clickables().filter { SemanticsProperties.Disabled in it.config }.flatMap { outer ->
+            under(outer)
+                .filter { SemanticsActions.OnClick in it.config && SemanticsProperties.Disabled !in it.config }
+                .map { "disabled ${nameOf(outer)} holds enabled ${nameOf(it)}" }
+        }
+        assertTrue("controls on $page:\n${held.joinToString("\n")}", held.isEmpty())
     }
 
     companion object {

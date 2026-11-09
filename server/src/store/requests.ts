@@ -266,9 +266,14 @@ export function requestsOf(db: Db, userId: string, log?: JobLog): StoredRequest[
 /** How many live requests of all media one person may be on, unless the configuration says. */
 export const MOST_LIVE_REQUESTS = 20;
 
-/** How many live requests a person is on, made or joined; a failed one is live until cancelled. */
+/**
+ * How many requests still under way a person is on, made or joined, of every medium: neither failed
+ * nor in the library. A failed one stays theirs to retry or cancel, but uses up none of the limit.
+ */
 export const liveRequestCount = (db: Db, userId: string, log?: JobLog): number =>
-  requestsOf(db, userId, log).filter(({ state }) => state.status !== 'inLibrary').length;
+  requestsOf(db, userId, log).filter(
+    ({ state }) => state.status !== 'inLibrary' && state.status !== 'failed',
+  ).length;
 
 /** The requests a person's Requests page lists: not a podcast's, which is instant, nor one landed. */
 export const requestsListed = (db: Db, userId: string, log?: JobLog): StoredRequest[] =>
@@ -350,6 +355,32 @@ export function workingRequests(db: Db, log?: JobLog): StoredRequest[] {
   );
 }
 
+/** Every live request of one medium: not yet in the library, failed ones too, oldest first. */
+export function liveRequestsOf(db: Db, medium: RequestMedium, log?: JobLog): StoredRequest[] {
+  return readableRows(
+    db
+      .prepare(
+        `SELECT ${COLUMNS} FROM requests r WHERE r.medium = ? AND r.status != 'inLibrary'
+         ORDER BY r.created_at, r.id`,
+      )
+      .all(medium) as unknown[],
+    log,
+  );
+}
+
+/** The releases a medium's requests have gone with, live or landed, oldest first. */
+export function releasesOf(db: Db, medium: RequestMedium, log?: JobLog): Release[] {
+  return readableRows(
+    db
+      .prepare(
+        `SELECT ${COLUMNS} FROM requests r WHERE r.medium = ? AND r.release IS NOT NULL
+         ORDER BY r.created_at, r.id`,
+      )
+      .all(medium) as unknown[],
+    log,
+  ).flatMap(({ release }) => (release === null ? [] : [release]));
+}
+
 /** A change to a request: where it now stands, and any of what its steps keep. */
 export interface RequestChange {
   state: RequestState;
@@ -406,6 +437,15 @@ export function saveRequest(
      WHERE id = @id`,
   ).run({ ...set, id });
   return true;
+}
+
+/**
+ * Notes what a step keeps of its own on a request's handle, such as the folders a kept song's import
+ * made. It is no save, as `markHeld` is not: nothing a person sees changed, so the job's save of
+ * the step's answer, made against the version it read, still goes through.
+ */
+export function noteHandle(db: Db, id: string, handle: Record<string, unknown>): void {
+  db.prepare('UPDATE requests SET handle = ? WHERE id = ?').run(JSON.stringify(handle), id);
 }
 
 /** Deletes a request, as a cancel does, and everyone's place on it. */

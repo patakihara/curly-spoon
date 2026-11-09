@@ -60,6 +60,7 @@ import {
 import {
   ChooseReleaseBody,
   CreateRequestBody,
+  KeepBody,
   RequestList,
   RequestParams,
   RequestView,
@@ -375,6 +376,17 @@ export const createRequest = {
   response: RequestView,
   access: 'member',
   body: CreateRequestBody,
+} as const satisfies Route;
+
+export const keepSong = {
+  method: 'POST',
+  path: '/api/keep',
+  operationId: 'keepSong',
+  summary: 'Keep a song from YouTube Music in the library, or join the keep already under way',
+  responseDescription: 'The song request, made, joined, or already in the library.',
+  response: RequestView,
+  access: 'member',
+  body: KeepBody,
 } as const satisfies Route;
 
 export const listRequests = {
@@ -746,6 +758,7 @@ export const routes: readonly Route[] = [
   createBookmark,
   deleteBookmark,
   createRequest,
+  keepSong,
   listRequests,
   getRequest,
   retryRequest,

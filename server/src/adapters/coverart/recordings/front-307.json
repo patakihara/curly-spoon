@@ -1,0 +1,22 @@
+{
+  "upstream": "coverart",
+  "upstreamVersion": "Cover Art Archive API, unversioned",
+  "call": "front-307",
+  "request": {
+    "method": "GET",
+    "path": "/release/a8cf67cb-78ef-4768-b0b1-cd24cf61da85/front-500",
+    "query": {},
+    "headers": {},
+    "body": null
+  },
+  "response": {
+    "status": 307,
+    "headers": {
+      "content-type": "text/plain; charset=utf-8",
+      "location": "https://archive.org/download/mbid-a8cf67cb-78ef-4768-b0b1-cd24cf61da85/mbid-a8cf67cb-78ef-4768-b0b1-cd24cf61da85-8480799354_thumb500.jpg"
+    },
+    "body": {
+      "text": "See: https://archive.org/download/mbid-a8cf67cb-78ef-4768-b0b1-cd24cf61da85/mbid-a8cf67cb-78ef-4768-b0b1-cd24cf61da85-8480799354_thumb500.jpg\n"
+    }
+  }
+}

@@ -1,4 +1,4 @@
-<!-- @dsCard group="Components" viewport="1400x1900" name="Mini Player, Result Rows & Media Header" subtitle="Now-playing surface in both platform variants, list rows with request states and numbered tracks, and the media header at both sides of its breakpoint, with one queue button and a menu, and under a heading that names the item, a person's caption beside round art, a book in its series, an episode with its add-to-a-list button, and a digest's mosaic of its items' covers" -->
+<!-- @dsCard group="Components" viewport="1400x2200" name="Mini Player, Result Rows & Media Header" subtitle="Now-playing surface in both platform variants, list rows with request states, numbered tracks and a song's Play next with its menu after it, and the media header at both sides of its breakpoint, with one queue button and a menu, and under a heading that names the item, a person's caption beside round art, a book in its series, an episode with its add-to-a-list button, and a digest's mosaic of its items' covers" -->
 <!DOCTYPE html><html><head><meta charset="utf-8">
 <link rel="stylesheet" href="../../styles.css">
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
@@ -39,6 +39,15 @@ function Demo(){
     <div style={{maxWidth:380}}>
       <ResultRow platform="mobile" title="Salt and Stone" meta="Book · Maya Lind · AudiobookBay" status="Downloading · 42%" tone="progress" trailing={<Button variant="secondary" size="sm" platform="mobile" pressed onClick={() => {}}>Requested</Button>} onClick={() => {}} onAction={() => {}} />
       <ResultRow platform="mobile" title="A Grain of Salt" meta="Book · Evelyn Harper · Prowlarr" trailing={<Button variant="secondary" size="sm" platform="mobile" onClick={() => {}}>Request</Button>} onClick={() => {}} onAction={() => {}} />
+    </div>
+    <div style={{color:'var(--surface-fg-muted)',fontSize:'var(--text-xs)',fontWeight:'var(--weight-strong)',textTransform:'uppercase',letterSpacing:.5}}>A song with Play next and its menu drawn last, so the button never moves; the second row's menu open</div>
+    <div style={{maxWidth:620}}>
+      <ResultRow title="Tidal Lines" meta="Song · Halcyon Bloom · YouTube Music" divider nextLabel="Play next" onNext={() => {}} menu={<OverflowMenu items={[{ key: 'keep', label: 'Add to library', icon: 'library_add' }]} onSelect={() => {}} />} onClick={() => {}} onAction={() => {}} />
+      <ResultRow title="Glass Weather" meta="Song · Deep Inertia · YouTube Music" menu={<OverflowMenu open items={[{ key: 'keep', label: 'Add to library', icon: 'library_add' }]} onSelect={() => {}} />} onClick={() => {}} onAction={() => {}} />
+    </div>
+    <div style={{maxWidth:380}}>
+      <ResultRow platform="mobile" title="Tidal Lines" meta="Song · Halcyon Bloom · YouTube Music" divider nextLabel="Play next" onNext={() => {}} menu={<OverflowMenu platform="mobile" items={[{ key: 'keep', label: 'Add to library', icon: 'library_add' }]} onSelect={() => {}} />} onClick={() => {}} onAction={() => {}} />
+      <ResultRow platform="mobile" title="Glass Weather" meta="Song · Deep Inertia · YouTube Music" menu={<OverflowMenu platform="mobile" items={[{ key: 'keep', label: 'Add to library', icon: 'library_add' }]} onSelect={() => {}} />} onClick={() => {}} onAction={() => {}} />
     </div>
     <div style={{color:'var(--surface-fg-muted)',fontSize:'var(--text-xs)',fontWeight:'var(--weight-strong)',textTransform:'uppercase',letterSpacing:.5}}>Result rows with a detail line — why each row is there, wrapping to two lines</div>
     <div style={{maxWidth:380}}>

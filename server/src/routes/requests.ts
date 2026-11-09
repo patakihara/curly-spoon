@@ -7,10 +7,13 @@
  * as someone has just asked for it, and everyone on it sees it move. What has already reached the
  * library holds no live key, so asking for it finds it there and the person gets their claim.
  *
- * A person may be on only so many live requests. Joining counts, as it can make the job do more; asking
- * again for one they are already on does not, and neither does what has reached the library.
+ * A person may be on only so many requests still under way. Joining counts, as it can make the job do
+ * more; asking again for one they are already on does not, and neither does a failed request nor
+ * what has reached the library. A kept song being imported is past cancel: its file is the
+ * household's as it is placed.
  */
 import {
+  type MediaRef,
   cancelRequest as cancelRequestRoute,
   chooseRelease as chooseReleaseRoute,
   createRequest as createRequestRoute,
@@ -23,7 +26,7 @@ import {
   type RequestView,
 } from '@auralis/schema';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
-import { indexedRow } from '../libraryIndex/store.js';
+import { indexedRow, topLevelOf } from '../libraryIndex/store.js';
 import {
   ARRIVAL_CLAIM,
   cancelRequest,
@@ -38,12 +41,14 @@ import { addClaim } from '../store/claims.js';
 import {
   arrivedRequests,
   createRequest,
+  getRequest,
   joinArrivedRequest,
   liveRequest,
   liveRequestCount,
   peopleOn,
   requestOf,
   requestsListed,
+  saveRequest,
   type StoredRequest,
 } from '../store/requests.js';
 import { artUrl } from './art.js';
@@ -68,29 +73,23 @@ function actions(request: StoredRequest): {
       return { verbs: [...verbs, 'cancel'], candidates: others };
     }
     default:
-      return { verbs: ['cancel'], candidates: [] };
+      return { verbs: pastCancel(request) ? [] : ['cancel'], candidates: [] };
   }
 }
 
-export function requestRoutes(
-  app: FastifyInstance,
-  deps: RequestActDeps & { maxLive: number },
-): void {
+/** A kept song once it is importing: what is placed in Music is the household's, never taken back. */
+const pastCancel = ({ medium, state }: StoredRequest) =>
+  medium === 'song' && state.status === 'importing';
+
+/** What asking for something takes. */
+export type RequestDoorDeps = RequestActDeps & { maxLive: number };
+
+/**
+ * The one way in to a request, which `POST /requests` and `POST /keep` share: asking for a thing
+ * (`askFor`), and a request as a person sees it (`viewOf`).
+ */
+export function requestDoor(deps: RequestDoorDeps) {
   const { db, log, now, steps, maxLive } = deps;
-
-  /** The request a path names, if the signed-in person is on it. */
-  const own = (request: FastifyRequest, id: string) => {
-    const found = requestOf(db, id, signedIn(request).id, log);
-    if (found === null) throw new Refusal(404, 'not_found');
-    return found;
-  };
-
-  /** The same, for a move only its medium's steps can carry on from. */
-  const movable = (request: FastifyRequest, id: string) => {
-    const found = own(request, id);
-    if (!steps.has(found.medium)) throw new Refusal(409, 'medium_unavailable');
-    return found;
-  };
 
   const viewOf = (request: StoredRequest): RequestView => {
     const { state, result, release } = request;
@@ -98,7 +97,10 @@ export function requestRoutes(
     const { verbs, candidates } = steps.has(request.medium)
       ? actions(request)
       : {
-          verbs: request.state.status === 'inLibrary' ? [] : (['cancel'] as const),
+          verbs:
+            request.state.status === 'inLibrary' || pastCancel(request)
+              ? []
+              : (['cancel'] as const),
           candidates: [],
         };
     return {
@@ -123,26 +125,73 @@ export function requestRoutes(
       ({ result }) => result !== null && indexedRow(db, result.source, result.id) !== undefined,
     );
 
-  serve(app, createRequestRoute, async (request, _reply, { ref }) => {
-    const user = signedIn(request);
+  /** A new request that is in the library from the start, as `owned`, with the person's claim. */
+  const arrivedAs = (userId: string, ref: RequestRef, owned: MediaRef): StoredRequest =>
+    db.transaction(() => {
+      const { request } = createRequest(db, userId, ref, now(), log);
+      const change = { state: { status: 'inLibrary' as const }, result: owned };
+      saveRequest(db, request.id, change, now(), request.version);
+      addClaim(db, userId, topLevelOf(db, owned), ARRIVAL_CLAIM[ref.medium], now());
+      return getRequest(db, request.id)!;
+    })();
+
+  /**
+   * Asks for a thing for a person: the request already in the library, with their claim on its
+   * top-level item; the live one, joined, and retried if it had failed; or a new one. With `owned`,
+   * the item the household already holds as this thing, a new request is answered from the library
+   * at once: nothing is fetched or placed, and it counts toward no limit.
+   */
+  const askFor = async (
+    userId: string,
+    ref: RequestRef,
+    owned: MediaRef | null = null,
+  ): Promise<StoredRequest> => {
     if (!steps.has(ref.medium)) throw new Refusal(409, 'medium_unavailable');
     const there = arrived(ref);
     if (there?.result != null) {
-      joinArrivedRequest(db, there.id, user.id, ref, now());
-      addClaim(db, user.id, there.result, ARRIVAL_CLAIM[there.medium], now());
-      return viewOf(there);
+      joinArrivedRequest(db, there.id, userId, ref, now());
+      addClaim(db, userId, topLevelOf(db, there.result), ARRIVAL_CLAIM[there.medium], now());
+      return there;
     }
     const live = liveRequest(db, ref, log);
-    const holdsIt = live !== undefined && peopleOn(db, live.id).includes(user.id);
-    if (!holdsIt && liveRequestCount(db, user.id, log) >= maxLive) {
+    if (live === undefined && owned !== null) return arrivedAs(userId, ref, owned);
+    const holdsIt = live !== undefined && peopleOn(db, live.id).includes(userId);
+    if (!holdsIt && liveRequestCount(db, userId, log) >= maxLive) {
       throw new Refusal(429, 'too_many_requests');
     }
-    const made = createRequest(db, user.id, ref, now(), log);
+    const made = createRequest(db, userId, ref, now(), log);
     const retried =
       made.joined && made.request.state.status === 'failed'
         ? await retryRequest(deps, made.request.id)
         : null;
-    return viewOf(retried ?? made.request);
+    return retried ?? made.request;
+  };
+
+  return { askFor, viewOf };
+}
+
+export function requestRoutes(app: FastifyInstance, deps: RequestDoorDeps): void {
+  const { db, log, steps } = deps;
+  const { askFor, viewOf } = requestDoor(deps);
+
+  /** The request a path names, if the signed-in person is on it. */
+  const own = (request: FastifyRequest, id: string) => {
+    const found = requestOf(db, id, signedIn(request).id, log);
+    if (found === null) throw new Refusal(404, 'not_found');
+    return found;
+  };
+
+  /** The same, for a move only its medium's steps can carry on from. */
+  const movable = (request: FastifyRequest, id: string) => {
+    const found = own(request, id);
+    if (!steps.has(found.medium)) throw new Refusal(409, 'medium_unavailable');
+    return found;
+  };
+
+  // A song is kept by `POST /keep`, which names it as search did: one door per medium.
+  serve(app, createRequestRoute, async (request, _reply, { ref }) => {
+    if (ref.medium === 'song') throw new Refusal(400, 'use_keep');
+    return viewOf(await askFor(signedIn(request).id, ref));
   });
 
   serve(app, listRequests, (request) => {
@@ -167,6 +216,7 @@ export function requestRoutes(
   serve(app, cancelRequestRoute, async (request, _reply, _body, { params }) => {
     const found = own(request, params.id);
     if (found.state.status === 'inLibrary') throw new Refusal(409, 'in_library');
+    if (pastCancel(found)) throw new Refusal(409, 'past_cancel');
     await cancelRequest(deps, found, signedIn(request).id);
     return { ok: true };
   });

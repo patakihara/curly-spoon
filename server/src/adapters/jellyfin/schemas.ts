@@ -143,3 +143,30 @@ export const userItemDataSchema = z
   })
   .passthrough();
 export type UserItemData = z.infer<typeof userItemDataSchema>;
+
+/**
+ * `GET /Library/VirtualFolders`: each library with the folders it reads, as Jellyfin's host sees
+ * them. `CollectionType` is `music` for a music library. The options are not read.
+ */
+export const virtualFoldersSchema = z.array(
+  z.object({
+    Name: z.string(),
+    ItemId: z.string(),
+    CollectionType: z.string().nullish(),
+    Locations: z.array(z.string()),
+  }),
+);
+export type VirtualFolder = z.infer<typeof virtualFoldersSchema>[number];
+
+/** What one folder holds as `folderItems` reads it: each item, where it is on Jellyfin's host, and a track's album. */
+export const folderItemsSchema = z.object({
+  Items: z.array(
+    z.object({
+      Id: z.string(),
+      Type: z.string(),
+      Path: z.string().nullish(),
+      AlbumId: z.string().nullish(),
+    }),
+  ),
+});
+export type FolderItem = z.infer<typeof folderItemsSchema>['Items'][number];

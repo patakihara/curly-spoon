@@ -237,8 +237,17 @@ const DRAW: Record<string, (act: Act, disabled: boolean) => ReactNode> = {
       <RailItem icon="home" label="Home" expanded={false} onClick={act} />
     </div>
   ),
-  // A numbered row has no art, so no play overlay of its own over the row's press.
-  ResultRow: (act) => <ResultRow title="Low Tide" meta="Halcyon Bloom" number={2} onClick={act} />,
+  // A numbered row has no art, so no play overlay of its own over the row's press. Its menu acts
+  // apart from the row, which then takes its tap on the title.
+  ResultRow: (act) => (
+    <ResultRow
+      title="Low Tide"
+      meta="Halcyon Bloom"
+      number={2}
+      onClick={act}
+      menu={<OverflowMenu items={[{ key: 'keep', label: 'Add to library' }]} onSelect={act} />}
+    />
+  ),
   SearchButton: (act) => <SearchButton onToggle={act} />,
   SearchField: (act, disabled) => (
     <SearchField placeholder="Search" onChange={act} disabled={disabled} />

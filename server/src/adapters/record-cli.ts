@@ -81,6 +81,15 @@
  * made-up hash and the public torrent named (record-qbit.ts), both removed with their files
  * afterwards. No read lists a household torrent. It needs only QBITTORRENT_API_KEY.
  *
+ * `--only musicbrainz` records M3.keep's MusicBrainz searches and lookups, and one busy answer, from
+ * this machine; `--only coverart`, the Cover Art Archive's redirects to one front cover
+ * (record-musicbrainz.ts). Neither takes a key; nothing goes on stdin.
+ *
+ * `--only keep --jellyfin <url>` records M3.keep's Jellyfin calls: the music library and where it
+ * reads, one walk down its folders with each item's path, and one report of a file made at a dot path under it,
+ * which Jellyfin ignores and which does not exist (record-musicbrainz.ts); `--no-report` leaves
+ * that report out. It needs only JELLYFIN_API_KEY.
+ *
  * `--dry-run` makes the same calls but writes into a fresh temporary folder instead of the
  * committed recordings, and says where.
  */
@@ -116,6 +125,9 @@ import { recordShelf } from './record-shelf.js';
 import { recordProgress } from './record-progress.js';
 import { recordSessions } from './record-sessions.js';
 import { recordShell } from './record-shell.js';
+import { recordCoverArt, recordKeep, recordMusicBrainz } from './record-musicbrainz.js';
+import { MUSICBRAINZ_URL } from './musicbrainz/client.js';
+import { COVERART_URL } from './coverart/client.js';
 
 /**
  * The index calls record one page of two items from each library. The fifth page holds the
@@ -138,7 +150,8 @@ Records Audiobookshelf's and Jellyfin's calls into server/src/adapters/*/recordi
                      --only sessions, the track Instant Mix is asked for; for --only played,
                      the track to mark if the test user has played nothing
   --only <name>      record only abs, jellyfin, index, play, episode, jfplay, progress,
-                     sessions, shell, lyrics, lists, played, books, shelf, qbit, ytmusic or extractor; or
+                     sessions, shell, lyrics, lists, played, books, shelf, qbit, ytmusic,
+                     extractor, musicbrainz, coverart or keep; or
                      oidc, a sign-in and its links
   --lrclib <url>     LRCLIB's base URL, for --only lyrics
   --prowlarr <url>   Prowlarr's base URL, for --only books
@@ -160,6 +173,7 @@ Records Audiobookshelf's and Jellyfin's calls into server/src/adapters/*/recordi
   --index-page <n>   the page of two the index calls record, from 0 (default ${INDEX_PAGE})
   --oidc <url>       the sign-on's issuer, for --only oidc
   --oidc-version <v> the sign-on's version, for --only oidc
+  --no-report        for --only keep, the reads alone: Jellyfin is told of no file
   --dry-run          write into a temporary folder, not the committed recordings
   --help             show this
 
@@ -687,6 +701,7 @@ export async function runRecord(io: RecordIo): Promise<number> {
       oidc: { type: 'string' },
       'oidc-version': { type: 'string' },
       'dry-run': { type: 'boolean', default: false },
+      'no-report': { type: 'boolean', default: false },
       help: { type: 'boolean', default: false },
     },
   });
@@ -717,11 +732,14 @@ export async function runRecord(io: RecordIo): Promise<number> {
       'ytmusic',
       'extractor',
       'github',
+      'musicbrainz',
+      'coverart',
+      'keep',
       'oidc',
     ].includes(only)
   ) {
     io.err(
-      `--only is abs, jellyfin, index, play, episode, jfplay, progress, sessions, shell, lyrics, lists, played, household, books, shelf, qbit, ytmusic, extractor, github or oidc, not ${only}`,
+      `--only is abs, jellyfin, index, play, episode, jfplay, progress, sessions, shell, lyrics, lists, played, household, books, shelf, qbit, ytmusic, extractor, github, musicbrainz, coverart, keep or oidc, not ${only}`,
     );
     return 2;
   }
@@ -748,6 +766,9 @@ export async function runRecord(io: RecordIo): Promise<number> {
   if (only === 'ytmusic') return runYtMusic(io, root);
   if (only === 'extractor') return runExtractor(io, values, root);
   if (only === 'github') return runGithub(io, root);
+  if (only === 'musicbrainz') return runMusicBrainz(io, root);
+  if (only === 'coverart') return runCoverArt(io, root);
+  if (only === 'keep') return runKeep(io, values, parseKeys(io.stdin), root);
   const wantIndex = only === undefined || only === 'index';
   const wantAbs = only !== 'jellyfin';
   const wantJellyfin = only !== 'abs';
@@ -1256,6 +1277,49 @@ async function runBooks(
 
 async function runGithub(io: RecordIo, root: string): Promise<number> {
   const { written } = await recordGithub({ fetch: io.fetch, out: io.out, root });
+  return scanWritten(io, written, []);
+}
+
+async function runMusicBrainz(io: RecordIo, root: string): Promise<number> {
+  const { written } = await recordMusicBrainz({
+    fetch: io.fetch,
+    out: io.out,
+    root,
+    musicBrainzUrl: MUSICBRAINZ_URL,
+  });
+  return scanWritten(io, written, []);
+}
+
+async function runCoverArt(io: RecordIo, root: string): Promise<number> {
+  const { written } = await recordCoverArt({
+    fetch: io.fetch,
+    out: io.out,
+    root,
+    coverArtUrl: COVERART_URL,
+  });
+  return scanWritten(io, written, []);
+}
+
+async function runKeep(
+  io: RecordIo,
+  values: Record<string, string | boolean | undefined>,
+  keys: Record<string, string>,
+  root: string,
+): Promise<number> {
+  const [jellyfinUrl, jellyfinKey] = [values.jellyfin, keys.JELLYFIN_API_KEY];
+  if (typeof jellyfinUrl !== 'string' || jellyfinUrl === '' || !jellyfinKey) {
+    io.err(`missing --jellyfin or JELLYFIN_API_KEY on stdin\n\n${USAGE}`);
+    return 2;
+  }
+  const report = values['no-report'] !== true;
+  const { written } = await recordKeep({
+    fetch: io.fetch,
+    out: io.out,
+    root,
+    jellyfinUrl,
+    jellyfinKey,
+    report,
+  });
   return scanWritten(io, written, []);
 }
 

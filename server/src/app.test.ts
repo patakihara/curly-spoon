@@ -438,6 +438,22 @@ describe('loadConfig', () => {
     expect(() => loadConfig({ LRCLIB_URL: 'ftp://lyrics.invalid' })).toThrow(/http or https/);
   });
 
+  it('[M3.keep] asks MusicBrainz and the Cover Art Archive at their own addresses unless each is empty', () => {
+    expect(loadConfig({}).songs).toEqual({
+      musicBrainzUrl: 'https://musicbrainz.org',
+      coverArtUrl: 'https://coverartarchive.org',
+    });
+    expect(loadConfig({ MUSICBRAINZ_URL: '', COVERART_URL: '' }).songs).toEqual({
+      musicBrainzUrl: null,
+      coverArtUrl: null,
+    });
+    expect(loadConfig({ MUSICBRAINZ_URL: 'http://mb.invalid' }).songs.musicBrainzUrl).toBe(
+      'http://mb.invalid',
+    );
+    expect(() => loadConfig({ MUSICBRAINZ_URL: 'file:///etc/passwd' })).toThrow(/http or https/);
+    expect(() => loadConfig({ COVERART_URL: 'ftp://covers.invalid' })).toThrow(/http or https/);
+  });
+
   it('reads each minutes setting as a plain whole number, blank as 0', () => {
     for (const name of ['INDEX_EVERY_MINUTES', 'LYRICS_EVERY_MINUTES', 'PLAY_IDLE_MINUTES']) {
       expect(() => loadConfig({ [name]: '0x10' }), name).toThrow(/whole number of minutes/);

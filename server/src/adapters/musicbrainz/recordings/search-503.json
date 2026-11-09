@@ -1,0 +1,26 @@
+{
+  "upstream": "musicbrainz",
+  "upstreamVersion": "MusicBrainz web service 2",
+  "call": "search-503",
+  "request": {
+    "method": "GET",
+    "path": "/ws/2/release",
+    "query": {
+      "fmt": "json",
+      "limit": "25",
+      "query": "release:\"Mama Africa\" AND artist:\"Peter Tosh\""
+    },
+    "headers": {
+      "accept": "application/json",
+      "user-agent": "Auralis/0.0.0 ( https://github.com/patakihara/curly-spoon )"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 503,
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body": null
+  }
+}

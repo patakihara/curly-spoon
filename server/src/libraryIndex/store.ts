@@ -3,7 +3,7 @@
  * `updated_at` say which rows a run really touched.
  */
 import { createHash } from 'node:crypto';
-import type { EpisodeOrder, MediaSource } from '@auralis/schema';
+import type { EpisodeOrder, MediaRef, MediaSource } from '@auralis/schema';
 import { searchText, writeSearchItem } from '../search/items.js';
 import type { Db } from '../store/connection.js';
 import { statement } from '../store/statements.js';
@@ -386,6 +386,15 @@ export function indexedRow(db: Db, source: MediaSource, id: string): StoredRow |
     .prepare('SELECT * FROM index_items WHERE source = ? AND upstream_id = ?')
     .all(source, id) as RawRow[];
   return ids(db, raw)[0];
+}
+
+/**
+ * The item a person holds by holding this one: a track's album, an episode's show, or itself, as
+ * the index has it; itself when the index does not hold it.
+ */
+export function topLevelOf(db: Db, ref: MediaRef): MediaRef {
+  const parent = indexedRow(db, ref.source, ref.id)?.parentId ?? null;
+  return parent === null ? ref : { source: ref.source, id: parent };
 }
 
 /** Every indexed book, show or album: the top-level items of one kind, with their libraries. */

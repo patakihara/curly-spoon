@@ -4,6 +4,8 @@ import { CommitId } from '@auralis/schema';
 import { z } from 'zod';
 import { AUDIBLE_URL } from './adapters/audible/client.js';
 import { AUDNEXUS_URL } from './adapters/audnexus/client.js';
+import { COVERART_URL } from './adapters/coverart/client.js';
+import { MUSICBRAINZ_URL } from './adapters/musicbrainz/client.js';
 import { isProxyEntry } from './auth/proxy.js';
 import { MOST_LIVE_REQUESTS } from './store/requests.js';
 
@@ -103,8 +105,8 @@ const envSchema = z.object({
   REQUEST_HOLD_MINUTES: minutes(60, { min: 1 }),
   REQUESTS_MAX_LIVE: whole('requests', MOST_LIVE_REQUESTS, { min: 1 }),
   // Book requests, each optional: without them books cannot be requested and all else runs. The
-  // indexers and the torrent client with their keys' files; the folder holding Books and Downloads,
-  // on one mount so a link holds; where qBittorrent itself sees Downloads; and the two public
+  // indexers and the torrent client with their keys' files; the folder holding Books, Music and
+  // Downloads, on one mount so a link holds; where qBittorrent itself sees Downloads; and the two public
   // catalogues, keyless, where empty finds no books at all or leaves them without a photo.
   PROWLARR_URL: httpUrl.optional(),
   PROWLARR_API_KEY_FILE: z.string().min(1).optional(),
@@ -114,6 +116,10 @@ const envSchema = z.object({
   MEDIA_DIR: z.string().min(1).optional(),
   AUDIBLE_URL: serviceUrl(AUDIBLE_URL),
   AUDNEXUS_URL: serviceUrl(AUDNEXUS_URL),
+  // Kept songs: the two public catalogues their tags and covers come from, keyless; empty keeps a
+  // song on YouTube Music's own names, or with YouTube Music's art.
+  MUSICBRAINZ_URL: serviceUrl(MUSICBRAINZ_URL),
+  COVERART_URL: serviceUrl(COVERART_URL),
   // How long a transcode may go unasked-for before Auralis closes it upstream.
   PLAY_IDLE_MINUTES: minutes(10, { min: 1 }),
   // The most a streamed song's held bytes may take on disk, about 500 songs by default.
@@ -154,6 +160,7 @@ export interface AppConfig {
   lyrics: LyricsConfig;
   requests: RequestsConfig;
   books: BooksConfig;
+  songs: SongsConfig;
   /** Minutes a transcode may go unasked-for before it is closed upstream. */
   playIdleMinutes: number;
   /** The extractor the image brings, and the song its canary checks. */
@@ -211,12 +218,20 @@ export interface BooksConfig {
   qbittorrent: UpstreamConfig | null;
   /** Where qBittorrent itself sees Downloads. */
   downloadsPath: string | null;
-  /** The folder holding Books and Downloads. */
+  /** The folder holding Books, Music and Downloads. */
   mediaDir: string | null;
   /** Null when Audible is switched off. */
   audibleUrl: string | null;
   /** Null when Audnexus is switched off. */
   audnexusUrl: string | null;
+}
+
+/** What kept songs ask besides Jellyfin, the extractor and MEDIA_DIR. */
+export interface SongsConfig {
+  /** Null when MusicBrainz is switched off. */
+  musicBrainzUrl: string | null;
+  /** Null when the Cover Art Archive is switched off. */
+  coverArtUrl: string | null;
 }
 
 const bothOrNull = (url: string | undefined, keyFile: string | undefined) =>
@@ -299,6 +314,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
       mediaDir: parsed.MEDIA_DIR ?? null,
       audibleUrl: parsed.AUDIBLE_URL === '' ? null : parsed.AUDIBLE_URL,
       audnexusUrl: parsed.AUDNEXUS_URL === '' ? null : parsed.AUDNEXUS_URL,
+    },
+    songs: {
+      musicBrainzUrl: parsed.MUSICBRAINZ_URL === '' ? null : parsed.MUSICBRAINZ_URL,
+      coverArtUrl: parsed.COVERART_URL === '' ? null : parsed.COVERART_URL,
     },
     playIdleMinutes: parsed.PLAY_IDLE_MINUTES,
     streamCacheMib: parsed.STREAM_CACHE_MIB,

@@ -21,6 +21,8 @@ import { startIndexJob } from './libraryIndex/start.js';
 import { lyricsService, startLyricsJob } from './lyrics/start.js';
 import { type Music, type MusicLog, ytMusic } from './music/index.js';
 import { bookSteps } from './requests/books/index.js';
+import { Wake } from './requests/job.js';
+import { songSteps } from './requests/songs/index.js';
 import type { BookCatalogue } from './requests/books/catalogue.js';
 import { type MediumSteps, stepsRegistry } from './requests/steps.js';
 import type { Upstreams } from './upstream/links.js';
@@ -70,12 +72,12 @@ export async function assembleServer(
   deps: {
     fetch: FetchLike;
     logger?: BuildAppOptions['logger'];
-    /** Steps of other media to request, as a harness brings; books come from the configuration. */
+    /** Steps of other media to request, as a harness brings; books and songs come from the configuration. */
     steps?: readonly MediumSteps[];
     /** What Search lists of the books the library lacks, in place of the configured one. */
     bookCatalogue?: BookCatalogue;
     /** Songs from outside the library, in place of the configured extractor, as a harness brings. */
-    music?: (log: MusicLog, db: Db) => { music: Music; stop: () => void };
+    music?: (log: MusicLog, db: Db) => { music: Music; stop: () => void | Promise<void> };
   },
 ): Promise<Server> {
   const { fetch } = deps;
@@ -142,6 +144,16 @@ export async function assembleServer(
   const streamed =
     deps.music?.(musicLog, db) ?? ytMusic(config, { db, fetch, log: musicLog, now: Date.now });
 
+  // The song steps wake the job, which only the app starts.
+  const wake = new Wake();
+  const songs = songSteps(config, {
+    db,
+    fetch,
+    log: { error: (details, message) => app.log.error(details, message) },
+    music: streamed?.music ?? null,
+    wake: () => wake.now(),
+  });
+
   const setupCodeFile = join(config.dataDir, 'setup-code');
   const app = await buildApp({
     webDistDir: config.webDistDir,
@@ -165,7 +177,12 @@ export async function assembleServer(
     lyrics,
     // A medium with no steps here cannot be requested.
     requests: {
-      steps: stepsRegistry([...(deps.steps ?? []), ...('steps' in books ? [books.steps] : [])]),
+      steps: stepsRegistry([
+        ...(deps.steps ?? []),
+        ...('steps' in books ? [books.steps] : []),
+        ...('steps' in songs ? [songs.steps] : []),
+      ]),
+      wake,
       everyMs: config.requests.everySeconds * 1_000,
       notIndexedAfterMs: config.requests.notIndexedAfterHours * 3_600_000,
       stepTimeoutMs: config.requests.stepTimeoutSeconds * 1_000,
@@ -182,6 +199,7 @@ export async function assembleServer(
   });
 
   if ('off' in books) app.log.info({ missing: books.off }, 'Books cannot be requested');
+  if ('off' in songs) app.log.info({ missing: songs.off }, 'Songs cannot be kept');
 
   if (!hasAdmin(db)) {
     issueSetupCode(db, setupCodeFile);
@@ -198,7 +216,7 @@ export async function assembleServer(
       stopSessionSweep();
       stopIndexJob();
       stopLyricsJob();
-      streamed?.stop();
+      await streamed?.stop();
       db.close();
       app.log.info('Database closed');
     },

@@ -184,6 +184,8 @@ export class StreamCache {
   private writing = 0;
   /** How many times each track's file has gone, so a write begun before cannot count after. */
   private readonly forgotten = new Map<string, number>();
+  /** Each chunk fetch still under way, its keeping too: a reader leaving does not end it. */
+  private readonly running = new Set<Promise<void>>();
 
   constructor(private readonly opts: StreamCacheOptions) {
     this.chunkBytes = opts.chunkBytes ?? CHUNK_BYTES;
@@ -297,6 +299,11 @@ export class StreamCache {
     if (range === undefined) return { status: 200, headers, body };
     headers['content-range'] = `bytes ${pos}-${last}/${size}`;
     return { status: 206, headers, body };
+  }
+
+  /** Settles once no chunk is being fetched or written, so a test or a shutdown can end cleanly. */
+  async settled(): Promise<void> {
+    while (this.running.size > 0) await Promise.all(this.running);
   }
 
   /** Keeps a track from eviction, or lets it go again. False when nothing is held for it. */
@@ -480,7 +487,7 @@ export class StreamCache {
   private fly(key: string, id: string, n: number, row: Row): Flight {
     const { length } = this.spanOfChunk(row.size, n);
     const stop = new AbortController();
-    let opened!: (body: (onPart: (part: Uint8Array) => void) => Promise<void>) => void;
+    let opened!: (body: (onPart: (part: Uint8Array) => void) => Promise<void>) => Promise<void>;
     let refused!: (error: Error) => void;
     const flight: Flight = {
       bytes: Buffer.alloc(length),
@@ -493,7 +500,7 @@ export class StreamCache {
       started: new Promise((resolve, reject) => {
         opened = (body) => {
           resolve();
-          void pump(body);
+          return pump(body);
         };
         refused = reject;
       }),
@@ -528,10 +535,12 @@ export class StreamCache {
       if (this.flights.get(key) === flight) this.flights.delete(key);
     };
     this.flights.set(key, flight);
-    this.openChunk(id, n, row, stop.signal).then(opened, (error: unknown) => {
+    const run = this.openChunk(id, n, row, stop.signal).then(opened, (error: unknown) => {
       fail(error);
       refused(flight.failure!);
     });
+    this.running.add(run);
+    void run.finally(() => this.running.delete(run));
     return flight;
   }
 

@@ -5,7 +5,6 @@
  * holds a request later, and never reaches the start of the server or its health.
  */
 import { lookup } from 'node:dns/promises';
-import { statSync } from 'node:fs';
 import { join } from 'node:path';
 import { AudibleClient } from '../../adapters/audible/client.js';
 import { AbsClient } from '../../adapters/audiobookshelf/client.js';
@@ -19,6 +18,7 @@ import type { AppConfig } from '../../config.js';
 import type { JobLog } from '../../jobs/schedule.js';
 import { readSecretFile } from '../../secretFile.js';
 import type { Db } from '../../store/connection.js';
+import { folderLacking } from '../folder.js';
 import type { MediumSteps } from '../steps.js';
 import { bookCatalogue, type BookCatalogue } from './catalogue.js';
 import { bookDownload } from './download.js';
@@ -38,17 +38,6 @@ export type BookSteps = { steps: MediumSteps; catalogue: BookCatalogue } | { off
 const addressesOf = async (host: string) =>
   (await lookup(host, { all: true })).map(({ address }) => address);
 
-/** What keeps the Books folder from being used, or null; one it may not look into starts nothing. */
-function booksFolderLacking(path: string): string | null {
-  try {
-    return statSync(path, { throwIfNoEntry: false })?.isDirectory() === true
-      ? null
-      : 'a Books folder in MEDIA_DIR';
-  } catch {
-    return 'a Books folder in MEDIA_DIR it may look inside';
-  }
-}
-
 export function bookSteps(config: AppConfig, deps: BookStepsDeps): BookSteps {
   const { abs, index, books } = config;
   const { db, fetch, log, now } = deps;
@@ -59,7 +48,7 @@ export function bookSteps(config: AppConfig, deps: BookStepsDeps): BookSteps {
   if (books.downloadsPath === null) return { off: 'QBITTORRENT_DOWNLOADS_PATH' };
   if (books.mediaDir === null) return { off: 'MEDIA_DIR' };
   const { mediaDir, downloadsPath } = books;
-  const lacking = booksFolderLacking(join(mediaDir, 'Books'));
+  const lacking = folderLacking(join(mediaDir, 'Books'), 'Books');
   if (lacking !== null) return { off: lacking };
 
   const secrets = [

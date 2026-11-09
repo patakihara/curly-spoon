@@ -29,7 +29,11 @@
  * and passed on with bare segment names that resolve under the same route. A streamed song needs
  * no upstream account: it plays for anyone signed in, only if search or radio has named it, reports
  * nowhere, claims nothing, and every byte comes through `music/`'s cache. Its plan never waits for
- * autoplay's pick, which no client reads: the server preloads the pick once it is worked out.
+ * autoplay's pick, which no client reads: the server preloads the pick once it is worked out. A
+ * song kept into the library plays as the Jellyfin track it was kept as, with or without
+ * streaming: the session goes on holding the song's own ref, so a queue or history row from before
+ * the keep plays and moves on as ever. A song played far enough through is kept by itself
+ * (`music/autoKeep.ts`), from its play's reports and close.
  */
 import { randomUUID } from 'node:crypto';
 import {
@@ -60,7 +64,7 @@ import {
 import { AdapterError, type FetchLike } from '../adapters/http/fetch.js';
 import type { JellyfinClient } from '../adapters/jellyfin/client.js';
 import { RangeNotSatisfiable, type UpstreamFile } from '../adapters/stream.js';
-import { indexedRow } from '../libraryIndex/store.js';
+import { indexedRow, topLevelOf } from '../libraryIndex/store.js';
 import type { Caller, HeldPlan, PlanEntry, Sessions } from '../queues/sessions.js';
 import { Refusal, serve, serveStream, type StreamAnswer } from '../route.js';
 import { addClaim } from '../store/claims.js';
@@ -86,6 +90,8 @@ import {
   TrackRefused,
 } from '../music/index.js';
 import { RangeRefused } from '../music/streamCache.js';
+import { keptTrack } from '../requests/songs/kept.js';
+import type { AutoKeep } from '../music/autoKeep.js';
 import { streamedTrack } from '../store/streamedTracks.js';
 import { type z } from 'zod';
 
@@ -308,6 +314,8 @@ export function playRoutes(
     playback?: PlaybackOptions;
     /** Songs from outside the library. Null or absent, a streamed ref is not linked. */
     music?: Music | null;
+    /** Keeps a song played far enough through; null or absent while songs cannot be kept. */
+    autoKeep?: AutoKeep | null;
     now?: () => number;
   },
 ): void {
@@ -497,9 +505,7 @@ export function playRoutes(
 
   /** Playing a thing makes it the person's own: a track's album, an episode's show, or itself. */
   const claimPlayed = (ref: MediaRef, userId: string) => {
-    const parent = indexedRow(db, ref.source, ref.id)?.parentId ?? null;
-    const held = parent === null ? ref : { source: ref.source, id: parent };
-    addClaim(db, userId, held, 'played', (options.now ?? Date.now)());
+    addClaim(db, userId, topLevelOf(db, ref), 'played', (options.now ?? Date.now)());
   };
 
   /**
@@ -523,6 +529,7 @@ export function playRoutes(
     const playId = randomUUID().replace(/-/g, '');
     const entries: PlanEntry[] = [{ entry: { ref }, start: 0 }];
     const owner = { userId: caller.id, deviceId: caller.deviceId };
+    const heard = options.autoKeep?.play(caller.id, ref.id, song.duration) ?? (() => undefined);
     await open.planOn(owner, async () => {
       await open.closeDevice(owner.userId, owner.deviceId);
       await open.open({
@@ -532,8 +539,10 @@ export function playRoutes(
         entries,
         duration: song.duration,
         idleMs: directIdleMs,
-        report: async () => undefined,
-        close: async () => undefined,
+        report: async (report) => heard(report),
+        close: async (report) => {
+          if (report !== undefined) heard(report);
+        },
       });
     });
     const plan: PlaybackPlan = {
@@ -555,29 +564,28 @@ export function playRoutes(
   };
 
   serve(app, play, async (request, _reply, body) => {
-    const ref = mediaRefKey(body.ref);
     const caller = signedIn(request);
     const heldBefore = open.heldBy({ userId: caller.id, deviceId: caller.deviceId });
-    if (body.ref.source === 'ytmusic') {
+    const kept = body.ref.source === 'ytmusic' ? keptTrack(db, body.ref.id) : null;
+    if (body.ref.source === 'ytmusic' && kept === null) {
       if (music === null) throw new Refusal(409, 'not_linked');
       return playSong(music, caller, body.ref, heldBefore);
     }
-    if (body.ref.source === 'jellyfin') {
+    const asked = kept ?? body.ref;
+    const ref = mediaRefKey(asked);
+    if (asked.source === 'jellyfin') {
       if (parseMediaRefKey(ref) === null) throw new Refusal(400, 'bad_request');
-      const { client, household, userId, deviceId } = await personFor(
-        request,
-        'jellyfin',
-        body.ref,
-      );
-      const { plan, played } = await jellyfinPlan(client, caller, body.ref);
+      const { client, household, userId, deviceId } = await personFor(request, 'jellyfin', asked);
+      const { plan, played } = await jellyfinPlan(client, caller, asked);
       // Jellyfin's own play session ids are 32 hex digits (recorded).
       const playId = randomUUID().replace(/-/g, '');
       // A household play tells Jellyfin nothing: no one's account hears of it.
       const reports = household
         ? { start: () => undefined, report: () => undefined, close: () => undefined }
         : jellyfinReports(client, played, playId, lineFor(userId, deviceId));
+      // A kept song's track is queued as the song it was asked as.
       const entries = played.map((t): PlanEntry => ({
-        entry: { ref: { source: 'jellyfin', id: t.id } },
+        entry: { ref: kept?.id === t.id ? body.ref : { source: 'jellyfin', id: t.id } },
         start: t.offset,
       }));
       const last = plan.tracks[plan.tracks.length - 1]!;
@@ -597,7 +605,7 @@ export function playRoutes(
           close: async (report) => reports.close(report),
         });
       });
-      claimPlayed(body.ref, caller.id);
+      claimPlayed(asked, caller.id);
       return inSession(
         caller,
         { ...plan, progressTarget: { playId } },

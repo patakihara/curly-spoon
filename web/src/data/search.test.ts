@@ -16,6 +16,8 @@ import {
   searchData,
   searchHeard,
   searchRequestFailed,
+  searchOffers,
+  searchVerb,
   songRowOf,
   type SearchDrawn,
   searchLive,
@@ -23,7 +25,7 @@ import {
   searchView,
   suggestData,
 } from './search';
-import { answerFrom, createPageStore, pageKey } from './store';
+import { answerFrom, createPageStore, pageKey, SignedOut } from './store';
 import { requestOf } from '../request';
 import { TOO_MANY_REQUESTS } from './requests';
 
@@ -579,7 +581,11 @@ describe('[M3.ytmusic] songs from outside the library', () => {
           title: 'Never Gonna',
           meta: 'Song · Streams · An Artist, Another · An Album',
           image: '/api/media/ytmusic:lYBUbBu4W08/art?size=small',
+          status: null,
+          tone: null,
           playRef: 'ytmusic:lYBUbBu4W08',
+          ref: 'ytmusic:lYBUbBu4W08',
+          menu: [{ key: 'keep', label: 'Add to library', icon: 'library_add' }],
         },
       ],
       follows: [],
@@ -696,5 +702,128 @@ describe('[M3.ytmusic] songs from outside the library', () => {
     expect(searchHeard(data, { music: false, refused: { ref, error } }).errors).toEqual([
       { message },
     ]);
+  });
+});
+
+describe('[M3.keep] keeping a song from YouTube Music', () => {
+  const ref = { source: 'ytmusic', id: 'lYBUbBu4W08' } as const;
+  const song = (availability: SearchSong['availability']): SearchSong => ({
+    ref,
+    title: 'Never Gonna',
+    artists: ['An Artist'],
+    album: null,
+    duration: 214,
+    art: null,
+    availability,
+  });
+  const answer = (...songs: SearchSong[]): SearchResults => ({
+    query: 'never',
+    results: [],
+    books: [],
+    songs,
+    streaming: 'ok',
+    hasRequests: false,
+  });
+
+  it('offers Add to library in a streamable song’s menu, on the song its ref names', () => {
+    const [row] = songRowOf(song({ kind: 'streamable' })).plays;
+    expect(row?.menu).toEqual([{ key: 'keep', label: 'Add to library', icon: 'library_add' }]);
+    expect(row?.ref).toBe('ytmusic:lYBUbBu4W08');
+    expect(row?.status).toBeNull();
+    expect(row?.tone).toBeNull();
+  });
+
+  it('offers nothing once the song is being kept, and says where its keep stands', () => {
+    const asked = songRowOf(song({ kind: 'requested', status: 'searching' })).plays[0];
+    expect(asked?.menu).toEqual([]);
+    expect(asked?.status).toBe('Searching…');
+    expect(asked?.tone).toBe('progress');
+    const coming = songRowOf(song({ kind: 'requested', status: 'downloading', progress: 0.38 }));
+    expect(coming.plays[0]?.status).toBe('Downloading · 38%');
+    expect(songRowOf(song({ kind: 'requested', status: 'importing' })).plays[0]?.status).toBe(
+      'Importing',
+    );
+  });
+
+  it('offers Add to library again on a song whose keep failed, and says it failed', () => {
+    const [row] = songRowOf(song({ kind: 'requested', status: 'failed' })).plays;
+    expect(row?.menu).toEqual([{ key: 'keep', label: 'Add to library', icon: 'library_add' }]);
+    expect(row?.tone).toBe('error');
+    const data = searchData(answer(song({ kind: 'requested', status: 'failed' })), empty);
+    expect(searchOffers(data, 'ytmusic:lYBUbBu4W08')).toBe(true);
+  });
+
+  it('offers nothing for a song the household owns', () => {
+    expect(songRowOf(song({ kind: 'owned' })).plays[0]?.menu).toEqual([]);
+  });
+
+  it('takes a choice only on a song row whose menu offers something', () => {
+    const other = {
+      ...song({ kind: 'requested', status: 'importing' }),
+      ref: { source: 'ytmusic', id: 'x2' } as const,
+    };
+    const data = searchData(answer(song({ kind: 'streamable' }), other), empty);
+    expect(searchOffers(data, 'ytmusic:lYBUbBu4W08')).toBe(true);
+    expect(searchOffers(data, 'ytmusic:x2')).toBe(false);
+    expect(searchOffers(data, 'ytmusic:nowhere')).toBe(false);
+    const playing = searchHeard(data, { music: true, refused: null });
+    expect(searchOffers(playing, 'ytmusic:lYBUbBu4W08')).toBe(true);
+  });
+
+  it('keeps its menu and status while music plays and its button says Play next', () => {
+    const data = searchData(answer(song({ kind: 'requested', status: 'importing' })), empty);
+    const [row] = searchHeard(data, { music: true, refused: null }).outside.music[0]!.follows;
+    expect(row?.status).toBe('Importing');
+    expect(row?.menu).toEqual([]);
+  });
+
+  it('looks again while a song it lists is being kept, and not once none is', async () => {
+    const loaded = (...songs: SearchSong[]) =>
+      loadSearchPage(
+        createApiClient({
+          baseUrl: 'http://auralis.test',
+          fetch: async () => Response.json(answer(...songs)),
+        }),
+        { q: 'never' },
+        empty,
+      );
+    expect((await loaded(song({ kind: 'streamable' }))).moving).toBe(false);
+    expect((await loaded(song({ kind: 'requested', status: 'requested' }))).moving).toBe(true);
+    expect((await loaded(song({ kind: 'requested', status: 'failed' }))).moving).toBe(false);
+  });
+
+  it('keeps the song by POST /api/keep with its ref, then has the page load again', async () => {
+    const asked: { url: string; method: string; body: unknown }[] = [];
+    const api = createApiClient({
+      baseUrl: 'http://auralis.test',
+      fetch: async (input: Request) => {
+        asked.push({ url: input.url, method: input.method, body: await input.json() });
+        return Response.json({}, { status: 200 });
+      },
+    });
+    expect(await searchVerb(api, 'ytmusic:lYBUbBu4W08', 'keep')).toEqual({ reload: true });
+    expect(asked).toEqual([{ url: 'http://auralis.test/api/keep', method: 'POST', body: { ref } }]);
+  });
+
+  it('asks nothing for a verb it does not know or a ref that names no song', async () => {
+    let asked = 0;
+    const api = createApiClient({
+      baseUrl: 'http://auralis.test',
+      fetch: async () => {
+        asked += 1;
+        return Response.json({});
+      },
+    });
+    await expect(searchVerb(api, 'ytmusic:lYBUbBu4W08', 'delete')).rejects.toThrow();
+    await expect(searchVerb(api, 'not a ref', 'keep')).rejects.toThrow();
+    expect(asked).toBe(0);
+  });
+
+  it('throws SignedOut when the keep is refused for want of a sign-in', async () => {
+    const api = createApiClient({
+      baseUrl: 'http://auralis.test',
+      fetch: async () => Response.json({ error: 'unauthorized' }, { status: 401 }),
+    });
+    await expect(searchVerb(api, 'ytmusic:lYBUbBu4W08', 'keep')).rejects.toBeInstanceOf(SignedOut);
   });
 });

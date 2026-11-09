@@ -23,6 +23,8 @@ import net.develivarr.auralis.generated.ui.ExpanderRowProps
 import net.develivarr.auralis.generated.ui.FrontLayerHeaderProps
 import net.develivarr.auralis.generated.ui.LayoutGridProps
 import net.develivarr.auralis.generated.ui.MiniPlayerProps
+import net.develivarr.auralis.generated.ui.OverflowMenuItem
+import net.develivarr.auralis.generated.ui.OverflowMenuProps
 import net.develivarr.auralis.generated.ui.PageBodyProps
 import net.develivarr.auralis.generated.ui.PageBodyWidth
 import net.develivarr.auralis.generated.ui.Platform
@@ -45,6 +47,7 @@ import net.develivarr.auralis.ui.sonora.ExpanderRow
 import net.develivarr.auralis.ui.sonora.FrontLayerHeader
 import net.develivarr.auralis.ui.sonora.LayoutGrid
 import net.develivarr.auralis.ui.sonora.MiniPlayer
+import net.develivarr.auralis.ui.sonora.OverflowMenu
 import net.develivarr.auralis.ui.sonora.PageBody
 import net.develivarr.auralis.ui.sonora.ResultRow
 import net.develivarr.auralis.ui.sonora.SearchField
@@ -335,18 +338,36 @@ fun SearchPage(navController: NavController, actions: PageActions) {
                                             ResultRowProps(
                                                 title = "Salt",
                                                 meta = "Song · Streams · Fleeting Verses",
+                                                status = null,
+                                                tone = null,
                                                 image = "/art/fragments-of-the-wind.jpg",
                                                 platform = Platform.MOBILE,
                                                 onAction = {
                                                     actions.onPlay("salt", PlayQueue.MUSIC, PlayMode.NOW)
                                                 },
                                                 divider = true,
+                                                menu = {
+                                                    OverflowMenu(
+                                                        OverflowMenuProps(
+                                                            items = listOf(
+                                                                OverflowMenuItem(
+                                                                    key = "keep",
+                                                                    label = "Add to library",
+                                                                    icon = "library_add",
+                                                                ),
+                                                            ),
+                                                            platform = Platform.MOBILE,
+                                                        ),
+                                                    )
+                                                },
                                             ),
                                         )
                                         ResultRow(
                                             ResultRowProps(
                                                 title = "Salted",
                                                 meta = "Song · Streams · Deep Inertia",
+                                                status = null,
+                                                tone = null,
                                                 image = "/art/tears-of-ice.jpg",
                                                 platform = Platform.MOBILE,
                                                 onAction = {
@@ -363,6 +384,42 @@ fun SearchPage(navController: NavController, actions: PageActions) {
                                                                 actions.onPlay("salted", PlayQueue.MUSIC, PlayMode.NEXT)
                                                             },
                                                             children = { BasicText("Play next") },
+                                                        ),
+                                                    )
+                                                },
+                                                menu = {
+                                                    OverflowMenu(
+                                                        OverflowMenuProps(
+                                                            items = listOf(
+                                                                OverflowMenuItem(
+                                                                    key = "keep",
+                                                                    label = "Add to library",
+                                                                    icon = "library_add",
+                                                                ),
+                                                            ),
+                                                            platform = Platform.MOBILE,
+                                                        ),
+                                                    )
+                                                },
+                                            ),
+                                        )
+                                        ResultRow(
+                                            ResultRowProps(
+                                                title = "Salt of the Sea",
+                                                meta = "Song · Streams · Soul Vertex",
+                                                status = "Importing",
+                                                tone = ResultRowTone.PROGRESS,
+                                                image = "/art/salt-and-static.jpg",
+                                                platform = Platform.MOBILE,
+                                                onAction = {
+                                                    actions.onPlay("salt-of-the-sea", PlayQueue.MUSIC, PlayMode.NOW)
+                                                },
+                                                divider = true,
+                                                menu = {
+                                                    OverflowMenu(
+                                                        OverflowMenuProps(
+                                                            items = listOf(),
+                                                            platform = Platform.MOBILE,
                                                         ),
                                                     )
                                                 },

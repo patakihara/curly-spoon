@@ -6,8 +6,9 @@ import { PLATFORM, useLayout, type Chrome, type FrameContext, type LayoutId, typ
 import type { ShellNav } from '../../shell-nav';
 import { usePlay, type PlayQueue, type Playing } from '../../player';
 import { useQuery } from '../../query';
+import { useChoose } from '../../choose';
 import { useRequest } from '../../request';
-import { AccountButton, BackLayer, BottomNav, Button, ButtonGroup, EmptyState, ExpanderRow, FrontLayerHeader, LayoutGrid, MiniPlayer, NavRail, PageBody, ResultRow, SearchField, Section, SortFilterBar, StatusBanner } from '../ui/index.js';
+import { AccountButton, BackLayer, BottomNav, Button, ButtonGroup, EmptyState, ExpanderRow, FrontLayerHeader, LayoutGrid, MiniPlayer, NavRail, OverflowMenu, PageBody, ResultRow, SearchField, Section, SortFilterBar, StatusBanner } from '../ui/index.js';
 
 const placeholder = {
   "errors": [
@@ -151,7 +152,17 @@ const placeholder = {
             "title": "Salt",
             "meta": "Song · Streams · Fleeting Verses",
             "image": "/art/fragments-of-the-wind.jpg",
-            "playRef": "salt"
+            "status": null,
+            "tone": null,
+            "playRef": "salt",
+            "ref": "salt",
+            "menu": [
+              {
+                "key": "keep",
+                "label": "Add to library",
+                "icon": "library_add"
+              }
+            ]
           }
         ],
         "follows": []
@@ -163,9 +174,34 @@ const placeholder = {
             "title": "Salted",
             "meta": "Song · Streams · Deep Inertia",
             "image": "/art/tears-of-ice.jpg",
-            "playRef": "salted"
+            "status": null,
+            "tone": null,
+            "playRef": "salted",
+            "ref": "salted",
+            "menu": [
+              {
+                "key": "keep",
+                "label": "Add to library",
+                "icon": "library_add"
+              }
+            ]
           }
         ]
+      },
+      {
+        "plays": [
+          {
+            "title": "Salt of the Sea",
+            "meta": "Song · Streams · Soul Vertex",
+            "image": "/art/salt-and-static.jpg",
+            "status": "Importing",
+            "tone": "progress",
+            "playRef": "salt-of-the-sea",
+            "ref": "salt-of-the-sea",
+            "menu": []
+          }
+        ],
+        "follows": []
       }
     ],
     "moreReleases": "More releases of Salt",
@@ -460,6 +496,7 @@ export default function Search({ data = placeholder, state = 'full' }: SearchPro
   const platform = PLATFORM[useLayout()];
   const navigate = useNavigate();
   const play = usePlay();
+  const choose = useChoose();
   const askFor = useRequest();
   return (
     <PageBody width="list" platform={platform}>
@@ -531,7 +568,17 @@ export default function Search({ data = placeholder, state = 'full' }: SearchPro
                 <Fragment key={i}>
                   {song.plays.map((plays, i) => (
                     <Fragment key={i}>
-                      <ResultRow title={plays.title} meta={plays.meta} image={plays.image} onAction={play(plays.playRef, 'music', 'now')} divider={true} platform={platform} />
+                      <ResultRow
+                        title={plays.title}
+                        meta={plays.meta}
+                        image={plays.image}
+                        status={plays.status}
+                        tone={plays.tone as Exclude<ComponentProps<typeof ResultRow>['tone'], undefined>}
+                        onAction={play(plays.playRef, 'music', 'now')}
+                        divider={true}
+                        menu={<OverflowMenu items={plays.menu} onSelect={choose(plays.ref)} platform={platform} />}
+                        platform={platform}
+                      />
                     </Fragment>
                   ))}
                   {song.follows.map((follows, i) => (
@@ -540,6 +587,8 @@ export default function Search({ data = placeholder, state = 'full' }: SearchPro
                         title={follows.title}
                         meta={follows.meta}
                         image={follows.image}
+                        status={follows.status}
+                        tone={follows.tone as Exclude<ComponentProps<typeof ResultRow>['tone'], undefined>}
                         onAction={play(follows.playRef, 'music', 'now')}
                         divider={true}
                         trailing={
@@ -547,6 +596,7 @@ export default function Search({ data = placeholder, state = 'full' }: SearchPro
                             {"Play next"}
                           </Button>
                         }
+                        menu={<OverflowMenu items={follows.menu} onSelect={choose(follows.ref)} platform={platform} />}
                         platform={platform}
                       />
                     </Fragment>

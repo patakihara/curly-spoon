@@ -490,7 +490,7 @@ describe('[M3.ytmusic/a] song rows in Search', () => {
     });
     await ask();
     const [first] = await songsOnRecord();
-    const row = songRows(db, [first!])[0]!;
+    const row = songRows(db, 'someone', [first!])[0]!;
     rememberTracks(db, [{ ...first!, id: 'ccccccccccc', duration: 3 * 3600 + 1 }], T0);
     music!.resolveAhead('a-device', [
       { ...row, availability: { kind: 'external', requestable: false } },
@@ -640,7 +640,7 @@ describe('[M3.ytmusic] one song under other names', () => {
   it('[M3.ytmusic] an artist whose name only holds the letters of an owned artist is another song', () => {
     const db = openDatabase(':memory:');
     ownedTrack(db, 'owned-1', 'Run', ['Air']);
-    const rows = songRows(db, [song('aaaaaaaaaaa', 'Run', ['Fair to Midland'])]);
+    const rows = songRows(db, 'someone', [song('aaaaaaaaaaa', 'Run', ['Fair to Midland'])]);
     expect(rows.map(({ ref }) => ref.id)).toEqual(['aaaaaaaaaaa']);
   });
 });

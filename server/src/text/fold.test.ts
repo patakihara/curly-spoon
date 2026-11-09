@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { foldName, searchFold, searchTokens } from './fold.js';
+import { foldName, plainTitle, searchFold, searchTokens, titleKey } from './fold.js';
 
 describe('folding text for search', () => {
   it('drops accents, case and apostrophes, and collapses whitespace', () => {
@@ -43,5 +43,18 @@ describe('folding text for search', () => {
 
   it('keeps a private-use character inside its word, as the full-text index does', () => {
     expect(searchTokens('Logo\uF8FFMark Live')).toEqual(['logo\uF8FFmark', 'live']);
+  });
+
+  it('[M3.keep] a title sent as written keeps its case and apostrophe and drops its brackets and edition', () => {
+    expect(plainTitle('Not Gonna Give It Up (2002 Remaster)')).toBe('Not Gonna Give It Up');
+    expect(plainTitle("I'm Never Gonna Give You Up [Live]")).toBe("I'm Never Gonna Give You Up");
+    expect(plainTitle('Dreams - 2004 Remaster')).toBe('Dreams');
+  });
+
+  it('[M3.keep] a title compared folds as search does, its brackets and edition dropped', () => {
+    expect(titleKey('I’m Never Gonna Give You Up (feat. X)')).toBe(
+      titleKey("I'm never gonna give you up"),
+    );
+    expect(titleKey('Dreams - 2004 Remaster')).toBe('dreams');
   });
 });

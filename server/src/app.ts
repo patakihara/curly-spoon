@@ -11,7 +11,7 @@ import type { CookieSecure } from './config.js';
 import { answerFailure, refuseConnection } from './failures.js';
 import { scheduleJob } from './jobs/schedule.js';
 import type { BookCatalogue } from './requests/books/catalogue.js';
-import { advanceRequests } from './requests/job.js';
+import { RequestTurns, Wake } from './requests/job.js';
 import type { StepsRegistry } from './requests/steps.js';
 import { retiredWorkerRoute } from './retiredWorker.js';
 import { serve } from './route.js';
@@ -30,6 +30,8 @@ import { type PlaybackOptions, playRoutes, type UpstreamAccess } from './routes/
 import { Lyrics } from './lyrics/service.js';
 import { IndexLookup } from './queues/lookup.js';
 import { Sessions } from './queues/sessions.js';
+import { keepRoutes, songKeeper } from './routes/keep.js';
+import { AutoKeep } from './music/autoKeep.js';
 import { requestRoutes } from './routes/requests.js';
 import { MOST_LIVE_REQUESTS } from './store/requests.js';
 import { searchRoutes } from './routes/search.js';
@@ -76,6 +78,8 @@ export interface BuildAppOptions {
     holdAfterMs: number;
     /** How many live requests one person may be on; `MOST_LIVE_REQUESTS` otherwise. */
     maxLive?: number;
+    /** What steps built before the app ask a turn through; the app's own otherwise. */
+    wake?: Wake;
   };
   /** What Search lists of the books the library lacks, while books can be requested. */
   bookCatalogue?: BookCatalogue;
@@ -204,12 +208,30 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
   // Marks still being sent finish before the server's store closes.
   app.addHook('onClose', () => sessions.settled());
   sessionRoutes(app, { sessions });
+  const wake = options.requests?.wake ?? new Wake();
+  const requestDeps = {
+    db,
+    steps: options.requests?.steps ?? new Map(),
+    log: app.log,
+    now: options.now ?? Date.now,
+    // With no steps registered, no step ever runs against this.
+    stepTimeoutMs: options.requests?.stepTimeoutMs ?? 0,
+    maxLive: options.requests?.maxLive ?? MOST_LIVE_REQUESTS,
+  };
   playRoutes(app, {
     db,
     upstreams,
     sessions,
     open: plays,
     music: options.music ?? null,
+    autoKeep: requestDeps.steps.has('song')
+      ? new AutoKeep({
+          db,
+          keep: songKeeper({ ...requestDeps, wake }),
+          now: options.now ?? Date.now,
+          log: app.log,
+        })
+      : null,
     ...(options.playback ? { playback: options.playback } : {}),
     ...(options.now ? { now: options.now } : {}),
   });
@@ -248,28 +270,19 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
   });
   settingsRoutes(app, { db, sessions, now: options.now ?? Date.now });
 
-  requestRoutes(app, {
-    db,
-    steps: options.requests?.steps ?? new Map(),
-    log: app.log,
-    now: options.now ?? Date.now,
-    // With no steps registered, no step ever runs against this.
-    stepTimeoutMs: options.requests?.stepTimeoutMs ?? 0,
-    maxLive: options.requests?.maxLive ?? MOST_LIVE_REQUESTS,
-  });
+  requestRoutes(app, requestDeps);
+  keepRoutes(app, { ...requestDeps, wake });
 
   if (options.requests !== undefined) {
-    const { everyMs, maxLive: _maxLive, ...requests } = options.requests;
-    const deps = { db, ...requests, log: app.log, now: options.now ?? Date.now };
-    let turn = Promise.resolve();
-    const stop = scheduleJob(
-      { name: 'requests', everyMs, run: () => (turn = advanceRequests(deps)) },
-      app.log,
-    );
+    const { everyMs, maxLive: _maxLive, wake: _wake, ...requests } = options.requests;
+    const turns = new RequestTurns({ db, ...requests, log: app.log, now: options.now ?? Date.now });
+    wake.attach(() => turns.wake());
+    const stop = scheduleJob({ name: 'requests', everyMs, run: () => turns.tick() }, app.log);
     // A turn still going finishes before the server's store closes.
     app.addHook('onClose', async () => {
       stop();
-      await turn.catch(() => undefined);
+      wake.attach(null);
+      await turns.stop();
     });
   }
 

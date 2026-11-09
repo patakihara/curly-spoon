@@ -16,6 +16,16 @@ import { lyricsQuery } from '../lyrics/query.js';
 import { ART_WIDTH } from '../routes/items.js';
 import { RADIO_KEPT_ROWS, YTMUSIC_TRIMMED } from './record-ytmusic.js';
 import { PLAYED_PAGE } from './record-played.js';
+import { CoverArtClient, isCoverHost } from './coverart/client.js';
+import {
+  type Clock,
+  MusicBrainzClient,
+  MUSICBRAINZ_BUSY_WAIT_MS,
+  MUSICBRAINZ_GAP_MS,
+  MUSICBRAINZ_USER_AGENT,
+} from './musicbrainz/client.js';
+import { FOLDER_KEPT, MUSICBRAINZ_SONGS, UNINDEXED_PROBE } from './record-musicbrainz.js';
+import { StepUnavailable } from '../requests/steps.js';
 import { ABS_PROGRESS_CALLS, JELLYFIN_PROGRESS_CALLS, TEST_BOOKMARK } from './record-progress.js';
 
 const adapters = dirname(fileURLToPath(import.meta.url));
@@ -1168,5 +1178,256 @@ describe("[M3.ytmusic/a] the extractor's runs and the stream host's answers, as 
     const { status, headers } = recording('googlevideo', 'range-416').response;
     expect(status).toBe(416);
     expect(headers['content-range']).toMatch(/^bytes \*\/\d+$/);
+  });
+});
+
+const MUSICBRAINZ_CALLS = [
+  'release-search-mama-africa',
+  'release-mama-africa',
+  'release-search-dame-tu-cosita',
+  'release-dame-tu-cosita',
+  'release-search-staying-alive',
+  'recording-search-stallone',
+  'release-staying-alive',
+  'recording-search-none',
+] as const;
+const musicbrainz = Object.fromEntries(
+  [...MUSICBRAINZ_CALLS, 'search-503'].map((call) => [call, recording('musicbrainz', call)]),
+) as Record<(typeof MUSICBRAINZ_CALLS)[number] | 'search-503', Recording>;
+
+/** A clock that only moves when slept on, noting when each wait ends. */
+function fakeClock(): Clock & { slept: number[] } {
+  let now = 1_000_000;
+  const slept: number[] = [];
+  return {
+    slept,
+    now: () => now,
+    sleep: async (ms) => {
+      slept.push(ms);
+      now += ms;
+    },
+  };
+}
+
+/** Answers each request with the next recording's answer, noting when on the clock it came. */
+function inTurn(recordings: Recording[], clock: Clock) {
+  const asked: number[] = [];
+  const replays = recordings.map((r) => replayFetch([r]));
+  const fetch: FetchLike = async (url, init) => {
+    asked.push(clock.now());
+    const next = replays[asked.length - 1];
+    if (!next) throw new Error('asked more than was recorded');
+    return next(url, init);
+  };
+  return { fetch, asked };
+}
+
+const mbClient = (fetch: FetchLike, clock: Clock = fakeClock()) =>
+  new MusicBrainzClient({
+    baseUrl: 'http://upstream.invalid',
+    fetch,
+    userAgent: MUSICBRAINZ_USER_AGENT,
+    clock,
+  });
+
+describe("[M3.keep] MusicBrainz's answers, as recorded", () => {
+  const { mamaAfrica, dameTuCosita, stayingAlive, none } = MUSICBRAINZ_SONGS;
+  // The busy answer was asked as the Mama Africa search was, so it is left out of the replay.
+  const client = () => mbClient(replayFetch(MUSICBRAINZ_CALLS.map((call) => musicbrainz[call])));
+
+  it('[M3.keep] each recorded call is a read of /ws/2 as JSON, naming Auralis and no person', () => {
+    for (const call of MUSICBRAINZ_CALLS) {
+      const r = musicbrainz[call];
+      expect(r.upstream, call).toBe('musicbrainz');
+      expect(r.request.method, call).toBe('GET');
+      expect(r.request.path, call).toMatch(/^\/ws\/2\/(release|recording)(\/[0-9a-f-]{36})?$/);
+      expect(r.request.query.fmt, call).toBe('json');
+      expect(r.request.headers['user-agent'], call).toBe(MUSICBRAINZ_USER_AGENT);
+      expect(r.response.status, call).toBe(200);
+      expect(scanRecording(r), call).toEqual([]);
+    }
+    expect(MUSICBRAINZ_USER_AGENT).toBe(
+      'Auralis/0.0.0 ( https://github.com/patakihara/curly-spoon )',
+    );
+  });
+
+  it('[M3.keep] a release search names the releases, their groups and their artists', async () => {
+    const found = await client().searchReleases(mamaAfrica.release);
+    expect(found.count).toBeGreaterThan(1);
+    const release = found.releases.find((r) => r.id === mamaAfrica.lookup)!;
+    expect(release).toMatchObject({ title: 'Mama Africa', status: 'Official', date: '1983' });
+    expect(release.artistCredit[0]).toMatchObject({ name: 'Peter Tosh' });
+    expect(release.releaseGroup.id).toMatch(/^[0-9a-f-]{36}$/);
+  });
+
+  it('[M3.keep] a release lookup gives each track its place, length and recording', async () => {
+    const release = (await client().release(mamaAfrica.lookup))!;
+    expect(release.releaseGroup.firstReleaseDate).toBe('1983');
+    const tracks = release.media.flatMap((m) => m.tracks);
+    const track = tracks.find((t) => t.title === mamaAfrica.track)!;
+    expect(track).toMatchObject({ position: 3, length: 345_800 });
+    expect(track.recording.id).toMatch(/^[0-9a-f-]{36}$/);
+    expect(track.artistCredit[0]!.artistId).toBe(release.artistCredit[0]!.artistId);
+  });
+
+  it('[M3.keep] a release by several artists credits each, with its join', async () => {
+    const found = await client().searchReleases(dameTuCosita.release);
+    const single = found.releases.find((r) => r.id === dameTuCosita.lookup)!;
+    expect(single.releaseGroup.primaryType).toBe('Single');
+    expect(single.artistCredit.map((a) => a.name)).toEqual(['El Chombo', 'Cutty Ranks']);
+    const release = (await client().release(dameTuCosita.lookup))!;
+    const track = release.media.flatMap((m) => m.tracks).find((t) => t.position === 1)!;
+    expect(track.artistCredit.length).toBeGreaterThan(1);
+  });
+
+  it("[M3.keep] a soundtrack's song is found by its recording, not its release", async () => {
+    expect((await client().searchReleases(stayingAlive.release)).count).toBe(0);
+    const found = await client().searchRecordings(stayingAlive.recording);
+    const on = found.recordings
+      .flatMap((r) => r.releases)
+      .find((r) => r.id === stayingAlive.lookup);
+    expect(on).toMatchObject({ title: 'Staying Alive', status: 'Official' });
+    expect(on!.media[0]!.tracks[0]!.number).toMatch(/^\d+$/);
+    const release = (await client().release(stayingAlive.lookup))!;
+    expect(release.artistCredit[0]!.artistName).toBe('Various Artists');
+  });
+
+  it('[M3.keep] a title nothing has finds nothing', async () => {
+    expect(await client().searchRecordings(none.recording)).toEqual({ count: 0, recordings: [] });
+  });
+
+  it('[M3.keep] calls wait their turn: each starts 1.1 s after the one before, the first at once', async () => {
+    const clock = fakeClock();
+    const { fetch, asked } = inTurn(
+      [musicbrainz['release-search-mama-africa'], musicbrainz['release-mama-africa']],
+      clock,
+    );
+    const mb = mbClient(fetch, clock);
+    const start = clock.now();
+    await Promise.all([mb.searchReleases(mamaAfrica.release), mb.release(mamaAfrica.lookup)]);
+    expect(asked).toEqual([start, start + MUSICBRAINZ_GAP_MS]);
+  });
+
+  it('[M3.keep] a busy answer waits 2 s and asks again', async () => {
+    const clock = fakeClock();
+    const { fetch, asked } = inTurn(
+      [musicbrainz['search-503'], musicbrainz['release-search-mama-africa']],
+      clock,
+    );
+    const found = await mbClient(fetch, clock).searchReleases(mamaAfrica.release);
+    expect(found.releases.length).toBeGreaterThan(0);
+    expect(asked[1]! - asked[0]!).toBe(MUSICBRAINZ_BUSY_WAIT_MS);
+  });
+
+  it('[M3.keep] three busy answers make MusicBrainz unavailable, so the request is held', async () => {
+    const busy = musicbrainz['search-503'];
+    const { fetch, asked } = inTurn([busy, busy, busy], fakeClock());
+    const asking = mbClient(fetch).searchReleases(mamaAfrica.release);
+    await expect(asking).rejects.toBeInstanceOf(StepUnavailable);
+    expect(asked).toHaveLength(3);
+  });
+
+  it('[M3.keep] the busy answer was recorded on the same search', () => {
+    const busy = musicbrainz['search-503'];
+    expect(busy.response.status).toBe(503);
+    expect(busy.request.query).toEqual(musicbrainz['release-search-mama-africa'].request.query);
+  });
+});
+
+describe("[M3.keep] the Cover Art Archive's front cover, as recorded", () => {
+  const calls = ['front-307', 'front-302', 'front-200'].map((c) => recording('coverart', c));
+  const covers = (recorded: Recording[] = calls) =>
+    new CoverArtClient({
+      baseUrl: 'http://upstream.invalid',
+      fetch: replayFetch(recorded, { readBytes: standInsBeside(adapters) }),
+    });
+  const release = MUSICBRAINZ_SONGS.mamaAfrica.lookup;
+  const relocated = (location: string): Recording => {
+    const first = calls[0]!;
+    return {
+      ...first,
+      response: { ...first.response, headers: { ...first.response.headers, location } },
+    };
+  };
+
+  it('[M3.keep] the archive redirects to archive.org, then to one of its nodes, which answers the JPEG', () => {
+    expect(calls.map((r) => r.response.status)).toEqual([307, 302, 200]);
+    expect(new URL(calls[0]!.response.headers.location!).hostname).toBe('archive.org');
+    expect(isCoverHost(new URL(calls[1]!.response.headers.location!).hostname)).toBe(true);
+    expect(calls[2]!.response.headers['content-type']).toBe('image/jpeg');
+  });
+
+  it('[M3.keep] the cover follows the redirects and comes back as an image', async () => {
+    const cover = await covers().releaseFront(release);
+    expect(cover?.mime).toBe('image/jpeg');
+    expect(cover!.bytes.subarray(0, 2)).toEqual(Buffer.from([0xff, 0xd8]));
+  });
+
+  it('[M3.keep] a redirect to any other host is refused, never followed', async () => {
+    const off = relocated('https://archive.org.example.com/download/cover.jpg');
+    await expect(covers([off, ...calls.slice(1)]).releaseFront(release)).rejects.toThrow(
+      /off the archive/,
+    );
+  });
+
+  it('[M3.keep] an answer that is not an image is refused', async () => {
+    const last = calls[2]!;
+    const notImage: Recording = {
+      ...last,
+      response: { status: 200, headers: { 'content-type': 'text/html' }, body: { text: '<p>' } },
+    };
+    await expect(covers([calls[0]!, calls[1]!, notImage]).releaseFront(release)).rejects.toThrow(
+      /not an image/,
+    );
+  });
+});
+
+describe("[M3.keep] Jellyfin's calls for a kept song, as recorded", () => {
+  const folders = recording('jellyfin', 'virtual-folders');
+  const walk = ['library', 'artist', 'album'].map((at) =>
+    recording('jellyfin', `items-folder-${at}`),
+  );
+  const updated = recording('jellyfin', 'media-updated');
+  const jellyfin = new JellyfinClient({
+    baseUrl: 'http://upstream.invalid',
+    token: '<token>',
+    fetch: replayFetch([folders, ...walk, updated]),
+  });
+
+  it("[M3.keep] the one music library reads one folder on Jellyfin's host", async () => {
+    const library = await jellyfin.musicLibrary();
+    expect(library).toEqual({ id: expect.any(String), locations: ['/data/media/Music'] });
+  });
+
+  it("[M3.keep] a walk down the music library's folders, one at a time, finds a track by its path, with its album", async () => {
+    const library = (await jellyfin.musicLibrary())!;
+    const artists = await jellyfin.folderItems(library.id);
+    expect(artists).toHaveLength(FOLDER_KEPT);
+    const artist = artists.find((item) => item.Type === 'MusicArtist')!;
+    expect(artist.Path).toMatch(/^\/data\/media\/Music\/[^/]+$/);
+    const albums = await jellyfin.folderItems(artist.Id);
+    const album = albums.find((item) => item.Type === 'MusicAlbum')!;
+    expect(album.Path!.startsWith(`${artist.Path}/`)).toBe(true);
+    const tracks = await jellyfin.folderItems(album.Id);
+    expect(tracks.length).toBeGreaterThan(0);
+    for (const track of tracks) {
+      expect(track.Type).toBe('Audio');
+      expect(track.Path!.startsWith(`${album.Path}/`)).toBe(true);
+      expect(track.AlbumId).toBe(album.Id);
+    }
+  });
+
+  it('[M3.keep] a file made is reported by its path, as Created, and Jellyfin answers 204', async () => {
+    const path = `/data/media/Music/${UNINDEXED_PROBE}`;
+    await expect(jellyfin.reportCreated(path)).resolves.toBeUndefined();
+    expect(updated.request).toMatchObject({ method: 'POST', path: '/Library/Media/Updated' });
+    expect(json(updated.request.body)).toEqual({
+      Updates: [{ Path: path, UpdateType: 'Created' }],
+    });
+    expect(updated.response.status).toBe(204);
+  });
+
+  it('[M3.keep] the recorded report named a dot folder, which Jellyfin never indexes', () => {
+    expect(UNINDEXED_PROBE.split('/')[0]).toMatch(/^\./);
   });
 });

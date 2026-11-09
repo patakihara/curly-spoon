@@ -34,6 +34,7 @@ import { runIndex } from './libraryIndex/job.js';
 import { indexedRow } from './libraryIndex/store.js';
 import {
   advanceRequests,
+  RequestTurns,
   chooseRelease,
   otherReleases,
   pickAnotherRelease,
@@ -61,6 +62,7 @@ import {
   type StoredRequest,
 } from './store/requests.js';
 import { createSession } from './store/sessions.js';
+import { rememberTracks } from './store/streamedTracks.js';
 import { upsertUser } from './store/users.js';
 
 const ADAPTERS = fileURLToPath(new URL('./adapters/', import.meta.url));
@@ -84,6 +86,11 @@ const show: MediaRef = { source: 'abs', id: json<{ id: string }>(abs('index-show
 const albums = json<{ Items: { Id: string }[] }>(jf('jf-library-albums-1')).Items;
 const album: MediaRef = { source: 'jellyfin', id: albums[0]!.Id };
 const songsAlbum: MediaRef = { source: 'jellyfin', id: albums[1]!.Id };
+/** A track on `songsAlbum`, as a kept song's import names it. */
+const songsTrack: MediaRef = {
+  source: 'jellyfin',
+  id: json<{ Items: { Id: string }[] }>(jf('index-album-tracks-2')).Items[0]!.Id,
+};
 
 const common = { baseUrl: 'http://upstream.invalid', token: '<token>' };
 
@@ -145,6 +152,16 @@ const refs: Record<RequestMedium, RequestRef> = {
     medium: 'podcast',
     target: { title: 'A Show', creator: null, ids: { feedUrl: 'https://feeds.example.com/show' } },
   },
+};
+
+/** The stand-in song as search named it, so `POST /keep` builds `refs.song`'s target from it. */
+const STREAMED_SONG = {
+  id: refs.song.target.ids.youtubeMusicId!,
+  title: refs.song.target.title,
+  artists: [refs.song.target.creator!],
+  album: null,
+  duration: 200,
+  artUrl: null,
 };
 
 const candidates = [standInRelease('a'), standInRelease('b')];
@@ -1633,6 +1650,86 @@ describe('the advance job in the app', () => {
   });
 });
 
+describe('[M3.keep] the job woken between its turns', () => {
+  /** Prompt song steps whose polls each wait to be let through, counting how many are out at once. */
+  function gated() {
+    const base = standInSteps('song', { polls: [{ kind: 'downloading', progress: 0.5 }] });
+    const gates: (() => void)[] = [];
+    let out = 0;
+    let most = 0;
+    const steps: MediumSteps = {
+      ...base,
+      prompt: true,
+      download: {
+        ...base.download!,
+        poll: async (handle) => {
+          out += 1;
+          most = Math.max(most, out);
+          await new Promise<void>((resolve) => gates.push(resolve));
+          out -= 1;
+          return base.download!.poll(handle);
+        },
+      },
+    };
+    return { steps, gates, most: () => most };
+  }
+
+  it('[M3.keep] a prompt request walks its route in one wake, each step once the one before is saved', async () => {
+    const turns = new RequestTurns(
+      deps({ ...standInSteps('song', { imports: songsTrack }), prompt: true }),
+    );
+    const one = request('song');
+    turns.wake();
+    await vi.waitFor(() => expect(reread(one).result).toEqual(songsTrack));
+    expect(reread(one).state.status).toBe('importing');
+    await turns.stop();
+  });
+
+  it('[M3.keep] a wake runs one more turn after the running one, never two at once, however many come', async () => {
+    const { steps, gates, most } = gated();
+    const turns = new RequestTurns(deps(steps));
+    const one = request('song');
+    turns.wake();
+    await vi.waitFor(() => expect(gates).toHaveLength(1));
+    expect(reread(one).handle).not.toBeNull();
+
+    turns.wake();
+    turns.wake();
+    turns.wake();
+    void turns.tick();
+    gates[0]!();
+    await vi.waitFor(() => expect(gates).toHaveLength(2));
+    gates[1]!();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(gates).toHaveLength(2);
+    await turns.stop();
+    expect(most()).toBe(1);
+  });
+
+  it('[M3.keep] a wake moves no medium that is not prompt; the next turn does', async () => {
+    const turns = new RequestTurns(deps(standInSteps('book')));
+    const one = request('book');
+    turns.wake();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(reread(one).state.status).toBe('requested');
+    await turns.tick();
+    expect(reread(one).state.status).toBe('searching');
+  });
+
+  it('[M3.keep] a kept song that arrives claims its album for everyone on the request', async () => {
+    const ben = upsertUser(db, { username: 'ben', role: 'member' }).id;
+    const one = request('song');
+    createRequest(db, ben, refs.song, clock);
+    const job = deps(standInSteps('song', { imports: songsTrack }));
+    await runUntilImported(job, one);
+    await indexRecordings(db, clock);
+    await runUntil(job, one, 'inLibrary');
+    for (const person of [ana, ben]) {
+      expect(claimsOf(db, person)).toEqual([{ ref: songsAlbum, reason: 'added' }]);
+    }
+  });
+});
+
 describe('the requests routes', () => {
   const PUBLIC = 'https://audio.example.org';
   const others = [standInRelease('two'), standInRelease('three')];
@@ -1649,6 +1746,7 @@ describe('the requests routes', () => {
   /** The app with these steps; its job's first turn has passed, and the test moves it after that. */
   const serving = async (...steps: MediumSteps[]) => {
     ben = upsertUser(db, { username: 'ben', role: 'member' }).id;
+    rememberTracks(db, [STREAMED_SONG], clock);
     signIn(ana, 'ana');
     signIn(ben, 'ben');
     app = await buildApp({
@@ -1689,8 +1787,17 @@ describe('the requests routes', () => {
       },
       ...(payload === undefined ? {} : { payload }),
     });
+  /** Asks for a medium's stand-in thing; a song through its own door, as search named it. */
   const ask = async (medium: RequestMedium, who = 'ana') => {
-    const res = await call('POST', '', who, { ref: refs[medium] });
+    const res =
+      medium === 'song'
+        ? await app!.inject({
+            method: 'POST',
+            url: '/api/keep',
+            headers: { origin: PUBLIC, cookie: cookies[who] ?? '' },
+            payload: { ref: { source: 'ytmusic', id: refs.song.target.ids.youtubeMusicId } },
+          })
+        : await call('POST', '', who, { ref: refs[medium] });
     expect(res.statusCode).toBe(200);
     return RequestView.parse(res.json());
   };
@@ -1762,7 +1869,7 @@ describe('the requests routes', () => {
       expect(res.json()).toMatchObject({ id: first!.id });
     });
 
-    it('counts every medium and every failed request, but not one that reached the library', async () => {
+    it('counts every medium, but neither a failed request nor one that reached the library', async () => {
       await serving(standInSteps('book'), standInSteps('podcast'));
       const held = filled(20);
       const feed = refs.podcast;
@@ -1773,14 +1880,30 @@ describe('the requests routes', () => {
         { state: { status: 'failed', failedStep: 'searching', reason: 'noRelease' } },
         clock,
       );
-      expect((await call('POST', '', 'ana', { ref: feed })).statusCode).toBe(429);
+      expect((await call('POST', '', 'ana', { ref: feed })).statusCode).toBe(200);
       saveRequest(
         db,
         held[1]!.id,
         { state: { status: 'inLibrary' }, result: { source: 'abs', id: 'landed' } },
         clock,
       );
-      expect((await call('POST', '', 'ana', { ref: feed })).statusCode).toBe(200);
+      expect((await call('POST', '', 'ana', { ref: bookNo(30) })).statusCode).toBe(200);
+      expect((await call('POST', '', 'ana', { ref: bookNo(31) })).statusCode).toBe(429);
+    });
+
+    it('[M3.keep] lets a person at the limit retry a failed keep of theirs, which counts again once it moves', async () => {
+      await serving(standInSteps('book'), standInSteps('song'));
+      const keptBefore = await ask('song');
+      saveRequest(
+        db,
+        keptBefore.id,
+        { state: { status: 'failed', failedStep: 'downloading', reason: 'downloadFailed' } },
+        clock,
+      );
+      filled(20);
+      const again = await ask('song');
+      expect(again).toMatchObject({ id: keptBefore.id, status: 'downloading' });
+      expect((await call('POST', '', 'ana', { ref: bookNo(20) })).statusCode).toBe(429);
     });
 
     it('takes its limit from the configuration', async () => {
@@ -2007,6 +2130,129 @@ describe('the requests routes', () => {
 
       await call('POST', `/${id}/choose`, 'ana', { candidate: 'two' });
       expect(stored(id)).toMatchObject({ state: { status: 'queued' }, result: null });
+    });
+  });
+
+  describe('[M3.keep] keeping a song', () => {
+    const keep = (ref: object, who = 'ana') =>
+      app!.inject({
+        method: 'POST',
+        url: '/api/keep',
+        headers: { origin: PUBLIC, cookie: cookies[who] ?? '' },
+        payload: { ref },
+      });
+
+    it('[M3.keep] keeps only a song search named, its target built from what search said', async () => {
+      await serving(standInSteps('song'));
+      for (const ref of [
+        { source: 'ytmusic', id: 'neverNamed1' },
+        { source: 'jellyfin', id: songsTrack.id },
+      ]) {
+        const refused = await keep(ref);
+        expect(refused.statusCode).toBe(404);
+        expect(refused.json()).toEqual({ error: 'not_found' });
+      }
+      expect(db.prepare('SELECT id FROM requests').all()).toEqual([]);
+
+      const { id } = await ask('song');
+      expect(stored(id).target).toEqual(refs.song.target);
+    });
+
+    it('[M3.keep] answers 400 use_keep to a song asked for by POST /requests, and makes nothing', async () => {
+      await serving(standInSteps('song'));
+      const res = await call('POST', '', 'ana', { ref: refs.song });
+      expect(res.statusCode).toBe(400);
+      expect(res.json()).toEqual({ error: 'use_keep' });
+      expect(db.prepare('SELECT id FROM requests').all()).toEqual([]);
+    });
+
+    it('[M3.keep] answers 409 medium_unavailable while songs cannot be kept', async () => {
+      await serving(standInSteps('book'));
+      const res = await keep({ source: 'ytmusic', id: refs.song.target.ids.youtubeMusicId });
+      expect(res.statusCode).toBe(409);
+      expect(res.json()).toEqual({ error: 'medium_unavailable' });
+    });
+
+    it('[M3.keep] two people keeping one song are on one request', async () => {
+      await serving(standInSteps('song'));
+      const first = await ask('song', 'ana');
+      const second = await ask('song', 'ben');
+      expect(second.id).toBe(first.id);
+      expect(peopleOn(db, first.id).sort()).toEqual([ana, ben].sort());
+    });
+
+    it('[M3.keep] a song already kept answers the keep from the library, claiming its album', async () => {
+      const job = await serving(standInSteps('song', { imports: songsTrack }));
+      const first = await ask('song', 'ana');
+      await indexRecordings(db, clock);
+      await until(job, first.id, 'inLibrary');
+
+      const again = await ask('song', 'ben');
+      expect(again).toMatchObject({ id: first.id, status: 'inLibrary' });
+      expect(claimsOf(db, ben)).toEqual([{ ref: songsAlbum, reason: 'added' }]);
+    });
+
+    it('[M3.keep] a song the household already owns, by its title and artist, answers from the library and runs no step', async () => {
+      const steps = standInSteps('song', { imports: songsTrack });
+      const searched = vi.spyOn(steps, 'search');
+      await serving(steps);
+      await indexRecordings(db, clock);
+      const owned = indexedRow(db, 'jellyfin', songsTrack.id)!;
+      rememberTracks(
+        db,
+        [
+          {
+            ...STREAMED_SONG,
+            id: 'ownedSong01',
+            title: `${owned.title} (2011 Remaster)`,
+            artists: owned.creators.map(({ name }) => name),
+          },
+        ],
+        clock,
+      );
+      const res = await keep({ source: 'ytmusic', id: 'ownedSong01' });
+      expect(res.statusCode).toBe(200);
+      const answered = RequestView.parse(res.json());
+      expect(answered.status).toBe('inLibrary');
+      expect(stored(answered.id).result).toEqual(songsTrack);
+      expect(claimsOf(db, ana)).toEqual([{ ref: songsAlbum, reason: 'added' }]);
+      expect(searched).not.toHaveBeenCalled();
+      expect((await list()).inFlight).toEqual([]);
+
+      const second = await keep({ source: 'ytmusic', id: 'ownedSong01' }, 'ben');
+      expect(RequestView.parse(second.json()).id).toBe(answered.id);
+      expect(claimsOf(db, ben)).toEqual([{ ref: songsAlbum, reason: 'added' }]);
+    });
+
+    it('[M3.keep] a failed keep is retried by keeping the song again', async () => {
+      await serving(standInSteps('song'));
+      const first = await ask('song');
+      saveRequest(
+        db,
+        first.id,
+        { state: { status: 'failed', failedStep: 'downloading', reason: 'downloadFailed' } },
+        clock,
+      );
+      expect(await ask('song')).toMatchObject({ id: first.id, status: 'downloading' });
+    });
+
+    it('[M3.keep] a keep being imported offers no cancel, and a cancel of it answers 409 past_cancel', async () => {
+      await serving(standInSteps('song'));
+      const { id } = await ask('song');
+      saveRequest(db, id, { state: { status: 'importing' } }, clock);
+      expect((await view(id)).verbs).toEqual([]);
+      const res = await call('POST', `/${id}/cancel`, 'ana');
+      expect(res.statusCode).toBe(409);
+      expect(res.json()).toEqual({ error: 'past_cancel' });
+      expect(stored(id).state.status).toBe('importing');
+      saveRequest(db, id, { state: { status: 'downloading', progress: 0.5 } }, clock);
+      expect((await view(id)).verbs).toEqual(['cancel']);
+    });
+
+    it('[M3.keep] a keep wakes the job: the song walks on with no turn of the job asked', async () => {
+      await serving({ ...standInSteps('song', { imports: songsTrack }), prompt: true });
+      const { id } = await ask('song');
+      await vi.waitFor(() => expect(stored(id).result).toEqual(songsTrack));
     });
   });
 

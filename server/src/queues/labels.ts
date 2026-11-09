@@ -6,12 +6,13 @@
  * Jellyfin; an Audiobookshelf episode from its show, found through the person's own progress on
  * it (`GET /api/me`); any other Audiobookshelf id as a book, from its expanded answer. A read that
  * fails is logged and leaves the entry unlabelled. A streamed song is read from its own table, with
- * no upstream call.
+ * no upstream call; a kept one is its Jellyfin track's row.
  */
 import type { MediaRef } from '@auralis/schema';
 import type { ItemSummary } from '../adapters/audiobookshelf/schemas.js';
 import type { Creator } from '../libraryIndex/rows.js';
 import { indexedRow, type StoredRow } from '../libraryIndex/store.js';
+import { keptTrack } from '../requests/songs/kept.js';
 import type { Db } from '../store/connection.js';
 import type { QueueEntry } from '../store/listening.js';
 import { streamedTrack } from '../store/streamedTracks.js';
@@ -173,6 +174,9 @@ export async function labelled(
   );
   return (entry) => {
     if (entry.ref.source === 'ytmusic') {
+      const kept = keptTrack(db, entry.ref.id);
+      const row = kept === null ? undefined : indexedRow(db, kept.source, kept.id);
+      if (row !== undefined) return fromIndex(db, lookup, row, entry);
       const song = streamedTrack(db, entry.ref.id);
       if (song === undefined) return UNLABELLED;
       return { title: song.title, sub: song.artists.join(', '), duration: song.duration };

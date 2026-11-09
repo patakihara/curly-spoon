@@ -1,6 +1,6 @@
 ---
 page: search
-pageHash: a84eae1d9fd6f089fc6f66572d52a22022b266e64ca6fb2b20482f5907f8bd28
+pageHash: 004dfdf3ef1f410bc5229b045254c4f19f7550909f1f5c6657a1f27452b8b246
 sonora: [kit:desktop/search, kit:mobile/search]
 spotify: [S03, S04, S32]
 ---
@@ -144,3 +144,8 @@ chooses the state. The canvas draws each on its own phone artboard, `search.phon
 - Changed on purpose: a song from YouTube Music plays from its art, as a library row does, and names no page to open: it belongs to no album here. Its meta line says "Streams" straight after "Song", the subtle mark the plan asks for, where a phone's cut line keeps it.
 - Changed on purpose: while music plays a song's own button is "Play next", the plan's default action, at the row's end (ResultRow `trailing`); its art still says Play and plays it now. Each song names its row by two lists (`song.plays`, `song.follows`), one of them holding it, as a book's three do, so the row keeps its place. The canvas draws one of each.
 - Changed on purpose: "Streaming unavailable", and a song that cannot play saying why, take the page's one `StatusBanner`, over the rows, as too many requests does. The banner's words are the data's; the canvas draws it with too many requests.
+
+## M3.keep
+
+- Changed on purpose: each song from YouTube Music ends in an `OverflowMenu`, ResultRow's `menu`, drawn last, after Play next where it shows, so adding it moves no button. Its one verb is "Add to library" (`library_add`), the key `keep`, which keeps the song in the household's library; Spotify's S32 rows end in a menu too. These renders come from the web app, which binds no `keep` yet, so the menu draws disabled, as the rows do.
+- Changed on purpose: a song being kept shows its keep's status where a book's does, "Importing" in the progress tone, and still plays from its art: it streams until the library holds it. Its menu holds nothing, so it draws disabled. The canvas draws one such row, "Salt of the Sea". The rows sit below the fold in both stills (looked at scrolled, both widths): on the phone the title keeps its line beside "Importing" and the menu.

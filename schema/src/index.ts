@@ -108,6 +108,7 @@ export {
   closePlay,
   createBookmark,
   createRequest,
+  keepSong,
   cancelRequest,
   chooseRelease,
   getRequest,
@@ -161,6 +162,7 @@ export {
 export {
   ChooseReleaseBody,
   CreateRequestBody,
+  KeepBody,
   REQUEST_ID_KEYS,
   RequestCandidate,
   RequestFailure,

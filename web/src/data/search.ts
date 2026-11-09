@@ -1,5 +1,6 @@
 import {
   mediaRefKey,
+  parseMediaRefKey,
   type SearchBook,
   type SearchKind,
   type SearchResult,
@@ -17,7 +18,7 @@ import { requestKey, requestOf } from '../request';
 import { artAt, emptied } from './format';
 import { statusOf } from './library';
 import { loadSearch, loadSuggest } from './loads';
-import { type Answer } from './store';
+import { type Answer, SignedOut } from './store';
 
 /**
  * Search's data from `GET /api/search/suggest` and `GET /api/search`: each suggestion as a row
@@ -31,7 +32,10 @@ import { type Answer } from './store';
  * leaves its button, as no request stands yet. A song from YouTube Music plays from its art and
  * opens nothing; while music plays its own button puts it next, as a song of the household's does,
  * and why it would not play, or was stepped over, takes the page's one banner, as does streaming
- * being unavailable. The page's own
+ * being unavailable. Its menu keeps it in the household's library (`POST /api/keep`) while it only
+ * streams; once the person's keep of it is under way the menu is empty and its row says where the
+ * keep stands, the page looking again until it is done. A keep that failed moves no more, so the
+ * page stops looking, and its menu offers Add to library again, which retries it. The page's own
  * words (its placeholder, its kinds) stay as given; what it says when a search finds nothing or
  * fails is written in the page, which this only chooses the state of.
  * The kinds' names and the meta lines are written here, as the library homes write theirs, until
@@ -179,17 +183,60 @@ function refusedMessage({ error, skipped, stoppedAfter, ranOut }: Refused): stri
   return `${skipped.title === null ? 'Skipped a song' : `Skipped “${skipped.title}”`}. ${why}`;
 }
 
-/** One song from YouTube Music as its row, in the list of the two that says what its button does. */
+/** A song's one verb: keeping it in the household's library. */
+const KEEP = { key: 'keep', label: 'Add to library', icon: 'library_add' };
+
+/** Whether this person's keep of a song failed. */
+const isFailedKeep = ({ availability }: SearchSong) =>
+  availability.kind === 'requested' && availability.status === 'failed';
+
+/** Whether a song's keep is under way: asked for, and neither failed nor done. */
+const keeping = (song: SearchSong) => song.availability.kind === 'requested' && !isFailedKeep(song);
+
+/**
+ * One song from YouTube Music as its row, in the list of the two that says what its button does.
+ * A song that just streams, or whose keep failed, offers to be kept; one being kept says where that
+ * stands.
+ */
 export function songRowOf(song: SearchSong): SongRow {
+  const key = mediaRefKey(song.ref);
   const row = {
     title: song.title,
     meta: ['Song', 'Streams', song.artists.join(', '), song.album]
       .filter((part) => part !== null && part !== '')
       .join(' · '),
     image: artAt(song.art, 'small'),
-    playRef: mediaRefKey(song.ref),
+    ...statusOf(song.availability),
+    playRef: key,
+    ref: key,
+    menu: song.availability.kind === 'streamable' || isFailedKeep(song) ? [KEEP] : [],
   };
   return { plays: [row], follows: [] } as SongRow;
+}
+
+/** Whether the song row `ref` names offers anything in its menu: none once it is being kept. */
+export function searchOffers(data: SearchData, ref: string): boolean {
+  return data.outside.music.some(({ plays, follows }) =>
+    [...plays, ...follows].some((row) => row.ref === ref && row.menu.length > 0),
+  );
+}
+
+/**
+ * Search's menu verb, `key` done to the song `ref` names: `keep` asks the server to keep it, and
+ * the page loads again to show the keep under way. A refusal for want of a sign-in throws
+ * `SignedOut`; any other, an unknown verb or a ref naming no song throws too.
+ */
+export async function searchVerb(
+  api: ApiClient,
+  ref: string,
+  key: string,
+): Promise<{ reload: boolean }> {
+  const song = parseMediaRefKey(ref);
+  if (key !== KEEP.key || song === null) throw new Error(`no verb ${key} on ${ref}`);
+  const { response } = await api.POST('/api/keep', { body: { ref: song } });
+  if (response.status === 401) throw new SignedOut();
+  if (!response.ok) throw new Error(`a keep answered ${response.status}`);
+  return { reload: true };
 }
 
 /** Whether a row of the household's is one song: it opens its album, and plays itself. */
@@ -294,7 +341,7 @@ export function searchView(q: string, draft: Draft | null): SearchView {
 
 /**
  * What Search loaded: the page's data, whether a search found anything, and whether a book it lists
- * is on its way, so the page should look again.
+ * is on its way, or a song it lists is being kept, so the page should look again.
  */
 export interface SearchLoaded {
   data: SearchData;
@@ -319,7 +366,7 @@ export async function loadSearchPage(
   return {
     data: searchData(answer, page),
     found: answer.results.length + answer.books.length + answer.songs.length > 0,
-    moving: answer.books.some(movingBook),
+    moving: answer.books.some(movingBook) || answer.songs.some(keeping),
   };
 }
 
