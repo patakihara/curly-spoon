@@ -153,6 +153,25 @@ export async function indexOneAbsItem(
   return summary;
 }
 
+/**
+ * One Jellyfin album and its tracks into the index now, as a pass would, so a kept song's request
+ * turns `inLibrary` on its next turn and not the next run. Throws when Jellyfin no longer has it.
+ */
+export async function indexOneJellyfinAlbum(
+  db: Db,
+  jellyfin: Pick<JellyfinClient, 'findAlbum' | 'getAlbumTracks'>,
+  albumId: string,
+  libraryId: string,
+  now: number,
+): Promise<void> {
+  const album = await jellyfin.findAlbum(albumId);
+  if (album === undefined) throw new Error('Jellyfin has no such album');
+  const row = albumRow(album, libraryId);
+  const tracks = await jellyfin.getAlbumTracks(albumId);
+  applyTree(db, { top: row, children: trackRows(albumId, libraryId, tracks) }, now, emptyCounts());
+  writeSync(db, 'jellyfin', albumId, row.upstreamVersion, now);
+}
+
 async function indexAbs(pass: Pass, abs: NonNullable<IndexJobOptions['abs']>): Promise<boolean> {
   let complete = true;
   for (const library of await abs.getLibraries()) {

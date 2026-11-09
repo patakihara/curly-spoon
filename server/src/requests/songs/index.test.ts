@@ -12,7 +12,7 @@ import { openDatabase, type Db } from '../../store/connection.js';
 import { createRequest, saveRequest } from '../../store/requests.js';
 import { upsertUser } from '../../store/users.js';
 import type { SongStream } from './download.js';
-import { songSteps, STAGING_FOLDER } from './index.js';
+import { type SongArt, songSteps, STAGING_FOLDER } from './index.js';
 
 let dir: string;
 let env: Record<string, string>;
@@ -39,8 +39,11 @@ const noFetch: FetchLike = async (url) => {
   calls.push(url);
   throw new Error(`no network in this test: ${url}`);
 };
-const music: SongStream = { open: () => Promise.reject(new Error('nothing streams here')) };
-const stepsWith = (vars: Record<string, string>, streams: SongStream | null = music) =>
+const music: SongStream & SongArt = {
+  open: () => Promise.reject(new Error('nothing streams here')),
+  openArt: () => Promise.reject(new Error('no art here')),
+};
+const stepsWith = (vars: Record<string, string>, streams: (SongStream & SongArt) | null = music) =>
   songSteps(loadConfig(vars), {
     db,
     fetch: noFetch,

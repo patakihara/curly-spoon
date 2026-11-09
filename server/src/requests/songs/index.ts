@@ -10,15 +10,22 @@
  */
 import { mkdirSync, readdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
+import { CoverArtClient, type Cover, COVER_MAX_BYTES } from '../../adapters/coverart/client.js';
 import type { FetchLike } from '../../adapters/http/fetch.js';
+import { readCapped } from '../../adapters/http/publicFetch.js';
+import { JellyfinClient } from '../../adapters/jellyfin/client.js';
 import { MusicBrainzClient, MUSICBRAINZ_USER_AGENT } from '../../adapters/musicbrainz/client.js';
+import type { ImageHeaders, UpstreamFile } from '../../adapters/stream.js';
 import type { AppConfig } from '../../config.js';
 import type { JobLog } from '../../jobs/schedule.js';
+import { TrackRefused } from '../../music/index.js';
+import { readSecretFile } from '../../secretFile.js';
 import type { Db } from '../../store/connection.js';
 import { liveRequestsOf } from '../../store/requests.js';
 import { folderLacking } from '../folder.js';
 import type { MediumSteps } from '../steps.js';
 import { songDownload, type SongStream } from './download.js';
+import { songImport } from './import.js';
 import { songSearch } from './search.js';
 
 /** The staging folder's name inside Music. */
@@ -28,10 +35,29 @@ export interface SongStepsDeps {
   db: Db;
   fetch: FetchLike;
   log: JobLog;
-  /** Songs that stream, through their cache; null with no extractor. */
-  music: SongStream | null;
+  /** Songs that stream, through their cache, with their art; null with no extractor. */
+  music: (SongStream & SongArt) | null;
   /** Asks the request job for a turn. */
   wake: () => void;
+}
+
+/** A song's art as YouTube Music has it. */
+export interface SongArt {
+  openArt(id: string): Promise<UpstreamFile<ImageHeaders>>;
+}
+
+/** A song's art as a cover: null when it has none; refused past the cover's own cap. */
+async function artCover(music: SongArt, id: string): Promise<Cover | null> {
+  let file: UpstreamFile<ImageHeaders>;
+  try {
+    file = await music.openArt(id);
+  } catch (error) {
+    if (error instanceof TrackRefused) return null;
+    throw error;
+  }
+  const bytes = await readCapped(new Response(file.body), COVER_MAX_BYTES);
+  if (bytes === null) throw new Error('the art is too big');
+  return { mime: file.headers['content-type'].split(';')[0]!.trim(), bytes: Buffer.from(bytes) };
 }
 
 /** The steps, or which setting keeps songs from being kept. */
@@ -66,7 +92,7 @@ export function songSteps(config: AppConfig, deps: SongStepsDeps): SongSteps {
     return { off: 'a Music folder in MEDIA_DIR it may write to' };
   }
 
-  const { musicBrainzUrl } = config.songs;
+  const { musicBrainzUrl, coverArtUrl } = config.songs;
   const musicBrainz =
     musicBrainzUrl === null
       ? null
@@ -82,8 +108,21 @@ export function songSteps(config: AppConfig, deps: SongStepsDeps): SongSteps {
       prompt: true,
       search: songSearch({ db, musicBrainz, log }),
       download: songDownload({ stream: music, stagingDir, wake, log }),
-      // Part E of M3.keep builds the import: remux, tag, place, report to Jellyfin.
-      import: () => Promise.reject(new Error('kept songs are not imported yet')),
+      import: songImport({
+        db,
+        musicDir,
+        stagingDir,
+        jellyfin: new JellyfinClient({
+          baseUrl: config.jellyfin.url,
+          token: readSecretFile(config.jellyfin.keyFile, 'JELLYFIN_API_KEY'),
+          fetch,
+          serverKey: true,
+        }),
+        coverArt: coverArtUrl === null ? null : new CoverArtClient({ baseUrl: coverArtUrl, fetch }),
+        art: (id) => artCover(music, id),
+        now: Date.now,
+        log,
+      }),
     },
   };
 }

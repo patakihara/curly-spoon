@@ -34,5 +34,3 @@ server/src/adapters/http/*
 !server/src/adapters/http/fetch.ts
 !server/src/adapters/http/publicFetch.ts
 !server/src/adapters/http/unavailable.ts
-# Not run until kept songs are imported; M3.keep's import takes this line out.
-server/src/music/opus
