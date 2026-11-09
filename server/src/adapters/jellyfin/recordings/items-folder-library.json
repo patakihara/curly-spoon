@@ -1,0 +1,185 @@
+{
+  "upstream": "jellyfin",
+  "upstreamVersion": "10.11.11",
+  "call": "items-folder-library",
+  "request": {
+    "method": "GET",
+    "path": "/Items",
+    "query": {
+      "Fields": "Path",
+      "ParentId": "7e64e319657a9516ec78490da03edccb"
+    },
+    "headers": {
+      "accept": "application/json",
+      "authorization": "MediaBrowser Client=\"Auralis\", Device=\"Auralis server\", DeviceId=\"auralis-server\", Version=\"0.0.0\", Token=\"<token>\""
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "Items": [
+          {
+            "Name": "Arctic Monkeys",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "542b5c99239d8843d61d6ac522b25d99",
+            "Path": "/data/media/Music/Arctic Monkeys",
+            "ChannelId": null,
+            "RunTimeTicks": 94976986789,
+            "IsFolder": true,
+            "Type": "MusicArtist",
+            "ImageTags": {
+              "Logo": "7ea361893ed575a744a19a82eb1278b0",
+              "Primary": "f9cb45a9232588c3b26a6ea6fa08aea9"
+            },
+            "BackdropImageTags": [
+              "06d7596470929f05adc6ebc43f03a2f0"
+            ],
+            "ImageBlurHashes": {
+              "Backdrop": {
+                "06d7596470929f05adc6ebc43f03a2f0": "WkIg$4M~xZ%1X9t6~WxrWCbHozf8?aoJs.WVkCj[%fRloIj[R*ay"
+              },
+              "Logo": {
+                "7ea361893ed575a744a19a82eb1278b0": "OkMP|CM{?^bH?uxb?vR*Rjs:oMj[tRWXTJf6niofjZWBWB"
+              },
+              "Primary": {
+                "f9cb45a9232588c3b26a6ea6fa08aea9": "eZFFd7-p~p-p%L?aWVR*WCRj-:ofRjj[Rk%LWXR*a}a|xaj[RjjZjs"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Unknown"
+          },
+          {
+            "Name": "Daft Punk",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "9797844cbaa5d04632be1dbc456b01a5",
+            "Path": "/data/media/Music/Daft Punk",
+            "ChannelId": null,
+            "RunTimeTicks": 0,
+            "IsFolder": true,
+            "Type": "MusicArtist",
+            "ImageTags": {
+              "Primary": "be16bff4f48d4ef67b68f24af6937deb",
+              "Logo": "3eb714b69b6dd29a122a1c2e659d0325"
+            },
+            "BackdropImageTags": [
+              "f97e8f5658a61378dc9c5b56713438f2"
+            ],
+            "ImageBlurHashes": {
+              "Backdrop": {
+                "f97e8f5658a61378dc9c5b56713438f2": "W68g:MSz?s?b8|?I%$X9RlspR+o10hw}E3I:v~E2E9wMXSNZw^Iq"
+              },
+              "Primary": {
+                "be16bff4f48d4ef67b68f24af6937deb": "e56@.oXT9GDjD*~pxuIUD*M|4@%0jES4%1E2RjoJ%Lt7==E3WY%1NJ"
+              },
+              "Logo": {
+                "3eb714b69b6dd29a122a1c2e659d0325": "OLI#x_xuayt7xu%MM{?b%Mt7IUayj[of~qt7ayM{ofof%M"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Unknown"
+          },
+          {
+            "Name": "Fall Out Boy",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "1ba97afb89ed17b13389baa240c94453",
+            "Path": "/data/media/Music/Fall Out Boy",
+            "ChannelId": null,
+            "RunTimeTicks": 25015066679,
+            "IsFolder": true,
+            "Type": "MusicArtist",
+            "ImageTags": {
+              "Logo": "bc2dab9b797a49a31b573e95e137bf1c",
+              "Primary": "012b0f81540d0a60808bb626d4ed2202"
+            },
+            "BackdropImageTags": [
+              "19626fcea2d94e0d10d1dab58623118b"
+            ],
+            "ImageBlurHashes": {
+              "Backdrop": {
+                "19626fcea2d94e0d10d1dab58623118b": "WhE{U$a{j[ofxut8~qaxofWBofxa?bj[WXWBWBt7-;ofj@bHRjt6"
+              },
+              "Logo": {
+                "bc2dab9b797a49a31b573e95e137bf1c": "OKQT4M-;M{xu9F-;?b-;t7s:WBRjj[t7~qRjxuRj%MM{M{"
+              },
+              "Primary": {
+                "012b0f81540d0a60808bb626d4ed2202": "eGB4Ev?bad-:?I_K%1s;sAVZ%fs:xaaLRQI:xu%LV@W=9ZoM%MRkS1"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Unknown"
+          },
+          {
+            "Name": "Fleetwood Mac",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "aa0cc2edfb53c73036b2da94640ea11d",
+            "Path": "/data/media/Music/Fleetwood Mac",
+            "ChannelId": null,
+            "RunTimeTicks": 49356788189,
+            "IsFolder": true,
+            "Type": "MusicArtist",
+            "ImageTags": {
+              "Primary": "a9efee2a757e9538def84aecedad05d3",
+              "Logo": "7865ea59907434ceb868276bccd45272"
+            },
+            "BackdropImageTags": [
+              "e915c33987ab7b9c747531cb6f10c217"
+            ],
+            "ImageBlurHashes": {
+              "Backdrop": {
+                "e915c33987ab7b9c747531cb6f10c217": "WgH2crM{M{xuxuay~qofM{xut7t7oft7ofof%Mayayt7t7t7t7WB"
+              },
+              "Primary": {
+                "a9efee2a757e9538def84aecedad05d3": "eHJ7ab0y%zrC9Z.8?GNG9ZIU0e-pa04:NfE2M{xaIpxa?Hr=NGg4n4"
+              },
+              "Logo": {
+                "7865ea59907434ceb868276bccd45272": "OQE3C*ofWBxuRjt7ay00t7ayRjofWBWB9FM{t7j[ofWBt7"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Unknown"
+          },
+          {
+            "Name": "Florence + The Machine",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "76b23a82dce04738253ba5df888bc030",
+            "Path": "/data/media/Music/Florence + The Machine",
+            "ChannelId": null,
+            "RunTimeTicks": 93917257137,
+            "IsFolder": true,
+            "Type": "MusicArtist",
+            "ImageTags": {
+              "Logo": "3ade852756c0e06279c424ef9e798ebb",
+              "Primary": "a60b94bff99d69a97244652e8ad71650"
+            },
+            "BackdropImageTags": [
+              "90fade51993b8ecfd9c66fafcf509665",
+              "bd12c8d30b750032d39b7ccd1d6334a3"
+            ],
+            "ImageBlurHashes": {
+              "Backdrop": {
+                "90fade51993b8ecfd9c66fafcf509665": "WrHxZ@Rj_N-;oz?b-pf6bcozWAj[bIj[j@ofaeR*t7bHxas:j[a{",
+                "bd12c8d30b750032d39b7ccd1d6334a3": "WrHxZ@Rj_N-;oz?b-pf6bcozWAj[bIj[j@ofaeR*t7bHxas:j[a{"
+              },
+              "Logo": {
+                "3ade852756c0e06279c424ef9e798ebb": "OcRp8-ofWBj[ayt7ayxufQfQfQfQj[fQ~qj[ofofj[WBj["
+              },
+              "Primary": {
+                "a60b94bff99d69a97244652e8ad71650": "ejJ7{[~q.9-;%M?H-;x]%Mt74oR*WBofofofoft7RjofX8t7xuRkRj"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Unknown"
+          }
+        ],
+        "TotalRecordCount": 13,
+        "StartIndex": 0,
+        "trimmed": "Trimmed by the recorder: only the first five items are kept, as the rest hold household names."
+      }
+    }
+  }
+}

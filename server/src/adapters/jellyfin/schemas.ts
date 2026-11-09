@@ -158,16 +158,15 @@ export const virtualFoldersSchema = z.array(
 );
 export type VirtualFolder = z.infer<typeof virtualFoldersSchema>[number];
 
-/** A track as `newestAudio` reads it: where its file is on Jellyfin's host, and its album. */
-export const newestAudioSchema = z.object({
+/** What one folder holds as `folderItems` reads it: each item, where it is on Jellyfin's host, and a track's album. */
+export const folderItemsSchema = z.object({
   Items: z.array(
     z.object({
       Id: z.string(),
-      Name: z.string().nullish(),
+      Type: z.string(),
       Path: z.string().nullish(),
       AlbumId: z.string().nullish(),
-      ProviderIds: z.record(z.string().nullable()).nullish(),
     }),
   ),
 });
-export type NewestAudio = z.infer<typeof newestAudioSchema>['Items'][number];
+export type FolderItem = z.infer<typeof folderItemsSchema>['Items'][number];

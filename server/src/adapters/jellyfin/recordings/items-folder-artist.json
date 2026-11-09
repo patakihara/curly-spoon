@@ -1,0 +1,241 @@
+{
+  "upstream": "jellyfin",
+  "upstreamVersion": "10.11.11",
+  "call": "items-folder-artist",
+  "request": {
+    "method": "GET",
+    "path": "/Items",
+    "query": {
+      "Fields": "Path",
+      "ParentId": "542b5c99239d8843d61d6ac522b25d99"
+    },
+    "headers": {
+      "accept": "application/json",
+      "authorization": "MediaBrowser Client=\"Auralis\", Device=\"Auralis server\", DeviceId=\"auralis-server\", Version=\"0.0.0\", Token=\"<token>\""
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "Items": [
+          {
+            "Name": "AM",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "6861ccedc953a3782a7e50b31419eaca",
+            "PremiereDate": "2013-01-01T00:00:00.0000000Z",
+            "Path": "/data/media/Music/Arctic Monkeys/AM (2013)",
+            "ChannelId": null,
+            "RunTimeTicks": 25071020400,
+            "ProductionYear": 2013,
+            "IsFolder": true,
+            "Type": "MusicAlbum",
+            "ParentLogoItemId": "542b5c99239d8843d61d6ac522b25d99",
+            "ParentBackdropItemId": "542b5c99239d8843d61d6ac522b25d99",
+            "ParentBackdropImageTags": [
+              "06d7596470929f05adc6ebc43f03a2f0"
+            ],
+            "Artists": [
+              "Arctic Monkeys"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Arctic Monkeys",
+                "Id": "542b5c99239d8843d61d6ac522b25d99"
+              }
+            ],
+            "AlbumArtist": "Arctic Monkeys",
+            "AlbumArtists": [
+              {
+                "Name": "Arctic Monkeys",
+                "Id": "542b5c99239d8843d61d6ac522b25d99"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "7688cff0b3e101e1026d2ccb2dc931d5"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "7ea361893ed575a744a19a82eb1278b0",
+            "ImageBlurHashes": {
+              "Primary": {
+                "7688cff0b3e101e1026d2ccb2dc931d5": "VE7KuNt7t7t7IUxuj[ofofWB00WBWBRjxuD%WBRjRjt7"
+              },
+              "Logo": {
+                "7ea361893ed575a744a19a82eb1278b0": "OkMP|CM{?^bH?uxb?vR*Rjs:oMj[tRWXTJf6niofjZWBWB"
+              },
+              "Backdrop": {
+                "06d7596470929f05adc6ebc43f03a2f0": "WkIg$4M~xZ%1X9t6~WxrWCbHozf8?aoJs.WVkCj[%fRloIj[R*ay"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Unknown",
+            "NormalizationGain": -9.3
+          },
+          {
+            "Name": "The Car",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "f06e65388cea0f145c2c4ca5538821ae",
+            "PremiereDate": "2022-10-20T21:00:00.0000000Z",
+            "Path": "/data/media/Music/Arctic Monkeys/The Car (2022)",
+            "ChannelId": null,
+            "RunTimeTicks": 22435526539,
+            "ProductionYear": 2022,
+            "IsFolder": true,
+            "Type": "MusicAlbum",
+            "ParentLogoItemId": "542b5c99239d8843d61d6ac522b25d99",
+            "ParentBackdropItemId": "542b5c99239d8843d61d6ac522b25d99",
+            "ParentBackdropImageTags": [
+              "06d7596470929f05adc6ebc43f03a2f0"
+            ],
+            "Artists": [
+              "Arctic Monkeys"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Arctic Monkeys",
+                "Id": "542b5c99239d8843d61d6ac522b25d99"
+              }
+            ],
+            "AlbumArtist": "Arctic Monkeys",
+            "AlbumArtists": [
+              {
+                "Name": "Arctic Monkeys",
+                "Id": "542b5c99239d8843d61d6ac522b25d99"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "cb072460de6dee8fbc7a61463df1d3f2"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "7ea361893ed575a744a19a82eb1278b0",
+            "ImageBlurHashes": {
+              "Primary": {
+                "cb072460de6dee8fbc7a61463df1d3f2": "eRJ*elRj~qax?b4ojZxtRkof%Nt7WVt7WB%Mj[Rjt7j[?vofM{j[WB"
+              },
+              "Logo": {
+                "7ea361893ed575a744a19a82eb1278b0": "OkMP|CM{?^bH?uxb?vR*Rjs:oMj[tRWXTJf6niofjZWBWB"
+              },
+              "Backdrop": {
+                "06d7596470929f05adc6ebc43f03a2f0": "WkIg$4M~xZ%1X9t6~WxrWCbHozf8?aoJs.WVkCj[%fRloIj[R*ay"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Unknown",
+            "NormalizationGain": -7.1000004
+          },
+          {
+            "Name": "Favourite Worst Nightmare",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "0efe45467fabda3a5ae16442857db59e",
+            "PremiereDate": "2007-01-01T00:00:00.0000000Z",
+            "Path": "/data/media/Music/Arctic Monkeys/Favorite Worst Nightmare (2007)",
+            "ChannelId": null,
+            "RunTimeTicks": 22898677560,
+            "ProductionYear": 2007,
+            "IsFolder": true,
+            "Type": "MusicAlbum",
+            "ParentLogoItemId": "542b5c99239d8843d61d6ac522b25d99",
+            "ParentBackdropItemId": "542b5c99239d8843d61d6ac522b25d99",
+            "ParentBackdropImageTags": [
+              "06d7596470929f05adc6ebc43f03a2f0"
+            ],
+            "Artists": [
+              "Arctic Monkeys"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Arctic Monkeys",
+                "Id": "542b5c99239d8843d61d6ac522b25d99"
+              }
+            ],
+            "AlbumArtist": "Arctic Monkeys",
+            "AlbumArtists": [
+              {
+                "Name": "Arctic Monkeys",
+                "Id": "542b5c99239d8843d61d6ac522b25d99"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "3e89f3134926d8aa6af54f94d3b0d2c1"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "7ea361893ed575a744a19a82eb1278b0",
+            "ImageBlurHashes": {
+              "Primary": {
+                "3e89f3134926d8aa6af54f94d3b0d2c1": "e571Zcs$Rg~VNE-,?Z%JRh%KW9-o%1IU%2_3D%IU?bIUD*WabJIVog"
+              },
+              "Logo": {
+                "7ea361893ed575a744a19a82eb1278b0": "OkMP|CM{?^bH?uxb?vR*Rjs:oMj[tRWXTJf6niofjZWBWB"
+              },
+              "Backdrop": {
+                "06d7596470929f05adc6ebc43f03a2f0": "WkIg$4M~xZ%1X9t6~WxrWCbHozf8?aoJs.WVkCj[%fRloIj[R*ay"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Unknown",
+            "NormalizationGain": -9.7
+          },
+          {
+            "Name": "Tranquility Base Hotel + Casino",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "3a760df5835c565d37d32f973367deb5",
+            "PremiereDate": "2018-01-01T00:00:00.0000000Z",
+            "Path": "/data/media/Music/Arctic Monkeys/Tranquility Base Hotel + Casino (2018)",
+            "ChannelId": null,
+            "RunTimeTicks": 24571762290,
+            "ProductionYear": 2018,
+            "IsFolder": true,
+            "Type": "MusicAlbum",
+            "ParentLogoItemId": "542b5c99239d8843d61d6ac522b25d99",
+            "ParentBackdropItemId": "542b5c99239d8843d61d6ac522b25d99",
+            "ParentBackdropImageTags": [
+              "06d7596470929f05adc6ebc43f03a2f0"
+            ],
+            "Artists": [
+              "Arctic Monkeys"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Arctic Monkeys",
+                "Id": "542b5c99239d8843d61d6ac522b25d99"
+              }
+            ],
+            "AlbumArtist": "Arctic Monkeys",
+            "AlbumArtists": [
+              {
+                "Name": "Arctic Monkeys",
+                "Id": "542b5c99239d8843d61d6ac522b25d99"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "cd69eb4bf847e4483d2a2de26dfb70bb"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "7ea361893ed575a744a19a82eb1278b0",
+            "ImageBlurHashes": {
+              "Primary": {
+                "cd69eb4bf847e4483d2a2de26dfb70bb": "ePB{$2xu9Zs8xuE2WBxtbIRj0LM{%LozWB^*t7IoWBxtx]xasSNGWB"
+              },
+              "Logo": {
+                "7ea361893ed575a744a19a82eb1278b0": "OkMP|CM{?^bH?uxb?vR*Rjs:oMj[tRWXTJf6niofjZWBWB"
+              },
+              "Backdrop": {
+                "06d7596470929f05adc6ebc43f03a2f0": "WkIg$4M~xZ%1X9t6~WxrWCbHozf8?aoJs.WVkCj[%fRloIj[R*ay"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Unknown",
+            "NormalizationGain": -10.7
+          }
+        ],
+        "TotalRecordCount": 4,
+        "StartIndex": 0,
+        "trimmed": "Trimmed by the recorder: only the first five items are kept, as the rest hold household names."
+      }
+    }
+  }
+}

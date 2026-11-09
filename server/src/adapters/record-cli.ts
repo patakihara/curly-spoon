@@ -86,7 +86,7 @@
  * (record-musicbrainz.ts). Neither takes a key; nothing goes on stdin.
  *
  * `--only keep --jellyfin <url>` records M3.keep's Jellyfin calls: the music library and where it
- * reads, its newest tracks with their paths, and one report of a file made at a dot path under it,
+ * reads, one walk down its folders with each item's path, and one report of a file made at a dot path under it,
  * which Jellyfin ignores and which does not exist (record-musicbrainz.ts); `--no-report` leaves
  * that report out. It needs only JELLYFIN_API_KEY.
  *

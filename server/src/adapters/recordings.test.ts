@@ -24,7 +24,7 @@ import {
   MUSICBRAINZ_GAP_MS,
   MUSICBRAINZ_USER_AGENT,
 } from './musicbrainz/client.js';
-import { MUSICBRAINZ_SONGS, NEWEST_KEPT, UNINDEXED_PROBE } from './record-musicbrainz.js';
+import { FOLDER_KEPT, MUSICBRAINZ_SONGS, UNINDEXED_PROBE } from './record-musicbrainz.js';
 import { StepUnavailable } from '../requests/steps.js';
 import { ABS_PROGRESS_CALLS, JELLYFIN_PROGRESS_CALLS, TEST_BOOKMARK } from './record-progress.js';
 
@@ -1384,12 +1384,14 @@ describe("[M3.keep] the Cover Art Archive's front cover, as recorded", () => {
 
 describe("[M3.keep] Jellyfin's calls for a kept song, as recorded", () => {
   const folders = recording('jellyfin', 'virtual-folders');
-  const newest = recording('jellyfin', 'items-newest-audio');
+  const walk = ['library', 'artist', 'album'].map((at) =>
+    recording('jellyfin', `items-folder-${at}`),
+  );
   const updated = recording('jellyfin', 'media-updated');
   const jellyfin = new JellyfinClient({
     baseUrl: 'http://upstream.invalid',
     token: '<token>',
-    fetch: replayFetch([folders, newest, updated]),
+    fetch: replayFetch([folders, ...walk, updated]),
   });
 
   it("[M3.keep] the one music library reads one folder on Jellyfin's host", async () => {
@@ -1397,13 +1399,21 @@ describe("[M3.keep] Jellyfin's calls for a kept song, as recorded", () => {
     expect(library).toEqual({ id: expect.any(String), locations: ['/data/media/Music'] });
   });
 
-  it("[M3.keep] the newest tracks come with their file's path and their album", async () => {
+  it("[M3.keep] a walk down the music library's folders, one at a time, finds a track by its path, with its album", async () => {
     const library = (await jellyfin.musicLibrary())!;
-    const tracks = await jellyfin.newestAudio(library.id);
-    expect(tracks).toHaveLength(NEWEST_KEPT);
+    const artists = await jellyfin.folderItems(library.id);
+    expect(artists).toHaveLength(FOLDER_KEPT);
+    const artist = artists.find((item) => item.Type === 'MusicArtist')!;
+    expect(artist.Path).toMatch(/^\/data\/media\/Music\/[^/]+$/);
+    const albums = await jellyfin.folderItems(artist.Id);
+    const album = albums.find((item) => item.Type === 'MusicAlbum')!;
+    expect(album.Path!.startsWith(`${artist.Path}/`)).toBe(true);
+    const tracks = await jellyfin.folderItems(album.Id);
+    expect(tracks.length).toBeGreaterThan(0);
     for (const track of tracks) {
-      expect(track.Path).toMatch(/^\/data\/media\/Music\/.+\.\w+$/);
-      expect(track.AlbumId).toMatch(/^[0-9a-f]{32}$/);
+      expect(track.Type).toBe('Audio');
+      expect(track.Path!.startsWith(`${album.Path}/`)).toBe(true);
+      expect(track.AlbumId).toBe(album.Id);
     }
   });
 

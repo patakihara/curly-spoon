@@ -209,6 +209,24 @@ describe('[M3.keep] a kept song is staged through the stream cache', () => {
     expect(readFileSync(staged).equals(clip)).toBe(true);
   });
 
+  it('[M3.keep] a staged file past the stream’s size is deleted and fails the download, and the retry stages it afresh', async () => {
+    const { stream, asked } = cached();
+    const { download, staged, woken } = steps(stream);
+    const handle = await download.start(request, release, 'key');
+    await woken();
+    writeFileSync(staged, Buffer.concat([clip, clip.subarray(0, 10)]));
+
+    expect(await download.poll(handle)).toEqual({ kind: 'failed', reason: 'downloadFailed' });
+    expect(existsSync(staged)).toBe(false);
+
+    asked.length = 0;
+    const again = await download.start(request, release, 'key');
+    expect(asked).toEqual(['bytes=0-']);
+    await woken(2);
+    expect(await download.poll(again)).toEqual({ kind: 'done' });
+    expect(readFileSync(staged).equals(clip)).toBe(true);
+  });
+
   it('[M3.keep] a start repeated while its read goes on answers the same handle and opens nothing more', async () => {
     const { stream, signals } = hanging();
     const { download } = steps(stream);

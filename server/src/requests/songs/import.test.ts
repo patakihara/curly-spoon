@@ -1,11 +1,13 @@
 /**
  * A kept song's import through the real job, store, index, stream cache and clients, on a real temp
  * Music folder and on recordings: MusicBrainz's, the Cover Art Archive's and Jellyfin's. The stream
- * is the synthesized Opus clip behind the recorded stream host. Jellyfin's newest tracks are its
- * recorded answer with its first row moved to the placed file, as no recording can list a path this
- * test makes; that row's album is the one whose lookup and tracks are recorded.
+ * is the synthesized Opus clip behind the recorded stream host. Jellyfin's folders are its recorded
+ * walk (the library's artists, an artist's albums, an album's tracks) with each answer's first row
+ * moved onto the file's path, as no recording can list a path this test makes; the track's album is
+ * the one whose lookup and tracks are recorded.
  */
 import {
+  chmodSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
@@ -36,7 +38,7 @@ import { openDatabase, type Db } from '../../store/connection.js';
 import { createRequest, getRequest, saveRequest } from '../../store/requests.js';
 import { rememberTracks, type StreamedTrack } from '../../store/streamedTracks.js';
 import { upsertUser } from '../../store/users.js';
-import { advanceRequests, type RequestJobDeps } from '../job.js';
+import { advanceRequests, type RequestJobDeps, retryRequest } from '../job.js';
 import { type MediumSteps, stepsRegistry } from '../steps.js';
 import { songDownload, stagedPath } from './download.js';
 import { songImport } from './import.js';
@@ -79,6 +81,8 @@ const YOUTUBE_ART: Cover = { mime: 'image/jpeg', bytes: Buffer.from([0xff, 0xd8,
 
 let dir: string;
 let music: string;
+/** This server's own staging folder, as `songSteps` names it by its instance id. */
+let stagingDir: string;
 let db: Db;
 let ana: string;
 let clock: number;
@@ -87,7 +91,8 @@ const errors: string[] = [];
 beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), 'auralis-song-import-'));
   music = join(dir, 'media', 'Music');
-  mkdirSync(join(music, STAGING_FOLDER), { recursive: true });
+  stagingDir = join(music, STAGING_FOLDER, '0123456789abcdef');
+  mkdirSync(stagingDir, { recursive: true });
   db = openDatabase(':memory:');
   clock = Date.UTC(2026, 10, 9, 8);
   ana = upsertUser(db, { username: 'ana', role: 'member' }).id;
@@ -98,6 +103,31 @@ afterEach(() => {
   db.close();
   rmSync(dir, { recursive: true, force: true });
 });
+
+/** The Music library's id, as the recorded walk starts from it. */
+const LIBRARY_ID = recorded('jellyfin', 'items-folder-library').request.query.ParentId!;
+const ARTIST_ID = '5e1f0c2a9b8d4e7f6a5b4c3d2e1f0a9b';
+
+/**
+ * Jellyfin's answer for one folder: as recorded, its first row moved onto the file at `path` (under
+ * the music folder), or as recorded alone while Jellyfin lists no such file.
+ */
+function folderAnswer(parent: string, path: string | null): Response {
+  const at = { [LIBRARY_ID]: 'library', [ARTIST_ID]: 'artist', [ALBUM_ID]: 'album' }[parent];
+  if (at === undefined) return new Response('Error processing request.', { status: 400 });
+  const page = jsonOf(recorded('jellyfin', `items-folder-${at}`)) as {
+    Items: Record<string, unknown>[];
+  };
+  const [artist, album] = (path ?? '').slice(JELLYFIN_MUSIC.length + 1).split('/');
+  const moved = {
+    library: { Id: ARTIST_ID, Path: `${JELLYFIN_MUSIC}/${artist}` },
+    artist: { Id: ALBUM_ID, Path: `${JELLYFIN_MUSIC}/${artist}/${album}` },
+    album: { Id: TRACK_ID, AlbumId: ALBUM_ID, Path: path },
+  }[at];
+  const Items =
+    path === null ? page.Items : page.Items.map((row, i) => (i === 0 ? { ...row, ...moved } : row));
+  return Response.json({ ...page, Items });
+}
 
 /** Every upstream as recorded, each call and Jellyfin report kept; Jellyfin lists the file once `seen`. */
 function upstreams(listed: () => string | null) {
@@ -122,20 +152,9 @@ function upstreams(listed: () => string | null) {
     const url = new URL(input);
     asked.push(`${init?.method ?? 'GET'} ${url.pathname}${url.search}`);
     if (url.pathname === '/Library/Media/Updated') reports.push(JSON.parse(String(init?.body)));
-    if (url.pathname === '/Items' && url.searchParams.get('SortBy') === 'DateCreated') {
-      const page = jsonOf(recorded('jellyfin', 'items-newest-audio')) as {
-        Items: Record<string, unknown>[];
-      };
-      const path = listed();
-      const Items =
-        path === null
-          ? page.Items
-          : page.Items.map((row, i) =>
-              i === 0 ? { ...row, Id: TRACK_ID, AlbumId: ALBUM_ID, Path: path } : row,
-            );
-      return new Response(JSON.stringify({ ...page, Items }), {
-        headers: { 'content-type': 'application/json' },
-      });
+    const parent = url.searchParams.get('ParentId');
+    if (url.pathname === '/Items' && parent !== null && url.searchParams.get('Fields') === 'Path') {
+      return folderAnswer(parent, listed());
     }
     return replay(input, init);
   };
@@ -183,7 +202,6 @@ function songSteps(
   fetch: FetchLike,
   options: { musicBrainz?: boolean; art?: Cover | null } = {},
 ): MediumSteps {
-  const stagingDir = join(music, STAGING_FOLDER);
   const cache = streamCache();
   const musicBrainz =
     options.musicBrainz === false
@@ -197,20 +215,22 @@ function songSteps(
   const log = {
     error: (_details: Record<string, unknown>, message: string) => errors.push(message),
   };
+  const download = songDownload({
+    stream: { open: (id, range, signal) => cache.open(id, range, signal) },
+    stagingDir,
+    wake: () => undefined,
+    log,
+  });
   return {
     medium: 'song',
     prompt: true,
     search: songSearch({ db, musicBrainz, log }),
-    download: songDownload({
-      stream: { open: (id, range, signal) => cache.open(id, range, signal) },
-      stagingDir,
-      wake: () => undefined,
-      log,
-    }),
+    download,
     import: songImport({
       db,
       musicDir: music,
       stagingDir,
+      staging: download,
       jellyfin: new JellyfinClient({
         baseUrl: 'http://upstream.invalid',
         token: '<token>',
@@ -257,7 +277,7 @@ async function atImport(steps: MediumSteps, staged: Buffer = clip) {
   const { request } = createRequest(db, ana, REF, clock);
   const searched = await steps.search(request);
   if (searched.kind !== 'picked') throw new Error('no pick');
-  writeFileSync(stagedPath(join(music, STAGING_FOLDER), ID), staged);
+  writeFileSync(stagedPath(stagingDir, ID), staged);
   saveRequest(
     db,
     request.id,
@@ -310,9 +330,7 @@ describe('[M3.keep/a] a kept song is saved as its own Opus stream, with MusicBra
     const placed = join(music, FILE);
     expect(existsSync(placed)).toBe(true);
 
-    expect(await packets(placed)).toEqual(
-      await packets(stagedPath(join(music, STAGING_FOLDER), ID)),
-    );
+    expect(await packets(placed)).toEqual(await packets(stagedPath(stagingDir, ID)));
     const { tags } = await oggOf(placed);
     const { comments } = tags;
     expect(comment(comments, 'TITLE')).toEqual(['Not Gonna Give It Up']);
@@ -344,18 +362,18 @@ describe('[M3.keep/a] a kept song is saved as its own Opus stream, with MusicBra
     expect(mode(placed)).toBe(0o664);
     expect(readFileSync(join(music, ALBUM_FOLDER, 'cover.jpg'))).toEqual(front);
     expect(mode(join(music, ALBUM_FOLDER, 'cover.jpg'))).toBe(0o664);
-    expect(readdirSync(join(music, STAGING_FOLDER))).toEqual([`${ID}.webm`]);
+    expect(readdirSync(stagingDir)).toEqual([`${ID}.webm`]);
 
     seen = true;
     await walk(deps, request.id, 'inLibrary');
-    expect(readdirSync(join(music, STAGING_FOLDER))).toEqual([]);
+    expect(readdirSync(stagingDir)).toEqual([]);
   });
 
   it('[M3.keep/a] the stream staged is the clip itself, byte for byte, read through the cache', async () => {
     const { fetch } = upstreams(() => null);
     const { request } = createRequest(db, ana, REF, clock);
     await walk(job(songSteps(fetch)), request.id, 'importing');
-    expect(readFileSync(stagedPath(join(music, STAGING_FOLDER), ID))).toEqual(clip);
+    expect(readFileSync(stagedPath(stagingDir, ID))).toEqual(clip);
   });
 
   it('[M3.keep/a] a cover.jpg already in the album’s folder stays as it was', async () => {
@@ -372,20 +390,66 @@ describe('[M3.keep/a] a kept song is saved as its own Opus stream, with MusicBra
     expect(statusOf(id)).toBe('importing');
   });
 
-  it('[M3.keep/a] a household file of that name stays, and the song is saved beside it as (2)', async () => {
-    mkdirSync(join(music, ALBUM_FOLDER), { recursive: true });
-    writeFileSync(join(music, FILE), 'the household’s file');
-    const ours = `${ALBUM_FOLDER}/03 - Not Gonna Give It Up (2).opus`;
+  it('[M3.keep/a] an album’s folder the household made, as `<album> (<year>)`, is filed into and given no cover.jpg', async () => {
+    const theirs = 'Peter Tosh/Mama Africa (1983)';
+    mkdirSync(join(music, theirs), { recursive: true });
+    writeFileSync(join(music, theirs, '01 - Mama Africa.flac'), 'the household’s');
+    const ours = `${theirs}/03 - Not Gonna Give It Up.opus`;
     const { fetch, reports } = upstreams(() => `${JELLYFIN_MUSIC}/${ours}`);
     const steps = songSteps(fetch);
     const id = await atImport(steps);
-    const deps = job(steps);
-    await walk(deps, id, 'inLibrary');
-    expect(readFileSync(join(music, FILE), 'utf8')).toBe('the household’s file');
-    expect(await packets(join(music, ours))).toEqual(await packets(clipPath()));
+    await walk(job(steps), id, 'inLibrary');
+    expect(readdirSync(join(music, 'Peter Tosh'))).toEqual(['Mama Africa (1983)']);
+    expect(readdirSync(join(music, theirs)).sort()).toEqual([
+      '01 - Mama Africa.flac',
+      '03 - Not Gonna Give It Up.opus',
+    ]);
     expect(reports).toEqual([
       { Updates: [{ Path: `${JELLYFIN_MUSIC}/${ours}`, UpdateType: 'Created' }] },
     ]);
+  });
+
+  it('[M3.keep/a] the household’s own file of the track, of any kind, answers the request, and nothing is added or reported', async () => {
+    const theirs = `${ALBUM_FOLDER}/03 - Not Gonna Give It Up.flac`;
+    mkdirSync(join(music, ALBUM_FOLDER), { recursive: true });
+    writeFileSync(join(music, theirs), 'the household’s file');
+    const { fetch, reports } = upstreams(() => `${JELLYFIN_MUSIC}/${theirs}`);
+    const steps = songSteps(fetch);
+    const id = await atImport(steps);
+    await walk(job(steps), id, 'inLibrary');
+    expect(readdirSync(join(music, ALBUM_FOLDER))).toEqual(['03 - Not Gonna Give It Up.flac']);
+    expect(readFileSync(join(music, theirs), 'utf8')).toBe('the household’s file');
+    expect(reports).toEqual([]);
+    expect(getRequest(db, id)!.result).toEqual({ source: 'jellyfin', id: TRACK_ID });
+  });
+
+  it('[M3.keep/a] a folder made but whose mode was never set, by a try cut short, is finished by the next', async () => {
+    const { fetch } = upstreams(() => null);
+    const steps = songSteps(fetch);
+    const id = await atImport(steps);
+    mkdirSync(join(music, ALBUM_FOLDER), { recursive: true });
+    chmodSync(join(music, 'Peter Tosh'), 0o755);
+    chmodSync(join(music, ALBUM_FOLDER), 0o755);
+    const handle = { id: ID, size: SIZE, made: ['Peter Tosh', ALBUM_FOLDER] };
+    saveRequest(db, id, { state: { status: 'importing' }, handle }, clock);
+    await advanceRequests(job(steps));
+    expect(existsSync(join(music, FILE))).toBe(true);
+    expect(mode(join(music, 'Peter Tosh'))).toBe(0o775);
+    expect(mode(join(music, ALBUM_FOLDER))).toBe(0o775);
+    expect(existsSync(join(music, ALBUM_FOLDER, 'cover.jpg'))).toBe(true);
+    expect(getRequest(db, id)!.handle).toEqual(handle);
+  });
+
+  it('[M3.keep/a] the folders an import makes are noted on the request as it makes them', async () => {
+    const { fetch } = upstreams(() => null);
+    const steps = songSteps(fetch);
+    const id = await atImport(steps);
+    await advanceRequests(job(steps));
+    expect(getRequest(db, id)!.handle).toEqual({
+      id: ID,
+      size: SIZE,
+      made: ['Peter Tosh', ALBUM_FOLDER],
+    });
   });
 
   it('[M3.keep/a] a repeat of the key builds and places nothing twice, and finds its own file', async () => {
@@ -394,7 +458,7 @@ describe('[M3.keep/a] a kept song is saved as its own Opus stream, with MusicBra
     const id = await atImport(steps);
     const request = getRequest(db, id)!;
     const first = await steps.import(request, 'one-key');
-    writeFileSync(stagedPath(join(music, STAGING_FOLDER), ID), clip);
+    writeFileSync(stagedPath(stagingDir, ID), clip);
     const again = await steps.import(request, 'one-key');
     expect(again).toEqual(first);
     expect(readdirSync(join(music, ALBUM_FOLDER)).sort()).toEqual([
@@ -423,29 +487,53 @@ describe('[M3.keep/a] a kept song is saved as its own Opus stream, with MusicBra
     expect(await packets(placed)).toEqual(await packets(clipPath()));
   });
 
-  it('[M3.keep/a] a stream that is not Opus fails the import, and leaves nothing in Music', async () => {
+  it('[M3.keep/a] a staged stream that is not Opus fails the import and is deleted, leaving nothing in Music; the retry stages it afresh', async () => {
     const at = clip.indexOf('A_OPUS');
     expect(at).toBeGreaterThan(0);
     const vorbis = Buffer.from(clip);
     vorbis.write('A_VORB', at, 'latin1');
-    const { fetch, asked } = upstreams(() => null);
+    const { fetch, asked } = upstreams(() => `${JELLYFIN_MUSIC}/${FILE}`);
     const steps = songSteps(fetch);
     const id = await atImport(steps, vorbis);
-    await advanceRequests(job(steps));
+    const deps = job(steps);
+    await advanceRequests(deps);
     expect(getRequest(db, id)!.state).toMatchObject({ status: 'failed', reason: 'importFailed' });
     expect(readdirSync(music)).toEqual([STAGING_FOLDER]);
-    expect(readdirSync(join(music, STAGING_FOLDER))).toEqual([`${ID}.webm`]);
+    expect(readdirSync(stagingDir)).toEqual([]);
     expect(asked.filter((call) => call.startsWith('POST'))).toEqual([]);
+
+    await retryRequest(deps, id);
+    await walk(deps, id, 'inLibrary');
+    expect(await packets(join(music, FILE))).toEqual(await packets(clipPath()));
   });
 
-  it('[M3.keep/a] a stream not wholly staged fails the import, and leaves nothing in Music', async () => {
-    const { fetch } = upstreams(() => null);
+  it('[M3.keep/a] a staged stream past its size fails the import and is deleted; the retry stages it afresh', async () => {
+    const { fetch } = upstreams(() => `${JELLYFIN_MUSIC}/${FILE}`);
     const steps = songSteps(fetch);
     const id = await atImport(steps);
-    writeFileSync(stagedPath(join(music, STAGING_FOLDER), ID), clip.subarray(0, SIZE - 10));
-    await advanceRequests(job(steps));
+    writeFileSync(stagedPath(stagingDir, ID), Buffer.concat([clip, clip.subarray(0, 10)]));
+    const deps = job(steps);
+    await advanceRequests(deps);
     expect(getRequest(db, id)!.state).toMatchObject({ status: 'failed', reason: 'importFailed' });
     expect(readdirSync(music)).toEqual([STAGING_FOLDER]);
+    expect(readdirSync(stagingDir)).toEqual([]);
+
+    await retryRequest(deps, id);
+    await walk(deps, id, 'inLibrary');
+    expect(await packets(join(music, FILE))).toEqual(await packets(clipPath()));
+  });
+
+  it('[M3.keep/a] a stream staged short is staged on, the import waiting meanwhile, then placed', async () => {
+    const { fetch } = upstreams(() => `${JELLYFIN_MUSIC}/${FILE}`);
+    const steps = songSteps(fetch);
+    const id = await atImport(steps);
+    writeFileSync(stagedPath(stagingDir, ID), clip.subarray(0, SIZE - 10));
+    const deps = job(steps);
+    await advanceRequests(deps);
+    expect(statusOf(id)).toBe('importing');
+    expect(readdirSync(music)).toEqual([STAGING_FOLDER]);
+    await walk(deps, id, 'inLibrary');
+    expect(await packets(join(music, FILE))).toEqual(await packets(clipPath()));
   });
 });
 
@@ -470,6 +558,20 @@ describe('[M3.keep/c] Jellyfin is told of each saved file, and the song arrives'
     expect(asked.filter((call) => call.startsWith('POST'))).toEqual([
       'POST /Library/Media/Updated',
     ]);
+  });
+
+  it('[M3.keep/c] the file is found by walking Jellyfin’s folders down to it, however many other tracks arrived', async () => {
+    const { fetch, asked } = upstreams(() => `${JELLYFIN_MUSIC}/${FILE}`);
+    const steps = songSteps(fetch);
+    const id = await atImport(steps);
+    await walk(job(steps), id, 'inLibrary');
+    const parents = asked
+      .filter((call) => call.startsWith('GET /Items?'))
+      .map((call) => new URLSearchParams(call.split('?')[1]).get('ParentId'));
+    expect(parents.slice(0, 3)).toEqual([LIBRARY_ID, ARTIST_ID, ALBUM_ID]);
+    expect(
+      asked.some((call) => /SortBy=DateCreated|Recursive=true&IncludeItemTypes=Audio/.test(call)),
+    ).toBe(false);
   });
 
   it('[M3.keep/c] once Jellyfin lists the file, its album is indexed and the request names the track, claiming the album', async () => {

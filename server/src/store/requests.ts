@@ -434,6 +434,15 @@ export function saveRequest(
   return true;
 }
 
+/**
+ * Notes what a step keeps of its own on a request's handle, such as the folders a kept song's import
+ * made. It is no save, as `markHeld` is not: nothing a person sees changed, so the job's save of
+ * the step's answer, made against the version it read, still goes through.
+ */
+export function noteHandle(db: Db, id: string, handle: Record<string, unknown>): void {
+  db.prepare('UPDATE requests SET handle = ? WHERE id = ?').run(JSON.stringify(handle), id);
+}
+
 /** Deletes a request, as a cancel does, and everyone's place on it. */
 export function deleteRequest(db: Db, id: string): void {
   db.prepare('DELETE FROM requests WHERE id = ?').run(id);

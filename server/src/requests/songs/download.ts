@@ -1,14 +1,15 @@
 /**
- * A kept song's download: its whole stream, read through the stream cache into the staging folder
- * (`Music/.auralis-keep/<id>.webm`, which Jellyfin ignores as a dot folder). Chunks the cache holds
- * come from its disk, so a song played through makes no upstream call; missing ones the cache
- * fetches as it always does, in closed ranges. `start` opens the stream and answers the handle
+ * A kept song's download: its whole stream, read through the stream cache into this server's
+ * staging folder (`Music/.auralis-keep/<instance>/<id>.webm`, which Jellyfin ignores as a dot
+ * folder). Chunks the cache holds come from its disk, so a song played through makes no upstream
+ * call; missing ones the cache fetches as it always does, in closed ranges. `start` opens the stream and answers the handle
  * `{id, size}` at once, the bytes following in the background; `poll` counts the staged bytes, and
  * is done once they are the stream's size. The read wakes the job when it ends, so the import does
  * not wait for the next turn.
  *
  * The staged file is the progress: a read lost to a restart, or to an outage, is started again by
- * the next poll from the bytes already staged. A song YouTube refuses fails the download; streaming
+ * the next poll from the bytes already staged. A staged file past the stream's size is wrong
+ * whatever it holds: it is deleted and the download fails, so a retry stages the song afresh. A song YouTube refuses fails the download; streaming
  * being unavailable holds it. A repeat of a start answers the read already going, or opens from
  * what is staged, so a start never stages twice.
  */
@@ -43,9 +44,16 @@ export interface SongDownloadDeps {
   log: JobLog;
 }
 
-/** A song's download: which song, and how many bytes its stream has. */
+/**
+ * A song's download: which song, and how many bytes its stream has; then the folders under Music its
+ * import made, noted as it makes them.
+ */
 export const SongHandle = z
-  .object({ id: z.string().regex(/^[\w-]{1,64}$/), size: z.number().int().positive() })
+  .object({
+    id: z.string().regex(/^[\w-]{1,64}$/),
+    size: z.number().int().positive(),
+    made: z.array(z.string()).optional(),
+  })
   .strict();
 export type SongHandle = z.infer<typeof SongHandle>;
 
@@ -159,9 +167,16 @@ export function songDownload(deps: SongDownloadDeps): DownloadSteps {
       const { id, size } = SongHandle.parse(handle);
       const have = staged(id)?.size ?? 0;
       const read = reads.get(id);
-      if (have >= size) {
+      if (have === size) {
         if (read?.ended !== false) reads.delete(id);
-        return have === size ? { kind: 'done' } : { kind: 'failed', reason: 'downloadFailed' };
+        return { kind: 'done' };
+      }
+      if (have > size) {
+        reads.delete(id);
+        read?.stop.abort();
+        await read?.over;
+        rmSync(stagedPath(stagingDir, id), { force: true });
+        return { kind: 'failed', reason: 'downloadFailed' };
       }
       if (read !== undefined && !read.ended) return { kind: 'downloading', progress: have / size };
       reads.delete(id);

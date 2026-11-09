@@ -5,10 +5,14 @@
  * a song is kept on YouTube Music's own names and art. Nothing here calls an upstream at start.
  *
  * The staging folder sits inside Music, so a staged file links into place on the same filesystem; a
- * dot folder, which Jellyfin never indexes. At start it holds only what a live request staged: a
- * file no request is waiting on is left from a cancel or an arrival a crash cut short, and goes.
+ * dot folder, which Jellyfin never indexes. Each server stages in its own folder there, named by an
+ * id it keeps in its data folder (`keep-instance`), as two servers may share one Music: one for
+ * trying a build beside the household's own. At start a server's folder holds only what its live
+ * requests staged: a file no request is waiting on is left from a cancel or an arrival a crash cut
+ * short, and goes. Another server's folder is never touched.
  */
-import { mkdirSync, readdirSync, rmSync } from 'node:fs';
+import { randomBytes } from 'node:crypto';
+import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { CoverArtClient, type Cover, COVER_MAX_BYTES } from '../../adapters/coverart/client.js';
 import type { FetchLike } from '../../adapters/http/fetch.js';
@@ -28,8 +32,26 @@ import { songDownload, type SongStream } from './download.js';
 import { songImport } from './import.js';
 import { songSearch } from './search.js';
 
-/** The staging folder's name inside Music. */
+/** The staging folder's name inside Music, which holds each server's own folder. */
 export const STAGING_FOLDER = '.auralis-keep';
+/** The file in the data folder holding this server's id, which names its staging folder. */
+export const INSTANCE_FILE = 'keep-instance';
+const INSTANCE_ID = /^[0-9a-f]{16}$/;
+
+/** This server's id, as its data folder keeps it: made once, the first time it is needed. */
+export function instanceId(dataDir: string): string {
+  const file = join(dataDir, INSTANCE_FILE);
+  try {
+    const kept = readFileSync(file, 'utf8').trim();
+    if (INSTANCE_ID.test(kept)) return kept;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+  }
+  const made = randomBytes(8).toString('hex');
+  mkdirSync(dataDir, { recursive: true });
+  writeFileSync(file, `${made}\n`);
+  return made;
+}
 
 export interface SongStepsDeps {
   db: Db;
@@ -63,7 +85,7 @@ async function artCover(music: SongArt, id: string): Promise<Cover | null> {
 /** The steps, or which setting keeps songs from being kept. */
 export type SongSteps = { steps: MediumSteps } | { off: string };
 
-/** Deletes what the staging folder holds for no live song request. */
+/** Deletes what this server's staging folder holds for no live song request. */
 function clearStaging(db: Db, stagingDir: string, log: JobLog): void {
   const live = new Set(
     liveRequestsOf(db, 'song', log).flatMap(({ target }) => target.ids.youtubeMusicId ?? []),
@@ -84,7 +106,13 @@ export function songSteps(config: AppConfig, deps: SongStepsDeps): SongSteps {
   const musicDir = join(mediaDir, 'Music');
   const lacking = folderLacking(musicDir, 'Music');
   if (lacking !== null) return { off: lacking };
-  const stagingDir = join(musicDir, STAGING_FOLDER);
+  let instance: string;
+  try {
+    instance = instanceId(config.dataDir);
+  } catch {
+    return { off: 'a DATA_DIR it may write to' };
+  }
+  const stagingDir = join(musicDir, STAGING_FOLDER, instance);
   try {
     mkdirSync(stagingDir, { recursive: true });
     clearStaging(db, stagingDir, log);
@@ -102,12 +130,13 @@ export function songSteps(config: AppConfig, deps: SongStepsDeps): SongSteps {
           userAgent: MUSICBRAINZ_USER_AGENT,
         });
 
+  const download = songDownload({ stream: music, stagingDir, wake, log });
   return {
     steps: {
       medium: 'song',
       prompt: true,
       search: songSearch({ db, musicBrainz, log }),
-      download: songDownload({ stream: music, stagingDir, wake, log }),
+      download,
       import: songImport({
         db,
         musicDir,
@@ -118,6 +147,7 @@ export function songSteps(config: AppConfig, deps: SongStepsDeps): SongSteps {
           fetch,
           serverKey: true,
         }),
+        staging: download,
         coverArt: coverArtUrl === null ? null : new CoverArtClient({ baseUrl: coverArtUrl, fetch }),
         art: (id) => artCover(music, id),
         now: Date.now,

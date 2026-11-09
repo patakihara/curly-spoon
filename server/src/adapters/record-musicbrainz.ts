@@ -18,8 +18,10 @@
  *   `front-302` to one of its nodes, and `front-200`, whose body is a stand-in. A node's name
  *   varies, so each recording names one recorded node instead.
  *
- * `keep` (the Jellyfin API key): `virtual-folders`, cut to the music library; `items-newest-audio`,
- * the newest tracks with their paths; and `media-updated`, a report of a file made at a path that
+ * `keep` (the Jellyfin API key): `virtual-folders`, cut to the music library; one folder walk, a
+ * folder at a time with each item's path: `items-folder-library` (the library's artists' folders),
+ * `items-folder-artist` (the first artist's albums) and `items-folder-album` (the first album's
+ * tracks); and `media-updated`, a report of a file made at a path that
  * cannot be indexed: a dot folder under the music library, which Jellyfin ignores and which does not
  * exist. That report is the one write, made once.
  *
@@ -33,6 +35,7 @@ import { type Recording } from './http/recording.js';
 import { scanRecording } from './http/scan.js';
 import { RECORDED_ARCHIVE_NODE, type RawExchange } from './http/scrub.js';
 import { JellyfinClient, type MusicLibrary } from './jellyfin/client.js';
+import type { FolderItem } from './jellyfin/schemas.js';
 import {
   type Clock,
   MusicBrainzClient,
@@ -369,19 +372,19 @@ export function onlyMusicLibraries(raw: RawExchange): RawExchange {
   return { ...raw, response: { ...raw.response, body: { json } } };
 }
 
-/** How many of the newest tracks `items-newest-audio` keeps: the household's names stay out. */
-export const NEWEST_KEPT = 5;
+/** How many items each `items-folder-*` recording keeps: the household's names stay out. */
+export const FOLDER_KEPT = 5;
 
-export const NEWEST_TRIMMED =
-  'Trimmed by the recorder: only the first five tracks are kept, as the rest hold household names.';
+export const FOLDER_TRIMMED =
+  'Trimmed by the recorder: only the first five items are kept, as the rest hold household names.';
 
-/** The `items-newest-audio` hook: the first few tracks, saying so. */
-export function firstNewest(raw: RawExchange): RawExchange {
+/** The `items-folder-*` hook: the first few items, saying so. */
+export function firstItems(raw: RawExchange): RawExchange {
   const body = raw.response.body;
   if (body === null || !('json' in body)) return raw;
   const answer = body.json as { Items?: unknown[] } | null;
   if (answer === null || !Array.isArray(answer.Items)) return raw;
-  const json = { ...answer, Items: answer.Items.slice(0, NEWEST_KEPT), trimmed: NEWEST_TRIMMED };
+  const json = { ...answer, Items: answer.Items.slice(0, FOLDER_KEPT), trimmed: FOLDER_TRIMMED };
   return { ...raw, response: { ...raw.response, body: { json } } };
 }
 
@@ -422,19 +425,34 @@ export async function recordKeep(input: KeepRecordInput): Promise<{ written: str
       },
     },
   );
-  const reads = recorder(firstNewest);
-  const newest = await reads.capture(
-    'items-newest-audio',
-    () => new JellyfinClient({ baseUrl, token, fetch: reads.fetch }).newestAudio(library!.id),
-    {
-      verify: (found, recording) => {
-        check(found.length > 0 && found.every((t) => t.Path && t.AlbumId), 'tracks with no path');
-        scanned(recording);
+  const reads = recorder(firstItems);
+  const folder = (call: string, parentId: string, type: string) =>
+    reads.capture(
+      call,
+      () => new JellyfinClient({ baseUrl, token, fetch: reads.fetch }).folderItems(parentId),
+      {
+        verify: (found, recording) => {
+          const kept = found.slice(0, FOLDER_KEPT);
+          check(
+            kept.some((item) => item.Type === type && item.Path),
+            `${call}: no ${type}`,
+          );
+          scanned(recording);
+        },
       },
-    },
-  );
-  out(`items-newest-audio: ${newest.length} tracks read, ${NEWEST_KEPT} kept`);
-  const calls = ['virtual-folders', 'items-newest-audio'];
+    );
+  const pick = (items: FolderItem[], type: string) =>
+    items.slice(0, FOLDER_KEPT).find((item) => item.Type === type && item.Path)!;
+  const artists = await folder('items-folder-library', library!.id, 'MusicArtist');
+  const albums = await folder('items-folder-artist', pick(artists, 'MusicArtist').Id, 'MusicAlbum');
+  const tracks = await folder('items-folder-album', pick(albums, 'MusicAlbum').Id, 'Audio');
+  out(`items-folder-*: ${artists.length}, ${albums.length} and ${tracks.length} items read`);
+  const calls = [
+    'virtual-folders',
+    'items-folder-library',
+    'items-folder-artist',
+    'items-folder-album',
+  ];
   if (input.report !== false) {
     const rec = recorder();
     const jf = new JellyfinClient({ baseUrl, token, fetch: rec.fetch });

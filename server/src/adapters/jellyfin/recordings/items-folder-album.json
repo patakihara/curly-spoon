@@ -1,0 +1,313 @@
+{
+  "upstream": "jellyfin",
+  "upstreamVersion": "10.11.11",
+  "call": "items-folder-album",
+  "request": {
+    "method": "GET",
+    "path": "/Items",
+    "query": {
+      "Fields": "Path",
+      "ParentId": "6861ccedc953a3782a7e50b31419eaca"
+    },
+    "headers": {
+      "accept": "application/json",
+      "authorization": "MediaBrowser Client=\"Auralis\", Device=\"Auralis server\", DeviceId=\"auralis-server\", Version=\"0.0.0\", Token=\"<token>\""
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "Items": [
+          {
+            "Name": "Do I Wanna Know?",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "3e9c95f4c99d8458549dcd7002e11ac9",
+            "HasLyrics": true,
+            "Container": "mp3",
+            "PremiereDate": "2013-01-01T00:00:00.0000000Z",
+            "Path": "/data/media/Music/Arctic Monkeys/AM (2013)/01 - Arctic Monkeys - Do I Wanna Know-.mp3",
+            "ChannelId": null,
+            "RunTimeTicks": 2724310200,
+            "ProductionYear": 2013,
+            "IndexNumber": 1,
+            "IsFolder": false,
+            "Type": "Audio",
+            "ParentLogoItemId": "542b5c99239d8843d61d6ac522b25d99",
+            "ParentBackdropItemId": "542b5c99239d8843d61d6ac522b25d99",
+            "ParentBackdropImageTags": [
+              "06d7596470929f05adc6ebc43f03a2f0"
+            ],
+            "Artists": [
+              "Arctic Monkeys"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Arctic Monkeys",
+                "Id": "542b5c99239d8843d61d6ac522b25d99"
+              }
+            ],
+            "Album": "AM",
+            "AlbumId": "6861ccedc953a3782a7e50b31419eaca",
+            "AlbumPrimaryImageTag": "7688cff0b3e101e1026d2ccb2dc931d5",
+            "AlbumArtist": "Arctic Monkeys",
+            "AlbumArtists": [
+              {
+                "Name": "Arctic Monkeys",
+                "Id": "542b5c99239d8843d61d6ac522b25d99"
+              }
+            ],
+            "ImageTags": {},
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "7ea361893ed575a744a19a82eb1278b0",
+            "ImageBlurHashes": {
+              "Logo": {
+                "7ea361893ed575a744a19a82eb1278b0": "OkMP|CM{?^bH?uxb?vR*Rjs:oMj[tRWXTJf6niofjZWBWB"
+              },
+              "Backdrop": {
+                "06d7596470929f05adc6ebc43f03a2f0": "WkIg$4M~xZ%1X9t6~WxrWCbHozf8?aoJs.WVkCj[%fRloIj[R*ay"
+              },
+              "Primary": {
+                "7688cff0b3e101e1026d2ccb2dc931d5": "VE7KuNt7t7t7IUxuj[ofofWB00WBWBRjxuD%WBRjRjt7"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -8.4
+          },
+          {
+            "Name": "R U Mine?",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "60a7ac462d43ff6ff909743b4df5d827",
+            "HasLyrics": true,
+            "Container": "mp3",
+            "PremiereDate": "2013-01-01T00:00:00.0000000Z",
+            "Path": "/data/media/Music/Arctic Monkeys/AM (2013)/02 - Arctic Monkeys - R U Mine-.mp3",
+            "ChannelId": null,
+            "RunTimeTicks": 2017697960,
+            "ProductionYear": 2013,
+            "IndexNumber": 2,
+            "IsFolder": false,
+            "Type": "Audio",
+            "ParentLogoItemId": "542b5c99239d8843d61d6ac522b25d99",
+            "ParentBackdropItemId": "542b5c99239d8843d61d6ac522b25d99",
+            "ParentBackdropImageTags": [
+              "06d7596470929f05adc6ebc43f03a2f0"
+            ],
+            "Artists": [
+              "Arctic Monkeys"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Arctic Monkeys",
+                "Id": "542b5c99239d8843d61d6ac522b25d99"
+              }
+            ],
+            "Album": "AM",
+            "AlbumId": "6861ccedc953a3782a7e50b31419eaca",
+            "AlbumPrimaryImageTag": "7688cff0b3e101e1026d2ccb2dc931d5",
+            "AlbumArtist": "Arctic Monkeys",
+            "AlbumArtists": [
+              {
+                "Name": "Arctic Monkeys",
+                "Id": "542b5c99239d8843d61d6ac522b25d99"
+              }
+            ],
+            "ImageTags": {},
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "7ea361893ed575a744a19a82eb1278b0",
+            "ImageBlurHashes": {
+              "Logo": {
+                "7ea361893ed575a744a19a82eb1278b0": "OkMP|CM{?^bH?uxb?vR*Rjs:oMj[tRWXTJf6niofjZWBWB"
+              },
+              "Backdrop": {
+                "06d7596470929f05adc6ebc43f03a2f0": "WkIg$4M~xZ%1X9t6~WxrWCbHozf8?aoJs.WVkCj[%fRloIj[R*ay"
+              },
+              "Primary": {
+                "7688cff0b3e101e1026d2ccb2dc931d5": "VE7KuNt7t7t7IUxuj[ofofWB00WBWBRjxuD%WBRjRjt7"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -10.8
+          },
+          {
+            "Name": "One for the Road",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "6da826c2c669825e933ffde07e3a5f96",
+            "HasLyrics": true,
+            "Container": "mp3",
+            "PremiereDate": "2013-01-01T00:00:00.0000000Z",
+            "Path": "/data/media/Music/Arctic Monkeys/AM (2013)/03 - Arctic Monkeys - One For the Road.mp3",
+            "ChannelId": null,
+            "RunTimeTicks": 2060800000,
+            "ProductionYear": 2013,
+            "IndexNumber": 3,
+            "IsFolder": false,
+            "Type": "Audio",
+            "ParentLogoItemId": "542b5c99239d8843d61d6ac522b25d99",
+            "ParentBackdropItemId": "542b5c99239d8843d61d6ac522b25d99",
+            "ParentBackdropImageTags": [
+              "06d7596470929f05adc6ebc43f03a2f0"
+            ],
+            "Artists": [
+              "Arctic Monkeys"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Arctic Monkeys",
+                "Id": "542b5c99239d8843d61d6ac522b25d99"
+              }
+            ],
+            "Album": "AM",
+            "AlbumId": "6861ccedc953a3782a7e50b31419eaca",
+            "AlbumPrimaryImageTag": "7688cff0b3e101e1026d2ccb2dc931d5",
+            "AlbumArtist": "Arctic Monkeys",
+            "AlbumArtists": [
+              {
+                "Name": "Arctic Monkeys",
+                "Id": "542b5c99239d8843d61d6ac522b25d99"
+              }
+            ],
+            "ImageTags": {},
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "7ea361893ed575a744a19a82eb1278b0",
+            "ImageBlurHashes": {
+              "Logo": {
+                "7ea361893ed575a744a19a82eb1278b0": "OkMP|CM{?^bH?uxb?vR*Rjs:oMj[tRWXTJf6niofjZWBWB"
+              },
+              "Backdrop": {
+                "06d7596470929f05adc6ebc43f03a2f0": "WkIg$4M~xZ%1X9t6~WxrWCbHozf8?aoJs.WVkCj[%fRloIj[R*ay"
+              },
+              "Primary": {
+                "7688cff0b3e101e1026d2ccb2dc931d5": "VE7KuNt7t7t7IUxuj[ofofWB00WBWBRjxuD%WBRjRjt7"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -9.4
+          },
+          {
+            "Name": "Arabella",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "7816b090571f8e9af114ab074909dda6",
+            "HasLyrics": true,
+            "Container": "mp3",
+            "PremiereDate": "2013-01-01T00:00:00.0000000Z",
+            "Path": "/data/media/Music/Arctic Monkeys/AM (2013)/04 - Arctic Monkeys - Arabella.mp3",
+            "ChannelId": null,
+            "RunTimeTicks": 2073861220,
+            "ProductionYear": 2013,
+            "IndexNumber": 4,
+            "IsFolder": false,
+            "Type": "Audio",
+            "ParentLogoItemId": "542b5c99239d8843d61d6ac522b25d99",
+            "ParentBackdropItemId": "542b5c99239d8843d61d6ac522b25d99",
+            "ParentBackdropImageTags": [
+              "06d7596470929f05adc6ebc43f03a2f0"
+            ],
+            "Artists": [
+              "Arctic Monkeys"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Arctic Monkeys",
+                "Id": "542b5c99239d8843d61d6ac522b25d99"
+              }
+            ],
+            "Album": "AM",
+            "AlbumId": "6861ccedc953a3782a7e50b31419eaca",
+            "AlbumPrimaryImageTag": "7688cff0b3e101e1026d2ccb2dc931d5",
+            "AlbumArtist": "Arctic Monkeys",
+            "AlbumArtists": [
+              {
+                "Name": "Arctic Monkeys",
+                "Id": "542b5c99239d8843d61d6ac522b25d99"
+              }
+            ],
+            "ImageTags": {},
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "7ea361893ed575a744a19a82eb1278b0",
+            "ImageBlurHashes": {
+              "Logo": {
+                "7ea361893ed575a744a19a82eb1278b0": "OkMP|CM{?^bH?uxb?vR*Rjs:oMj[tRWXTJf6niofjZWBWB"
+              },
+              "Backdrop": {
+                "06d7596470929f05adc6ebc43f03a2f0": "WkIg$4M~xZ%1X9t6~WxrWCbHozf8?aoJs.WVkCj[%fRloIj[R*ay"
+              },
+              "Primary": {
+                "7688cff0b3e101e1026d2ccb2dc931d5": "VE7KuNt7t7t7IUxuj[ofofWB00WBWBRjxuD%WBRjRjt7"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -9.1
+          },
+          {
+            "Name": "I Want It All",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "b346e453e9944c63b6d9a9167ceaa8e1",
+            "HasLyrics": true,
+            "Container": "mp3",
+            "PremiereDate": "2013-01-01T00:00:00.0000000Z",
+            "Path": "/data/media/Music/Arctic Monkeys/AM (2013)/05 - Arctic Monkeys - I Want It All.mp3",
+            "ChannelId": null,
+            "RunTimeTicks": 1843983670,
+            "ProductionYear": 2013,
+            "IndexNumber": 5,
+            "IsFolder": false,
+            "Type": "Audio",
+            "ParentLogoItemId": "542b5c99239d8843d61d6ac522b25d99",
+            "ParentBackdropItemId": "542b5c99239d8843d61d6ac522b25d99",
+            "ParentBackdropImageTags": [
+              "06d7596470929f05adc6ebc43f03a2f0"
+            ],
+            "Artists": [
+              "Arctic Monkeys"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Arctic Monkeys",
+                "Id": "542b5c99239d8843d61d6ac522b25d99"
+              }
+            ],
+            "Album": "AM",
+            "AlbumId": "6861ccedc953a3782a7e50b31419eaca",
+            "AlbumPrimaryImageTag": "7688cff0b3e101e1026d2ccb2dc931d5",
+            "AlbumArtist": "Arctic Monkeys",
+            "AlbumArtists": [
+              {
+                "Name": "Arctic Monkeys",
+                "Id": "542b5c99239d8843d61d6ac522b25d99"
+              }
+            ],
+            "ImageTags": {},
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "7ea361893ed575a744a19a82eb1278b0",
+            "ImageBlurHashes": {
+              "Logo": {
+                "7ea361893ed575a744a19a82eb1278b0": "OkMP|CM{?^bH?uxb?vR*Rjs:oMj[tRWXTJf6niofjZWBWB"
+              },
+              "Backdrop": {
+                "06d7596470929f05adc6ebc43f03a2f0": "WkIg$4M~xZ%1X9t6~WxrWCbHozf8?aoJs.WVkCj[%fRloIj[R*ay"
+              },
+              "Primary": {
+                "7688cff0b3e101e1026d2ccb2dc931d5": "VE7KuNt7t7t7IUxuj[ofofWB00WBWBRjxuD%WBRjRjt7"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -10.9
+          }
+        ],
+        "TotalRecordCount": 12,
+        "StartIndex": 0,
+        "trimmed": "Trimmed by the recorder: only the first five items are kept, as the rest hold household names."
+      }
+    }
+  }
+}

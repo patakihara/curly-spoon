@@ -17,13 +17,13 @@ import { buildAuthorizationHeader, type JellyfinDeviceInfo } from './auth.js';
 import {
   baseItemDtoSchema,
   baseItemQueryResultSchema,
+  type FolderItem,
+  folderItemsSchema,
   type IndexItem,
   type IndexQueryResult,
   indexQueryResultSchema,
   type JellyfinLyrics,
   jellyfinLyricsSchema,
-  type NewestAudio,
-  newestAudioSchema,
   noContentSchema,
   type PlayableItem,
   playableItemSchema,
@@ -35,9 +35,6 @@ import {
   userListSchema,
   virtualFoldersSchema,
 } from './schemas.js';
-
-/** How many of the newest tracks `newestAudio` reads. */
-export const NEWEST_AUDIO_LIMIT = 25;
 
 /** The music library a song is kept in: its id, and the folders it reads on Jellyfin's host. */
 export interface MusicLibrary {
@@ -256,18 +253,15 @@ export class JellyfinClient {
     await this.post('Library/Media/Updated', json, noContentSchema);
   }
 
-  /** The library's newest tracks, newest first, each with its file's path and its album. */
-  async newestAudio(libraryId: string): Promise<NewestAudio[]> {
-    const query = {
-      ParentId: libraryId,
-      Recursive: 'true',
-      IncludeItemTypes: 'Audio',
-      SortBy: 'DateCreated',
-      SortOrder: 'Descending',
-      Limit: String(NEWEST_AUDIO_LIMIT),
-      Fields: 'Path,ProviderIds',
-    };
-    return (await this.get('Items', newestAudioSchema, query)).Items;
+  /**
+   * What one folder holds, each item with its path on Jellyfin's host: `GET /Items?ParentId=`, not
+   * recursive. The music library's own id lists its artists' folders, an artist's folder its
+   * albums, and an album's folder its tracks, each with its album (recorded). Walked a folder at a
+   * time, a path is found however many other files arrived beside it.
+   */
+  async folderItems(parentId: string): Promise<FolderItem[]> {
+    const query = { ParentId: parentId, Fields: 'Path' };
+    return (await this.get('Items', folderItemsSchema, query)).Items;
   }
 
   /** The first administrator's id: `GET /Users`, which only an admin token may call. */
