@@ -1,8 +1,10 @@
 /**
  * The Ogg container (RFC 3533): a page writer and a page reader over file handles. A packet goes
  * into 255-byte lacing segments, at most 255 segments a page, and a packet too long for one page
- * spans pages, each one after the first marked as continued. Every page carries its CRC, and the
- * reader refuses a page whose CRC does not check.
+ * spans pages, each one after the first marked as continued. A page's granule is that of the last
+ * packet to end on it, though another packet starts after it and carries on to the next page; a
+ * page on which no packet ends has none (-1). Every page carries its CRC, and the reader refuses a
+ * page whose CRC does not check.
  */
 import type { FileHandle } from 'node:fs/promises';
 import { OpusRefused } from './ebml.js';
@@ -37,6 +39,7 @@ export const NO_GRANULE = -1n;
 export class OggWriter {
   private segments: number[] = [];
   private data: Buffer[] = [];
+  /** The granule of the last packet to end on the page being filled; none while none has. */
   private granule = NO_GRANULE;
   /** The page being filled starts with the rest of a packet begun on the page before. */
   private continued = false;
@@ -85,7 +88,7 @@ export class OggWriter {
     header[4] = 0;
     header[5] =
       (this.continued ? CONTINUED : 0) | (this.sequence === 0 ? FIRST : 0) | (last ? LAST : 0);
-    header.writeBigInt64LE(carriesOn ? NO_GRANULE : this.granule, 6);
+    header.writeBigInt64LE(this.granule, 6);
     header.writeUInt32LE(this.serial >>> 0, 14);
     header.writeUInt32LE(this.sequence, 18);
     header[26] = this.segments.length;
