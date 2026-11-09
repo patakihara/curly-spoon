@@ -32,7 +32,8 @@
  * autoplay's pick, which no client reads: the server preloads the pick once it is worked out. A
  * song kept into the library plays as the Jellyfin track it was kept as, with or without
  * streaming: the session goes on holding the song's own ref, so a queue or history row from before
- * the keep plays and moves on as ever.
+ * the keep plays and moves on as ever. A song played far enough through is kept by itself
+ * (`music/autoKeep.ts`), from its play's reports and close.
  */
 import { randomUUID } from 'node:crypto';
 import {
@@ -90,6 +91,7 @@ import {
 } from '../music/index.js';
 import { RangeRefused } from '../music/streamCache.js';
 import { keptTrack } from '../requests/songs/kept.js';
+import type { AutoKeep } from '../music/autoKeep.js';
 import { streamedTrack } from '../store/streamedTracks.js';
 import { type z } from 'zod';
 
@@ -312,6 +314,8 @@ export function playRoutes(
     playback?: PlaybackOptions;
     /** Songs from outside the library. Null or absent, a streamed ref is not linked. */
     music?: Music | null;
+    /** Keeps a song played far enough through; null or absent while songs cannot be kept. */
+    autoKeep?: AutoKeep | null;
     now?: () => number;
   },
 ): void {
@@ -525,6 +529,7 @@ export function playRoutes(
     const playId = randomUUID().replace(/-/g, '');
     const entries: PlanEntry[] = [{ entry: { ref }, start: 0 }];
     const owner = { userId: caller.id, deviceId: caller.deviceId };
+    const heard = options.autoKeep?.play(caller.id, ref.id, song.duration) ?? (() => undefined);
     await open.planOn(owner, async () => {
       await open.closeDevice(owner.userId, owner.deviceId);
       await open.open({
@@ -534,8 +539,10 @@ export function playRoutes(
         entries,
         duration: song.duration,
         idleMs: directIdleMs,
-        report: async () => undefined,
-        close: async () => undefined,
+        report: async (report) => heard(report),
+        close: async (report) => {
+          if (report !== undefined) heard(report);
+        },
       });
     });
     const plan: PlaybackPlan = {

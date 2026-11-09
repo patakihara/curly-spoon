@@ -947,6 +947,21 @@ export const migrations: readonly Migration[] = [
       `);
     },
   },
+  {
+    id: 28,
+    name: 'auto_keeps',
+    up: (db) => {
+      // The songs each person has had kept by playing them: each is asked once, ever.
+      db.exec(`
+        CREATE TABLE auto_keeps (
+          user_id          TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          youtube_music_id TEXT NOT NULL,
+          at               INTEGER NOT NULL,
+          PRIMARY KEY (user_id, youtube_music_id)
+        );
+      `);
+    },
+  },
 ];
 
 export function runMigrations(

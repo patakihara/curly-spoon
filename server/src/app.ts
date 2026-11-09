@@ -30,7 +30,8 @@ import { type PlaybackOptions, playRoutes, type UpstreamAccess } from './routes/
 import { Lyrics } from './lyrics/service.js';
 import { IndexLookup } from './queues/lookup.js';
 import { Sessions } from './queues/sessions.js';
-import { keepRoutes } from './routes/keep.js';
+import { keepRoutes, songKeeper } from './routes/keep.js';
+import { AutoKeep } from './music/autoKeep.js';
 import { requestRoutes } from './routes/requests.js';
 import { MOST_LIVE_REQUESTS } from './store/requests.js';
 import { searchRoutes } from './routes/search.js';
@@ -207,12 +208,30 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
   // Marks still being sent finish before the server's store closes.
   app.addHook('onClose', () => sessions.settled());
   sessionRoutes(app, { sessions });
+  const wake = options.requests?.wake ?? new Wake();
+  const requestDeps = {
+    db,
+    steps: options.requests?.steps ?? new Map(),
+    log: app.log,
+    now: options.now ?? Date.now,
+    // With no steps registered, no step ever runs against this.
+    stepTimeoutMs: options.requests?.stepTimeoutMs ?? 0,
+    maxLive: options.requests?.maxLive ?? MOST_LIVE_REQUESTS,
+  };
   playRoutes(app, {
     db,
     upstreams,
     sessions,
     open: plays,
     music: options.music ?? null,
+    autoKeep: requestDeps.steps.has('song')
+      ? new AutoKeep({
+          db,
+          keep: songKeeper({ ...requestDeps, wake }),
+          now: options.now ?? Date.now,
+          log: app.log,
+        })
+      : null,
     ...(options.playback ? { playback: options.playback } : {}),
     ...(options.now ? { now: options.now } : {}),
   });
@@ -251,16 +270,6 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
   });
   settingsRoutes(app, { db, sessions, now: options.now ?? Date.now });
 
-  const wake = options.requests?.wake ?? new Wake();
-  const requestDeps = {
-    db,
-    steps: options.requests?.steps ?? new Map(),
-    log: app.log,
-    now: options.now ?? Date.now,
-    // With no steps registered, no step ever runs against this.
-    stepTimeoutMs: options.requests?.stepTimeoutMs ?? 0,
-    maxLive: options.requests?.maxLive ?? MOST_LIVE_REQUESTS,
-  };
   requestRoutes(app, requestDeps);
   keepRoutes(app, { ...requestDeps, wake });
 
