@@ -91,7 +91,8 @@ const errors: string[] = [];
 beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), 'auralis-song-import-'));
   music = join(dir, 'media', 'Music');
-  stagingDir = join(music, STAGING_FOLDER, '0123456789abcdef');
+  stagingDir = join(dir, 'media', STAGING_FOLDER, '0123456789abcdef');
+  mkdirSync(music, { recursive: true });
   mkdirSync(stagingDir, { recursive: true });
   db = openDatabase(':memory:');
   clock = Date.UTC(2026, 10, 9, 8);
@@ -498,7 +499,7 @@ describe('[M3.keep/a] a kept song is saved as its own Opus stream, with MusicBra
     const deps = job(steps);
     await advanceRequests(deps);
     expect(getRequest(db, id)!.state).toMatchObject({ status: 'failed', reason: 'importFailed' });
-    expect(readdirSync(music)).toEqual([STAGING_FOLDER]);
+    expect(readdirSync(music)).toEqual([]);
     expect(readdirSync(stagingDir)).toEqual([]);
     expect(asked.filter((call) => call.startsWith('POST'))).toEqual([]);
 
@@ -515,7 +516,7 @@ describe('[M3.keep/a] a kept song is saved as its own Opus stream, with MusicBra
     const deps = job(steps);
     await advanceRequests(deps);
     expect(getRequest(db, id)!.state).toMatchObject({ status: 'failed', reason: 'importFailed' });
-    expect(readdirSync(music)).toEqual([STAGING_FOLDER]);
+    expect(readdirSync(music)).toEqual([]);
     expect(readdirSync(stagingDir)).toEqual([]);
 
     await retryRequest(deps, id);
@@ -531,7 +532,7 @@ describe('[M3.keep/a] a kept song is saved as its own Opus stream, with MusicBra
     const deps = job(steps);
     await advanceRequests(deps);
     expect(statusOf(id)).toBe('importing');
-    expect(readdirSync(music)).toEqual([STAGING_FOLDER]);
+    expect(readdirSync(music)).toEqual([]);
     await walk(deps, id, 'inLibrary');
     expect(await packets(join(music, FILE))).toEqual(await packets(clipPath()));
   });

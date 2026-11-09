@@ -4,10 +4,11 @@
  * rest of the server runs as ever. MusicBrainz and the Cover Art Archive are optional: without them
  * a song is kept on YouTube Music's own names and art. Nothing here calls an upstream at start.
  *
- * The staging folder sits inside Music, so a staged file links into place on the same filesystem; a
- * dot folder, which Jellyfin never indexes. Each server stages in its own folder there, named by an
- * id it keeps in its data folder (`keep-instance`), as two servers may share one Music: one for
- * trying a build beside the household's own. At start a server's folder holds only what its live
+ * The staging folder sits in MEDIA_DIR beside Music, so a staged file links into place on the same
+ * filesystem, and Jellyfin's Music library never sees it come and go: each file made or deleted
+ * inside the library costs a whole library refresh. Each server stages in its own folder there,
+ * named by an id it keeps in its data folder (`keep-instance`), as two servers may share one
+ * MEDIA_DIR: one for trying a build beside the household's own. At start a server's folder holds only what its live
  * requests staged: a file no request is waiting on is left from a cancel or an arrival a crash cut
  * short, and goes. Another server's folder is never touched.
  */
@@ -32,7 +33,7 @@ import { songDownload, type SongStream } from './download.js';
 import { songImport } from './import.js';
 import { songSearch } from './search.js';
 
-/** The staging folder's name inside Music, which holds each server's own folder. */
+/** The staging folder's name in MEDIA_DIR, beside Music, which holds each server's own folder. */
 export const STAGING_FOLDER = '.auralis-keep';
 /** The file in the data folder holding this server's id, which names its staging folder. */
 export const INSTANCE_FILE = 'keep-instance';
@@ -112,12 +113,12 @@ export function songSteps(config: AppConfig, deps: SongStepsDeps): SongSteps {
   } catch {
     return { off: 'a DATA_DIR it may write to' };
   }
-  const stagingDir = join(musicDir, STAGING_FOLDER, instance);
+  const stagingDir = join(mediaDir, STAGING_FOLDER, instance);
   try {
     mkdirSync(stagingDir, { recursive: true });
     clearStaging(db, stagingDir, log);
   } catch {
-    return { off: 'a Music folder in MEDIA_DIR it may write to' };
+    return { off: 'a MEDIA_DIR it may write to' };
   }
 
   const { musicBrainzUrl, coverArtUrl } = config.songs;

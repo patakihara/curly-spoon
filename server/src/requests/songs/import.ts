@@ -53,7 +53,7 @@ export interface SongImportDeps {
   db: Db;
   /** `MEDIA_DIR/Music` as this server sees it. */
   musicDir: string;
-  /** The staging folder inside it, where the stream was staged and the file is built. */
+  /** The staging folder beside it, where the stream was staged and the file is built. */
   stagingDir: string;
   jellyfin: Pick<
     JellyfinClient,

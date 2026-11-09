@@ -15,7 +15,7 @@
       "json": {
         "Updates": [
           {
-            "Path": "/data/media/Music/.auralis-keep/recording-probe.opus",
+            "Path": "/data/media/Music/.auralis-probe/recording-probe.opus",
             "UpdateType": "Created"
           }
         ]
