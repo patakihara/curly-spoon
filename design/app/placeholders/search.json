@@ -140,7 +140,17 @@
             "title": "Salt",
             "meta": "Song · Streams · Fleeting Verses",
             "image": "/art/fragments-of-the-wind.jpg",
-            "playRef": "salt"
+            "status": null,
+            "tone": null,
+            "playRef": "salt",
+            "ref": "salt",
+            "menu": [
+              {
+                "key": "keep",
+                "label": "Add to library",
+                "icon": "library_add"
+              }
+            ]
           }
         ],
         "follows": []
@@ -152,9 +162,34 @@
             "title": "Salted",
             "meta": "Song · Streams · Deep Inertia",
             "image": "/art/tears-of-ice.jpg",
-            "playRef": "salted"
+            "status": null,
+            "tone": null,
+            "playRef": "salted",
+            "ref": "salted",
+            "menu": [
+              {
+                "key": "keep",
+                "label": "Add to library",
+                "icon": "library_add"
+              }
+            ]
           }
         ]
+      },
+      {
+        "plays": [
+          {
+            "title": "Salt of the Sea",
+            "meta": "Song · Streams · Soul Vertex",
+            "image": "/art/salt-and-static.jpg",
+            "status": "Importing",
+            "tone": "progress",
+            "playRef": "salt-of-the-sea",
+            "ref": "salt-of-the-sea",
+            "menu": []
+          }
+        ],
+        "follows": []
       }
     ],
     "moreReleases": "More releases of Salt",

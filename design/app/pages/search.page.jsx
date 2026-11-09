@@ -110,8 +110,11 @@ export default function Search({ data }) {
                   title={plays.title}
                   meta={plays.meta}
                   image={plays.image}
+                  status={plays.status}
+                  tone={plays.tone}
                   onAction={<Play ref={plays.playRef} queue="music" />}
                   divider
+                  menu={<OverflowMenu items={plays.menu} onSelect={<Choose ref={plays.ref} />} />}
                 />
               </Each>
               <Each of={song.follows} as="follows">
@@ -119,6 +122,8 @@ export default function Search({ data }) {
                   title={follows.title}
                   meta={follows.meta}
                   image={follows.image}
+                  status={follows.status}
+                  tone={follows.tone}
                   onAction={<Play ref={follows.playRef} queue="music" />}
                   divider
                   trailing={
@@ -129,6 +134,9 @@ export default function Search({ data }) {
                     >
                       Play next
                     </Button>
+                  }
+                  menu={
+                    <OverflowMenu items={follows.menu} onSelect={<Choose ref={follows.ref} />} />
                   }
                 />
               </Each>

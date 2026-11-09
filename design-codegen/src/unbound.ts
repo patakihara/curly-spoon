@@ -60,6 +60,7 @@ export const UNBOUND: Readonly<Record<string, string>> = {
   'favourites/OverflowMenu.onSelect': 'M5.searchui',
   'list/OverflowMenu.onSelect': 'M5.searchui',
   'search/ButtonGroup.onChange': 'M5.searchui',
+  'search/OverflowMenu.onSelect': 'M5.searchui',
   'search/ResultRow.onClick': 'M5.searchui',
   'search/SearchField.onChange': 'M5.searchui',
   'search/SearchField.onSubmit': 'M5.searchui',
