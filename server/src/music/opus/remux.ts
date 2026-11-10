@@ -8,30 +8,22 @@
  */
 import type { FileHandle } from 'node:fs/promises';
 import { OpusRefused, readWebmOpus } from './ebml.js';
+import {
+  type Picture,
+  pictureBlock,
+  readPictureBlock,
+  readVorbisCommentBody,
+  type VorbisComment,
+  vorbisCommentBody,
+} from '../vorbis.js';
 import { oggCrc, oggPackets, OggWriter } from './ogg.js';
 
 export { OpusRefused } from './ebml.js';
 
-/** One Vorbis comment. A key may repeat, as `ARTISTS` does once per artist. */
-export interface VorbisComment {
-  readonly key: string;
-  readonly value: string;
-}
-
-/** A cover, as a FLAC picture block carries it. */
-export interface Picture {
-  readonly mime: string;
-  readonly data: Buffer;
-  readonly width?: number;
-  readonly height?: number;
-}
-
 const VENDOR = 'Auralis';
-const FRONT_COVER = 3;
 const SAMPLE_RATE = 48_000;
 /** About a second of audio a page, as ffmpeg writes them. */
 const PAGE_SAMPLES = SAMPLE_RATE;
-const KEY = /^[\x20-\x3c\x3e-\x7d]+$/;
 
 /** The samples at 48 kHz one Opus packet decodes to, from its TOC byte (RFC 6716, 3.1). */
 export function packetSamples(packet: Uint8Array): number {
@@ -58,69 +50,13 @@ export function packetSamples(packet: Uint8Array): number {
   return samples;
 }
 
-function u32be(value: number): Buffer {
-  const bytes = Buffer.alloc(4);
-  bytes.writeUInt32BE(value >>> 0);
-  return bytes;
-}
-
-function u32le(value: number): Buffer {
-  const bytes = Buffer.alloc(4);
-  bytes.writeUInt32LE(value >>> 0);
-  return bytes;
-}
-
-/** A FLAC picture block, base64, for `METADATA_BLOCK_PICTURE`. */
-function pictureBlock(picture: Picture): string {
-  const mime = Buffer.from(picture.mime, 'latin1');
-  return Buffer.concat([
-    u32be(FRONT_COVER),
-    u32be(mime.length),
-    mime,
-    u32be(0),
-    u32be(picture.width ?? 0),
-    u32be(picture.height ?? 0),
-    u32be(0),
-    u32be(0),
-    u32be(picture.data.length),
-    picture.data,
-  ]).toString('base64');
-}
-
-function readPictureBlock(base64: string): Picture {
-  const bytes = Buffer.from(base64, 'base64');
-  let at = 4;
-  const take = (): Buffer => {
-    const length = bytes.readUInt32BE(at);
-    const part = bytes.subarray(at + 4, at + 4 + length);
-    at += 4 + length;
-    return part;
-  };
-  const mime = take().toString('latin1');
-  take();
-  const width = bytes.readUInt32BE(at);
-  const height = bytes.readUInt32BE(at + 4);
-  at += 16;
-  return { mime, data: Buffer.from(take()), width, height };
-}
-
 /** The `OpusTags` packet. */
 export function opusTagsPacket(comments: readonly VorbisComment[], picture?: Picture): Buffer {
   const all = [...comments];
-  if (picture) all.push({ key: 'METADATA_BLOCK_PICTURE', value: pictureBlock(picture) });
-  const vendor = Buffer.from(VENDOR, 'utf8');
-  const parts = [
-    Buffer.from('OpusTags', 'latin1'),
-    u32le(vendor.length),
-    vendor,
-    u32le(all.length),
-  ];
-  for (const { key, value } of all) {
-    if (!KEY.test(key)) throw new Error(`a Vorbis comment key is not valid: ${key}`);
-    const comment = Buffer.from(`${key}=${value}`, 'utf8');
-    parts.push(u32le(comment.length), comment);
+  if (picture) {
+    all.push({ key: 'METADATA_BLOCK_PICTURE', value: pictureBlock(picture).toString('base64') });
   }
-  return Buffer.concat(parts);
+  return Buffer.concat([Buffer.from('OpusTags', 'latin1'), vorbisCommentBody(VENDOR, all)]);
 }
 
 export interface OpusTags {
@@ -132,25 +68,13 @@ export interface OpusTags {
 
 export function readOpusTagsPacket(packet: Buffer): OpusTags {
   if (packet.toString('latin1', 0, 8) !== 'OpusTags') throw new OpusRefused('no OpusTags');
-  let at = 8;
-  const take = (): string => {
-    const length = packet.readUInt32LE(at);
-    const text = packet.toString('utf8', at + 4, at + 4 + length);
-    at += 4 + length;
-    return text;
-  };
-  const vendor = take();
-  const count = packet.readUInt32LE(at);
-  at += 4;
+  const { vendor, comments: all } = readVorbisCommentBody(packet.subarray(8));
   const comments: VorbisComment[] = [];
   let picture: Picture | null = null;
-  for (let i = 0; i < count; i++) {
-    const text = take();
-    const equals = text.indexOf('=');
-    const key = text.slice(0, equals);
-    const value = text.slice(equals + 1);
-    if (key.toUpperCase() === 'METADATA_BLOCK_PICTURE') picture = readPictureBlock(value);
-    else comments.push({ key, value });
+  for (const comment of all) {
+    if (comment.key.toUpperCase() === 'METADATA_BLOCK_PICTURE') {
+      picture = readPictureBlock(Buffer.from(comment.value, 'base64'));
+    } else comments.push(comment);
   }
   return { vendor, comments, picture };
 }

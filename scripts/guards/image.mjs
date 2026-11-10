@@ -113,16 +113,21 @@ export function undeclaredGlobalArgs(dockerfile) {
 }
 
 const HTTP_AT_RUNTIME = new Set([
+  'server/src/adapters/http/entities.ts',
   'server/src/adapters/http/fetch.ts',
   'server/src/adapters/http/publicFetch.ts',
   'server/src/adapters/http/unavailable.ts',
 ]);
 
-/** True for a file only tests use: a test, a recording, the test key, the recorder or the harness. */
+/**
+ * True for a file only tests use: a test, a recording, a fixture, the test key, the recorder or the
+ * harness.
+ */
 export function testOnly(file) {
   return (
     /\.test\.[cm]?[jt]sx?$/.test(file) ||
     file.includes('/recordings/') ||
+    /^server\/src\/.*\/fixtures\//.test(file) ||
     file.startsWith('server/e2e/') ||
     /^server\/src\/adapters\/record-[^/]+$/.test(file) ||
     (file.startsWith('server/src/adapters/http/') && !HTTP_AT_RUNTIME.has(file))

@@ -7,14 +7,8 @@ import { fileURLToPath } from 'node:url';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { readWebmOpus } from './ebml.js';
 import { oggPages, type OggPage } from './ogg.js';
-import {
-  opusPackets,
-  OpusRefused,
-  packetSamples,
-  readOggOpus,
-  remux,
-  type VorbisComment,
-} from './remux.js';
+import { opusPackets, OpusRefused, packetSamples, readOggOpus, remux } from './remux.js';
+import type { VorbisComment } from '../vorbis.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 /** YouTube Music's layout, made by scripts/fixtures/tone.sh: 20 s mono, 1,001 packets. */
