@@ -82,6 +82,10 @@
  * in throwaway containers on the server, so from its address, with no key, and removes them
  * (record-extractor.ts). No stream's bytes are read. Nothing goes on stdin.
  *
+ * `--only albums-qbit --qbittorrent <url>` records the album gate's qBittorrent calls (a start, a file
+ * priority, a tag) on the books part's made-up hash, which no torrent has (record-albums.ts). It
+ * adds no torrent and needs only QBITTORRENT_API_KEY.
+ *
  * `--only qbit --qbittorrent <url> --torrent <magnet>` records M3.books' qBittorrent calls on a
  * made-up hash and the public torrent named (record-qbit.ts), both removed with their files
  * afterwards. No read lists a household torrent. It needs only QBITTORRENT_API_KEY.
@@ -121,7 +125,7 @@ import { RECORD_USER_ID, recordOidc, TEST_IDENTITY } from './record-oidc.js';
 import { UNDO_UNCONFIRMED } from './record-finished.js';
 import { recordLists } from './record-lists.js';
 import { recordLyrics } from './record-lyrics.js';
-import { recordAlbums } from './record-albums.js';
+import { recordAlbums, recordAlbumsQbit } from './record-albums.js';
 import { recordBooks } from './record-books.js';
 import { recordQbit } from './record-qbit.js';
 import { recordExtractor } from './record-extractor.js';
@@ -164,12 +168,13 @@ Records Audiobookshelf's and Jellyfin's calls into server/src/adapters/*/recordi
                      the track to mark if the test user has played nothing
   --only <name>      record only abs, jellyfin, index, play, episode, jfplay, progress,
                      sessions, shell, lyrics, lists, played, books, albums, shelf, qbit, ytmusic,
-                     extractor, musicbrainz, albums-musicbrainz, coverart or keep; or
+                     extractor, musicbrainz, albums-musicbrainz, albums-qbit, coverart or
+                     keep; or
                      oidc, a sign-in and its links
   --lrclib <url>     LRCLIB's base URL, for --only lyrics
   --prowlarr <url>   Prowlarr's base URL, for --only books and albums
   --book-folder <p>  for --only shelf, the book's folder under its library
-  --qbittorrent <url> qBittorrent's base URL, for --only qbit
+  --qbittorrent <url> qBittorrent's base URL, for --only qbit and albums-qbit
   --torrent <magnet> a public torrent with a healthy swarm, for --only qbit
   --albums <a,b,..>  for --only lyrics, the albums holding the three LRCLIB tracks
   --jellyfin-synced <id>, --jellyfin-plain <id>
@@ -748,13 +753,14 @@ export async function runRecord(io: RecordIo): Promise<number> {
       'github',
       'musicbrainz',
       'albums-musicbrainz',
+      'albums-qbit',
       'coverart',
       'keep',
       'oidc',
     ].includes(only)
   ) {
     io.err(
-      `--only is abs, jellyfin, index, play, episode, jfplay, progress, sessions, shell, lyrics, lists, played, household, books, albums, shelf, qbit, ytmusic, extractor, github, musicbrainz, albums-musicbrainz, coverart, keep or oidc, not ${only}`,
+      `--only is abs, jellyfin, index, play, episode, jfplay, progress, sessions, shell, lyrics, lists, played, household, books, albums, shelf, qbit, ytmusic, extractor, github, musicbrainz, albums-musicbrainz, albums-qbit, coverart, keep or oidc, not ${only}`,
     );
     return 2;
   }
@@ -784,6 +790,7 @@ export async function runRecord(io: RecordIo): Promise<number> {
   if (only === 'github') return runGithub(io, root);
   if (only === 'musicbrainz') return runMusicBrainz(io, root);
   if (only === 'albums-musicbrainz') return runAlbumGroups(io, root);
+  if (only === 'albums-qbit') return runAlbumsQbit(io, values, parseKeys(io.stdin), root);
   if (only === 'coverart') return runCoverArt(io, root);
   if (only === 'keep') return runKeep(io, values, parseKeys(io.stdin), root);
   const wantIndex = only === undefined || only === 'index';
@@ -1451,6 +1458,33 @@ async function runQbit(
     key: keys.QBITTORRENT_API_KEY as string,
     magnet: values.torrent as string,
     sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+  });
+  return scanWritten(io, written, []);
+}
+
+async function runAlbumsQbit(
+  io: RecordIo,
+  values: Record<string, string | boolean | undefined>,
+  keys: Record<string, string>,
+  root: string,
+): Promise<number> {
+  const need = {
+    '--qbittorrent': values.qbittorrent,
+    'QBITTORRENT_API_KEY on stdin': keys.QBITTORRENT_API_KEY,
+  };
+  const missing = Object.entries(need)
+    .filter(([, v]) => typeof v !== 'string' || v === '')
+    .map(([k]) => k);
+  if (missing.length > 0) {
+    io.err(`missing ${missing.join(', ')}\n\n${USAGE}`);
+    return 2;
+  }
+  const { written } = await recordAlbumsQbit({
+    fetch: io.fetch,
+    out: io.out,
+    root,
+    url: values.qbittorrent as string,
+    key: keys.QBITTORRENT_API_KEY as string,
   });
   return scanWritten(io, written, []);
 }

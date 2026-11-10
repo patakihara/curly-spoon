@@ -18,6 +18,13 @@
  * dictionary verbatim, so its hash holds, and its `url-list` with each address at the placeholder
  * host. Nothing else of it is kept (its trackers, its comment). Rows are scrubbed as the books part
  * scrubs them, with one list of stand-ins for the indexers across the run.
+ *
+ * The `albums-qbit` part (`recordAlbumsQbit`) records the calls the gate adds to qBittorrent, on
+ * the books part's made-up hash, which no torrent has: a start (`start-missing`), a file priority
+ * (`file-prio-missing`) and a tag (`add-tag-missing`). It adds no torrent and deletes none: it
+ * stops before any write if that hash is there, and takes away the recording tag only if this run
+ * made it. Whether an add stops at its metadata cannot be seen without adding one; that waits for a
+ * real album.
  */
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -28,7 +35,9 @@ import { type Recording } from './http/recording.js';
 import { scanRecording } from './http/scan.js';
 import { PLACEHOLDER_ORIGIN, type RawExchange } from './http/scrub.js';
 import { AUDIO_CATEGORY, ProwlarrClient, type ProwlarrRelease } from './prowlarr/client.js';
+import { QbittorrentClient } from './qbittorrent/client.js';
 import { anonymiseProwlarr, indexerStandIns } from './record-books.js';
+import { cutQbit, MADE_UP_HASH, RECORD_TAG } from './record-qbit.js';
 
 /** The searches, as the album search words them: each album's artist and title, as torrents write it. */
 export const ALBUM_SEARCHES = [
@@ -221,5 +230,83 @@ export async function recordAlbums(input: AlbumsRecordInput): Promise<{ written:
   });
   written.push(join(dir, 'link-magnet-music.json'));
   out('link-magnet-music: a magnet');
+  return { written };
+}
+
+export interface AlbumsQbitRecordInput {
+  fetch: FetchLike;
+  out: (line: string) => void;
+  root: string;
+  url: string;
+  key: string;
+}
+
+export async function recordAlbumsQbit(
+  input: AlbumsQbitRecordInput,
+): Promise<{ written: string[] }> {
+  const { fetch, out, url: baseUrl, key: apiKey } = input;
+  const dir = join(input.root, 'qbittorrent', 'recordings');
+  const written: string[] = [];
+  const plain = new QbittorrentClient({ baseUrl, apiKey, fetch });
+  const base = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
+  const headers = { authorization: `Bearer ${apiKey}` };
+  const tags = async (): Promise<string[]> => {
+    const answer = await fetch(`${base}api/v2/torrents/tags`, { headers });
+    if (!answer.ok) throw new Error(`the tag list answered ${answer.status}`);
+    const list: unknown = await answer.json();
+    return Array.isArray(list) ? list.filter((tag): tag is string => typeof tag === 'string') : [];
+  };
+  const noTorrent = async (when: string) => {
+    if ((await plain.withHashes([MADE_UP_HASH])).length > 0) {
+      throw new Error(`the made-up hash is in qBittorrent ${when}`);
+    }
+  };
+
+  const rec = createRecorder({
+    fetch,
+    dir,
+    upstream: 'qbittorrent',
+    upstreamVersion: await plain.version(),
+    secrets: [apiKey],
+    baseUrl,
+    prepare: cutQbit,
+  });
+  const qbit = new QbittorrentClient({ baseUrl, apiKey, fetch: rec.fetch });
+  const capture = async <T>(call: string, step: () => Promise<T>, check?: (answer: T) => void) => {
+    const answer = await rec.capture(call, step, {
+      verify: (result, recording) => {
+        check?.(result);
+        scanned(recording);
+      },
+    });
+    written.push(join(dir, `${call}.json`));
+    out(`${call}: recorded`);
+    return answer;
+  };
+
+  await noTorrent('before the run');
+  const tagWasThere = (await tags()).includes(RECORD_TAG);
+  try {
+    await capture('start-missing', () => qbit.start([MADE_UP_HASH]));
+    await capture(
+      'file-prio-missing',
+      () => qbit.setFilePriority(MADE_UP_HASH, [0], 0),
+      (found) => {
+        if (found) throw new Error('a priority was set on a hash no torrent has');
+      },
+    );
+    await capture('add-tag-missing', () => qbit.addTag([MADE_UP_HASH], RECORD_TAG));
+  } finally {
+    if (!tagWasThere && (await tags()).includes(RECORD_TAG)) {
+      await fetch(`${base}api/v2/torrents/deleteTags`, {
+        method: 'POST',
+        headers: { ...headers, 'content-type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ tags: RECORD_TAG }).toString(),
+      });
+      out('the recording tag this run made is gone');
+    }
+  }
+  await noTorrent('after the run');
+  out('no torrent was added');
   return { written };
 }

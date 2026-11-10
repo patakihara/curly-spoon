@@ -112,3 +112,58 @@ describe('[M3.books] the qBittorrent client', () => {
     expect(files[0]?.size).toBeGreaterThan(0);
   });
 });
+
+describe('[M3.albums] the qBittorrent client for the album gate', () => {
+  const madeUp = (call: string) => {
+    const body = recorded(call).request.body as { text: string };
+    const form = new URLSearchParams(body.text);
+    return (form.get('hashes') ?? form.get('hash')) as string;
+  };
+
+  it('[M3.albums] an add asked to stop at its metadata says so, and one not asked says nothing', async () => {
+    const sent: string[] = [];
+    const replay = replayFetch([recorded('add-magnet')]);
+    const fetch: FetchLike = (url, init) => {
+      sent.push(typeof init?.body === 'string' ? init.body : '');
+      return replay(url, init);
+    };
+    const torrent = { kind: 'magnet', magnet: 'magnet:?', hash: 'a' } as const;
+    const fields = { torrent, category: 'a-category', tag: 'a-tag' };
+    await client(fetch).add({ ...fields, stopAtMetadata: true });
+    await client(fetch).add(fields);
+    expect(new URLSearchParams(sent[0]).get('stopCondition')).toBe('MetadataReceived');
+    expect(new URLSearchParams(sent[1]).has('stopCondition')).toBe(false);
+  });
+
+  it('[M3.albums] a torrent sent as bytes is stopped at its metadata the same way', async () => {
+    const sent: unknown[] = [];
+    const replay = replayFetch([recorded('add-magnet')]);
+    const fetch: FetchLike = (url, init) => {
+      sent.push(init?.body);
+      return replay(url, init);
+    };
+    const torrent = { kind: 'torrent', bytes: new Uint8Array([1, 2]), hash: 'a' } as const;
+    await client(fetch).add({ torrent, category: 'c', tag: 't', stopAtMetadata: true });
+    expect((sent[0] as FormData).get('stopCondition')).toBe('MetadataReceived');
+  });
+
+  it('[M3.albums] starting or tagging a hash it does not have is no failure, as recorded', async () => {
+    const start = client(replayFetch([recorded('start-missing')]));
+    await expect(start.start([madeUp('start-missing')])).resolves.toBeUndefined();
+    const tag = client(replayFetch([recorded('add-tag-missing')]));
+    await expect(
+      tag.addTag([madeUp('add-tag-missing')], 'auralis-record'),
+    ).resolves.toBeUndefined();
+  });
+
+  it('[M3.albums] a file priority on a hash it does not have answers false, as recorded', async () => {
+    const prio = client(replayFetch([recorded('file-prio-missing')]));
+    expect(await prio.setFilePriority(madeUp('file-prio-missing'), [0], 0)).toBe(false);
+  });
+
+  it('[M3.albums] a torrent’s files carry the index a priority names them by', async () => {
+    const hash = recorded('files').request.query.hash as string;
+    const [file] = await client(replayFetch([recorded('files')])).files(hash);
+    expect(file?.index).toBe(0);
+  });
+});

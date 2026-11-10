@@ -45,3 +45,42 @@ export function fittingEdition(
 ): Edition | null {
   return editions.find((edition) => fitsEdition(files, edition)) ?? null;
 }
+
+/** A folder that holds one disc of an album: `CD1`, `Disc 2`, `disk 3`. */
+const DISC_FOLDER = /^(?:cd|dis[ck])\s*\d+$/i;
+
+/** Whether `path` lies inside `folder`, by whole path segments. */
+export const inFolder = (path: string, folder: string): boolean => path.startsWith(`${folder}/`);
+
+/** The album folder an audio file sits in: its own folder, or the one above a disc folder. */
+function albumFolderOf(path: string): string {
+  const parts = path.split('/').slice(0, -1);
+  if (parts.length > 1 && DISC_FOLDER.test(parts.at(-1)!.trim())) parts.pop();
+  return parts.join('/');
+}
+
+export interface AlbumFolder {
+  folder: string;
+  edition: Edition;
+}
+
+/**
+ * A pack's album folder: of the folders holding audio, each with its disc folders, the one whose
+ * files fit an edition, the edition listed first winning, then the folder first in path order. Null
+ * for none.
+ */
+export function albumFolder(
+  files: readonly TorrentFile[],
+  editions: readonly Edition[],
+): AlbumFolder | null {
+  const folders = [...new Set(audioFiles(files).map((file) => albumFolderOf(file.path)))];
+  let best: (AlbumFolder & { rank: number }) | null = null;
+  for (const folder of folders) {
+    const inside = files.filter((file) => inFolder(file.path, folder));
+    const rank = editions.findIndex((edition) => fitsEdition(inside, edition));
+    if (rank >= 0 && (best === null || rank < best.rank)) {
+      best = { folder, edition: editions[rank]!, rank };
+    }
+  }
+  return best === null ? null : { folder: best.folder, edition: best.edition };
+}
