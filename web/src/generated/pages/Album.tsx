@@ -5,6 +5,7 @@ import { generatePath, useNavigate } from 'react-router';
 import { PLATFORM, useLayout, type Chrome, type LayoutId, type PageFrame } from '../nav/platform';
 import type { ShellNav } from '../../shell-nav';
 import { usePlay, type Playing } from '../../player';
+import { useChoose } from '../../choose';
 import { BackLayer, BottomNav, ExpanderRow, IconButton, MediaCard, MediaHeader, MiniPlayer, NavRail, OverflowMenu, PageBody, ResultRow, Section, Shelf } from '../ui/index.js';
 
 const placeholder = {
@@ -406,6 +407,7 @@ export default function Album({ data = placeholder, state = 'full' }: AlbumProps
   const platform = PLATFORM[useLayout()];
   const navigate = useNavigate();
   const play = usePlay();
+  const choose = useChoose();
   return (
     <PageBody width="list" platform={platform}>
       <Section platform={platform}>
@@ -418,7 +420,7 @@ export default function Album({ data = placeholder, state = 'full' }: AlbumProps
           onPlay={play(data.ref, 'music', 'now')}
           nextLabel={null}
           lastLabel="Add to queue"
-          menu={<OverflowMenu items={data.menu} platform={platform} />}
+          menu={<OverflowMenu items={data.menu} onSelect={choose(data.ref)} platform={platform} />}
           platform={platform}
         />
       </Section>

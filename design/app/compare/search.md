@@ -1,6 +1,6 @@
 ---
 page: search
-pageHash: 004dfdf3ef1f410bc5229b045254c4f19f7550909f1f5c6657a1f27452b8b246
+pageHash: 48b94fd4dd62005e4124a4fddd39b2c19688545a4ed63fcb479fe028c41adb78
 sonora: [kit:desktop/search, kit:mobile/search]
 spotify: [S03, S04, S32]
 ---
@@ -149,3 +149,7 @@ chooses the state. The canvas draws each on its own phone artboard, `search.phon
 
 - Changed on purpose: each song from YouTube Music ends in an `OverflowMenu`, ResultRow's `menu`, drawn last, after Play next where it shows, so adding it moves no button. Its one verb is "Add to library" (`library_add`), the key `keep`, which keeps the song in the household's library; Spotify's S32 rows end in a menu too. These renders come from the web app, which binds no `keep` yet, so the menu draws disabled, as the rows do.
 - Changed on purpose: a song being kept shows its keep's status where a book's does, "Importing" in the progress tone, and still plays from its art: it streams until the library holds it. Its menu holds nothing, so it draws disabled. The canvas draws one such row, "Salt of the Sea". The rows sit below the fold in both stills (looked at scrolled, both widths): on the phone the title keeps its line beside "Importing" and the menu.
+
+## M3.albums
+
+- Changed on purpose: albums MusicBrainz finds that the library lacks get rows under "Not in your library", after the songs and their "More releases" row and before the books. They follow the book rows: each album sits in one of three lists (`album.asking`, `album.standing`, `album.arrived`). A row with no request ends in a secondary `Button`, "Add to library", which requests the album's lossless copy by its ref. A row with a request on its way shows only its status, such as "Downloading · 40%" in the progress tone, and opens Requests. "In library" opens the album and plays it from its art on the music queue. The canvas draws one of each: Salt Flats, Salt Lines and Salt Year. Unlike a song's, an album's Add to library is its own button, as 07-discover gives an album card one, since it is a torrent request and not a keep. These renders come from the web app, which binds no album request yet, so Salt Flats draws disabled. The rows are below the fold in both stills, which are unchanged; the rows were checked scrolled into view at both widths.

@@ -273,10 +273,22 @@ describe('Add to library', () => {
     ...readPage(f.replace('.page.jsx', '')),
   }));
 
-  it('[M0.canvas] is never a button on a card, a row or a header, on any page, given or bound', () => {
+  it("[M0.canvas] is never a song's button on a card, a row or a header, on any page, given or bound: only an album's, its torrent request", () => {
     for (const { id, tree, data } of pages) {
-      for (const { element, values, text } of shown(tree, data)) {
+      const all = shown(tree, data);
+      const where = (within: string[]) => within.join(' > ');
+      const albumRows = new Set(
+        all
+          .filter((s) => s.element.component === 'ResultRow' && s.within.length > 0)
+          .filter((s) => {
+            const meta = s.values('meta');
+            return meta.length > 0 && meta.every((m) => /^Album · /.test(String(m)));
+          })
+          .map((s) => where(s.within)),
+      );
+      for (const { element, values, text, within } of all) {
         if (element.component === 'OverflowMenu') continue;
+        if (albumRows.has(where(within))) continue;
         const said = [...Object.keys(element.props).flatMap(values), ...text];
         const offered = said.filter((v) => typeof v === 'string' && /add to library/i.test(v));
         expect(offered, `${id}: ${element.component} at line ${element.line}`).toEqual([]);

@@ -12,7 +12,7 @@ export default function Album({ data }) {
             onPlay={<Play ref={data.ref} queue="music" />}
             nextLabel={null}
             lastLabel="Add to queue"
-            menu={<OverflowMenu items={data.menu} />}
+            menu={<OverflowMenu items={data.menu} onSelect={<Choose ref={data.ref} />} />}
           />
         </Section>
         <Section>

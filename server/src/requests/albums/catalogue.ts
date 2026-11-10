@@ -32,7 +32,7 @@ const ART_LIMIT_MS = 5_000;
 const LEAST_SCORE = 90;
 const MOST_ROWS = 5;
 
-export interface AlbumArt {
+export interface AlbumCover {
   type: string;
   bytes: Uint8Array;
 }
@@ -41,7 +41,7 @@ export interface AlbumCatalogue {
   /** The release groups this search finds; none past the limit, on any failure, or once `gone` aborts. */
   search(q: string, gone: AbortSignal): Promise<ReleaseGroupHit[]>;
   /** A found album's front cover; null when there is none to give. */
-  art(mbid: string, gone: AbortSignal): Promise<AlbumArt | null>;
+  art(mbid: string, gone: AbortSignal): Promise<AlbumCover | null>;
   /** Whether covers can be asked for at all. */
   hasArt: boolean;
 }

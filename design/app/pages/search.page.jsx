@@ -142,6 +142,46 @@ export default function Search({ data }) {
               </Each>
             </Each>
             <ExpanderRow label={data.outside.moreReleases} />
+            <Each of={data.outside.albums} as="album">
+              <Each of={album.asking} as="asking">
+                <ResultRow
+                  title={asking.title}
+                  meta={asking.meta}
+                  image={asking.image}
+                  status={asking.status}
+                  tone={asking.tone}
+                  divider
+                  trailing={
+                    <Button variant="secondary" size="sm" onClick={<Request ref={asking.ref} />}>
+                      {asking.action}
+                    </Button>
+                  }
+                />
+              </Each>
+              <Each of={album.standing} as="standing">
+                <ResultRow
+                  title={standing.title}
+                  meta={standing.meta}
+                  image={standing.image}
+                  status={standing.status}
+                  tone={standing.tone}
+                  onClick={<Open page="requests" />}
+                  divider
+                />
+              </Each>
+              <Each of={album.arrived} as="arrived">
+                <ResultRow
+                  title={arrived.title}
+                  meta={arrived.meta}
+                  image={arrived.image}
+                  status={arrived.status}
+                  tone={arrived.tone}
+                  onClick={<Open page="album" ref={arrived.ref} />}
+                  onAction={<Play ref={arrived.ref} queue="music" />}
+                  divider
+                />
+              </Each>
+            </Each>
             <Each of={data.outside.books} as="book">
               <Each of={book.asking} as="asking">
                 <ResultRow

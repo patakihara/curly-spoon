@@ -193,6 +193,50 @@
       }
     ],
     "moreReleases": "More releases of Salt",
+    "albums": [
+      {
+        "asking": [
+          {
+            "title": "Salt Flats",
+            "ref": "salt-flats",
+            "meta": "Album · Deep Inertia · 2022",
+            "image": "/art/tears-of-ice.jpg",
+            "status": null,
+            "tone": null,
+            "action": "Add to library"
+          }
+        ],
+        "standing": [],
+        "arrived": []
+      },
+      {
+        "asking": [],
+        "standing": [
+          {
+            "title": "Salt Lines",
+            "meta": "Album · Soul Vertex · 2020",
+            "image": "/art/salt-and-static.jpg",
+            "status": "Downloading · 40%",
+            "tone": "progress"
+          }
+        ],
+        "arrived": []
+      },
+      {
+        "asking": [],
+        "standing": [],
+        "arrived": [
+          {
+            "title": "Salt Year",
+            "ref": "salt-year",
+            "meta": "Album · Fleeting Verses · 2019",
+            "image": "/art/fragments-of-the-wind.jpg",
+            "status": "In library",
+            "tone": "library"
+          }
+        ]
+      }
+    ],
     "books": [
       {
         "asking": [],
