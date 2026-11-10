@@ -3,7 +3,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it, vi } from 'vitest';
 import { type Recording, recordingSchema } from '../../adapters/http/recording.js';
-import { replayFetch } from '../../adapters/http/replay.js';
+import { replayFetch, standInsBeside } from '../../adapters/http/replay.js';
 import type { Clock } from '../../adapters/musicbrainz/client.js';
 import { ProwlarrClient, type ProwlarrRelease } from '../../adapters/prowlarr/client.js';
 import { openDatabase } from '../../store/connection.js';
@@ -57,6 +57,9 @@ function timedProwlarr(clock: ReturnType<typeof fakeClock>, takes: number) {
   return {
     began,
     musicIndexers: vi.fn(async () => [1, 2]),
+    resolve: vi.fn(async (): Promise<never> => {
+      throw new Error('no link is asked here');
+    }),
     search: vi.fn(async (query: string) => {
       began.push(clock.now());
       clock.advance(takes);
@@ -165,5 +168,54 @@ describe('[M3.albums] how the album search asks Prowlarr', () => {
         if (magnet !== undefined) expect(magnet).toMatch(/^magnet:\?xt=urn:btih:[0-9a-f]{40}$/);
       }
     }
+  });
+
+  it('[M3.albums] a link is asked once a day: a torrent gives its files and web seed, a magnet its hash', async () => {
+    const db = openDatabase(':memory:');
+    const asked: string[] = [];
+    const replay = replayFetch([recording('torrent-ghosts-ia'), recording('link-magnet-music')], {
+      readBytes: standInsBeside(join(recordings, '../..')),
+    });
+    const prowlarr = new ProwlarrClient({
+      baseUrl: 'http://upstream.invalid',
+      apiKey: '<token>',
+      fetch: (url, init) => {
+        asked.push(new URL(url).pathname);
+        return replay(url, init);
+      },
+    });
+    const cache = new ProwlarrCache({ db, prowlarr, clock: fakeClock() });
+    const torrent = '/4/download?link=link-723c0f17e972';
+    const magnet = '/1/download?link=link-c10af1640615';
+    expect(cache.keptLink(torrent)).toBeUndefined();
+    const files = await cache.askLink(torrent);
+    expect(files).toMatchObject({
+      hash: '802668fa8d65fca85b7fa3335e5723a3543d4778',
+      webSeed: true,
+    });
+    expect(files!.files!.filter((file) => /\.flac$/.test(file.path))).toHaveLength(36);
+    expect(await cache.askLink(magnet)).toEqual({
+      hash: '6941a469928aa388eff7d25ffc9cfdd100fa9a7c',
+      files: null,
+      webSeed: false,
+    });
+    expect(cache.keptLink(torrent)).toEqual(files);
+    expect(asked).toHaveLength(2);
+    const kept = db.prepare<[], { answer: string }>('SELECT answer FROM prowlarr_links').all();
+    expect(JSON.stringify(kept)).not.toMatch(/apikey|<token>|https?:|upstream\.invalid/i);
+  });
+
+  it('[M3.albums] a link that gives nothing is kept as nothing, and not asked again', async () => {
+    const db = openDatabase(':memory:');
+    const prowlarr = {
+      musicIndexers: vi.fn(async () => [1]),
+      search: vi.fn(async () => []),
+      resolve: vi.fn(async (): Promise<never> => {
+        throw new StepUnavailable('prowlarr: GET /2/download: no answer in 30000 ms');
+      }),
+    };
+    const cache = new ProwlarrCache({ db, prowlarr, clock: fakeClock() });
+    expect(await cache.askLink('/2/download?link=a')).toBeNull();
+    expect(cache.keptLink('/2/download?link=a')).toBeNull();
   });
 });

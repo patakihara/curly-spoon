@@ -1040,6 +1040,22 @@ export const migrations: readonly Migration[] = [
       `);
     },
   },
+  {
+    id: 32,
+    name: 'prowlarr_links',
+    up: (db) => {
+      // What a release's link answered when asked before any download, for a day, beside the
+      // searches: link is its path and query with no key; answer is JSON, the info hash, the
+      // torrent's files and whether it names a web seed, or null for a link that gave nothing.
+      db.exec(`
+        CREATE TABLE prowlarr_links (
+          link   TEXT PRIMARY KEY,
+          at     INTEGER NOT NULL,
+          answer TEXT NOT NULL
+        );
+      `);
+    },
+  },
 ];
 
 export function runMigrations(
