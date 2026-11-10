@@ -12,7 +12,8 @@
  *    `folder`, `front`), cloned, else the Cover Art Archive's release front, else its group's.
  * 4. **Report.** One `POST /Library/Media/Updated` names every placed file `Created`, as Jellyfin's
  *    own folder monitor would; never a library scan. Until Jellyfin's folder walk lists every track
- *    the import is `waiting`; then the album goes into the index and the request names it.
+ *    the import is `waiting`; then the album goes into the index.
+ * 5. **Replace kept songs** of the album (replace.ts), and the request names the album.
  *
  * Folders made and paths placed are noted on the request's handle before each is made, and the
  * placing as a whole once it is done, so a repeat of the key finishes what a try cut short and
@@ -53,6 +54,7 @@ import { type Clone, cloned, reflinkClone } from './clone.js';
 import type { AlbumEditions, Edition } from './editions.js';
 import { checkedSource, downloadedTracks, matchEdition } from './match.js';
 import { type AlbumTrackFile, type PlacedAlbum, placeAlbum } from './place.js';
+import { type JellyfinPerson, Replacing, replaceKept } from './replace.js';
 import { AlbumRefused } from './refused.js';
 
 /** The folder beside Music where each import key stages its files. */
@@ -71,8 +73,16 @@ export interface AlbumImportDeps {
   coverArt: Pick<CoverArtClient, 'releaseFront' | 'groupFront'> | null;
   jellyfin: Pick<
     JellyfinClient,
-    'musicLibrary' | 'reportCreated' | 'folderItems' | 'findAlbum' | 'getAlbumTracks'
+    | 'musicLibrary'
+    | 'reportCreated'
+    | 'reportDeleted'
+    | 'folderItems'
+    | 'findAlbum'
+    | 'getAlbumTracks'
+    | 'userIds'
   >;
+  /** Everyone linked on Jellyfin, each with a client acting as them, for the kept songs replaced. */
+  people: () => JellyfinPerson[];
   /** The clone into staging; only a test passes its own. */
   clone?: Clone;
   now: () => number;
@@ -95,6 +105,8 @@ const AlbumHandle = z
     placed: placedSchema.optional(),
     /** The album's folders, once the placing is done. */
     folders: z.object({ artist: z.string(), album: z.string() }).optional(),
+    /** How replacing the kept songs stands (replace.ts). */
+    replacing: Replacing.optional(),
   })
   .passthrough();
 type AlbumHandle = z.infer<typeof AlbumHandle>;
@@ -294,6 +306,17 @@ export function albumImport(deps: AlbumImportDeps): MediumSteps['import'] {
   return async (request, key, signal): Promise<ImportOutcome> => {
     const handle = AlbumHandle.parse(request.handle);
     const music = await musicLibrary();
+    const pathOf = (relPath: string) => posix.join(music.locations[0]!, relPath).normalize('NFC');
+    const replace = replaceKept({
+      db: deps.db,
+      musicDir,
+      jellyfinPath: pathOf,
+      libraryId: music.id,
+      jellyfin: deps.jellyfin,
+      people: deps.people,
+      now: deps.now,
+      log: deps.log,
+    });
     let { placed, folders } = handle;
     if (placed === undefined || folders === undefined) {
       const done = await placeOnce(request, handle, key, signal);
@@ -301,7 +324,6 @@ export function albumImport(deps: AlbumImportDeps): MediumSteps['import'] {
       ({ placed, folders } = done);
     }
 
-    const pathOf = (relPath: string) => posix.join(music.locations[0]!, relPath).normalize('NFC');
     const unreported = placed.ours.map(pathOf).filter((path) => !reported.has(path));
     if (unreported.length > 0) {
       await jellyfin(() => deps.jellyfin.reportCreated(unreported));
@@ -318,6 +340,13 @@ export function albumImport(deps: AlbumImportDeps): MediumSteps['import'] {
     await jellyfin(() =>
       indexOneJellyfinAlbum(deps.db, deps.jellyfin, albumId, music.id, deps.now()),
     );
+    const replaced = await replace({
+      requestId: request.id,
+      releaseGroupId: handle.releaseGroupId,
+      albumId,
+      trackIds: tracks.map((track) => track!.Id),
+    });
+    if (replaced === 'waiting') return { kind: 'waiting' };
     return { kind: 'arrived', ref: { source: 'jellyfin', id: albumId } };
   };
 }

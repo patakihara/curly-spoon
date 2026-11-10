@@ -159,3 +159,21 @@ export function readToken(db: Db, key: Buffer, userId: string, service: Service)
   if (row?.token_ciphertext == null) return null;
   return decryptSecret(row.token_ciphertext, key, aad(userId, service));
 }
+
+/** Every person linked on this service, with the upstream account they are linked to. */
+export function linkedAccounts(
+  db: Db,
+  service: Service,
+): { userId: string; upstreamUserId: string }[] {
+  const rows = db
+    .prepare(
+      `SELECT user_id, upstream_user_id FROM upstream_links
+       WHERE service = ? AND state = 'linked' AND upstream_user_id IS NOT NULL
+       ORDER BY user_id`,
+    )
+    .all(service);
+  return z
+    .array(z.object({ user_id: z.string(), upstream_user_id: z.string() }))
+    .parse(rows)
+    .map((row) => ({ userId: row.user_id, upstreamUserId: row.upstream_user_id }));
+}

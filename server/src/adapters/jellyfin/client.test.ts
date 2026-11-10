@@ -18,6 +18,10 @@ function fake(answer: unknown) {
 }
 
 const album = { Id: 'a1', Name: 'An Album', Type: 'MusicAlbum' };
+const recorded = (call: string) =>
+  recordingSchema.parse(
+    JSON.parse(readFileSync(new URL(`./recordings/${call}.json`, import.meta.url), 'utf8')),
+  );
 
 describe('the Jellyfin client', () => {
   it('[M3.requests/d] reads a track by id with the API key, which has no user, on the recording', async () => {
@@ -185,6 +189,75 @@ describe('the Jellyfin client', () => {
     const jf = new JellyfinClient({ baseUrl: 'http://upstream.invalid', token: 'k', fetch });
     expect(await jf.findAdministratorId()).toBe('u2');
     expect(new URL(sent[0]?.url ?? '').pathname).toBe('/Users');
+  });
+
+  it('[M3.albums/c] every user’s id, on the recorded user list', async () => {
+    const users = recorded('users-list');
+    const jf = new JellyfinClient({
+      baseUrl: 'http://upstream.invalid',
+      token: '<token>',
+      fetch: replayFetch([users]),
+    });
+    const ids = await jf.userIds();
+    expect(ids).toEqual((users.response.body as { json: { Id: string }[] }).json.map((u) => u.Id));
+    expect(ids.length).toBeGreaterThan(1);
+  });
+
+  it('[M3.albums/c] files and folders deleted are reported on the recorded route, as Deleted', async () => {
+    const updated = recorded('media-updated');
+    const bodies: unknown[] = [];
+    const replay = replayFetch([updated]);
+    const jf = new JellyfinClient({
+      baseUrl: 'http://upstream.invalid',
+      token: '<token>',
+      fetch: async (url, init) => {
+        bodies.push(JSON.parse(String(init?.body)));
+        return replay(url, init);
+      },
+    });
+    await jf.reportDeleted(['/data/media/Music/A/B/1.opus', '/data/media/Music/A/B']);
+    expect(bodies).toEqual([
+      {
+        Updates: [
+          { Path: '/data/media/Music/A/B/1.opus', UpdateType: 'Deleted' },
+          { Path: '/data/media/Music/A/B', UpdateType: 'Deleted' },
+        ],
+      },
+    ]);
+  });
+
+  it('[M3.albums/c] a person’s state is set with the body the progress recorder’s revert sends, and its answer parsed', async () => {
+    const answer = recorded('jf-userdata').response.body as { json: Record<string, unknown> };
+    const sent: { url: string; method?: string; body: unknown }[] = [];
+    const jf = new JellyfinClient({
+      baseUrl: 'http://upstream.invalid',
+      token: '<token>',
+      fetch: async (url, init) => {
+        sent.push({ url, method: init?.method, body: JSON.parse(String(init?.body)) });
+        return Response.json(answer.json);
+      },
+    });
+    const saved = await jf.setUserData('i1', {
+      PlaybackPositionTicks: 0,
+      PlayCount: 3,
+      Played: true,
+      IsFavorite: true,
+      LastPlayedDate: '2026-11-09T10:00:00.0000000Z',
+    });
+    expect(saved.ItemId).toBe(answer.json.ItemId);
+    expect(sent).toEqual([
+      {
+        url: 'http://upstream.invalid/UserItems/i1/UserData',
+        method: 'POST',
+        body: {
+          PlaybackPositionTicks: 0,
+          PlayCount: 3,
+          Played: true,
+          IsFavorite: true,
+          LastPlayedDate: '2026-11-09T10:00:00.0000000Z',
+        },
+      },
+    ]);
   });
 
   it('the server version is read without the key', async () => {

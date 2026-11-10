@@ -220,6 +220,7 @@ function importDeps(fetch: FetchLike, more: Partial<AlbumImportDeps> = {}): Albu
       fetch,
       serverKey: true,
     }),
+    people: () => [],
     clone: copying,
     now: () => clock,
     log: { error: (_details, message) => errors.push(message) },

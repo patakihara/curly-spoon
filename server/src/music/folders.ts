@@ -130,8 +130,11 @@ export interface AlbumFolders {
   album: string;
 }
 
-/** Where an album's tracks go: the artist's and the album's folders already there, else new names. */
-export async function albumFolders(musicDir: string, place: AlbumPlace): Promise<AlbumFolders> {
+/** The artist's folder, and every folder of the album already there under it, in name order. */
+async function foldersThere(
+  musicDir: string,
+  place: AlbumPlace,
+): Promise<{ artist: string; albums: string[] }> {
   const artist = await artistFolder(musicDir, place.artist);
   const entries = await readdir(join(musicDir, artist), { withFileTypes: true }).catch(
     (error: NodeJS.ErrnoException) => {
@@ -143,7 +146,22 @@ export async function albumFolders(musicDir: string, place: AlbumPlace): Promise
     .filter((entry) => entry.isDirectory() && isAlbumFolder(entry.name, place))
     .map(({ name }) => name)
     .sort();
+  return { artist, albums };
+}
+
+/** Where an album's tracks go: the artist's and the album's folders already there, else new names. */
+export async function albumFolders(musicDir: string, place: AlbumPlace): Promise<AlbumFolders> {
+  const { artist, albums } = await foldersThere(musicDir, place);
   return { artist, album: albums.includes(place.album) ? place.album : (albums[0] ?? place.album) };
+}
+
+/** Every folder of the album already in Music, in any of the household's forms. */
+export async function everyAlbumFolder(
+  musicDir: string,
+  place: AlbumPlace,
+): Promise<AlbumFolders[]> {
+  const { artist, albums } = await foldersThere(musicDir, place);
+  return albums.map((album) => ({ artist, album }));
 }
 
 /** A file's track number and the titles its name may hold, or null for a name of no title. */
