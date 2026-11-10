@@ -7,7 +7,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { openDatabase } from '../../store/connection.js';
 import type { Edition } from './editions.js';
 import { albumFolder, fittingEdition, inFolder } from './fit.js';
-import { ghostsFiles, nineInchNailsPack, PACK, recordedEditions } from './testAlbums.js';
+import { ghostsFiles, nineInchNailsPack, PACK, recordedEditions } from './fixtures/albums.js';
 
 let slip: Edition[];
 let ghosts: Edition[];

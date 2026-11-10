@@ -10,7 +10,9 @@
  *   serial, newest first otherwise), or the other way round when that order is asked (`?sort`),
  *   undated and unnumbered episodes last either way, each with how far through the person is and whether they finished it, from their
  *   `GET /api/me` and what Auralis holds for them. The order asked is the page's alone: autoplay and every list keep the show's.
- * - An album's page: its tracks as the index holds them, in disc and track order.
+ * - An album's page: its tracks as the index holds them, in disc and track order, and while albums
+ *   can be requested, the request for its lossless copy when every track is a kept song
+ *   (`albums/catalogue.ts`).
  * - An episode's page: its show's title and art, its length and published date as the index
  *   holds them, how far through the person is and whether they finished it, from their
  *   `GET /api/me`, and its notes from its show's own answer.
@@ -38,6 +40,7 @@ import { Refusal, serve, serveStream, type StreamAnswer } from '../route.js';
 import type { Db } from '../store/connection.js';
 import type { Upstreams } from '../upstream/links.js';
 import { type AbsAccess, Reach, withHeld } from '../upstream/reach.js';
+import { albumRequestOf } from '../requests/albums/catalogue.js';
 import { PAGE_KINDS } from './art.js';
 import { signedIn } from './auth.js';
 import { entry } from './library.js';
@@ -135,7 +138,13 @@ function artAnswer(opened: UpstreamFile<ImageHeaders>): StreamAnswer {
 
 export function itemRoutes(
   app: FastifyInstance,
-  options: { db: Db; upstreams: UpstreamAccess | null; music?: Music | null },
+  options: {
+    db: Db;
+    upstreams: UpstreamAccess | null;
+    music?: Music | null;
+    /** Whether albums can be requested, so a kept-only album's page offers its lossless copy. */
+    albumRequests?: boolean;
+  },
 ): void {
   const { db, upstreams } = options;
   const reach = new Reach(db, upstreams);
@@ -197,19 +206,21 @@ export function itemRoutes(
       episodes: [],
       tracks: [],
       episode: { show: head.ref, description, publishedAt: row.publishedAt, finished },
+      request: null,
     };
   };
 
   serve(app, getItem, async (request, _reply, _body, { params, query }): Promise<ItemDetail> => {
     const item = await openable(request, params.ref);
     const { row } = item;
-    const none = { chapters: [], episodes: [], tracks: [] };
+    const none = { chapters: [], episodes: [], tracks: [], request: null };
     if (item.kind === 'album') {
       return {
         ...entry(row, 'album', null),
         duration: row.duration,
         ...none,
         tracks: tracks(db, row),
+        request: options.albumRequests === true ? albumRequestOf(db, row) : null,
       };
     }
     if (item.kind === 'show') {

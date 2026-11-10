@@ -10,6 +10,7 @@ import { createProxyTrust, type ProxyTrust } from './auth/proxy.js';
 import type { CookieSecure } from './config.js';
 import { answerFailure, refuseConnection } from './failures.js';
 import { scheduleJob } from './jobs/schedule.js';
+import type { AlbumCatalogue } from './requests/albums/catalogue.js';
 import type { BookCatalogue } from './requests/books/catalogue.js';
 import { RequestTurns, Wake } from './requests/job.js';
 import type { StepsRegistry } from './requests/steps.js';
@@ -83,6 +84,8 @@ export interface BuildAppOptions {
   };
   /** What Search lists of the books the library lacks, while books can be requested. */
   bookCatalogue?: BookCatalogue;
+  /** What Search lists of the albums the library lacks, while albums can be requested. */
+  albumCatalogue?: AlbumCatalogue;
   /** How transcodes are held open and their segments waited for. */
   playback?: PlaybackOptions;
   /** Songs from outside the library. Null or absent, a streamed ref is not linked. */
@@ -247,7 +250,12 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     now: options.now ?? Date.now,
     ...(options.playedPageSize === undefined ? {} : { playedPageSize: options.playedPageSize }),
   });
-  itemRoutes(app, { db, upstreams, music: options.music ?? null });
+  itemRoutes(app, {
+    db,
+    upstreams,
+    music: options.music ?? null,
+    albumRequests: requestDeps.steps.has('album'),
+  });
   listRoutes(app, { db, upstreams, sessions, now: options.now ?? Date.now });
   feedRoutes(app, { db, upstreams, now: options.now ?? Date.now });
   const lyrics =
@@ -266,6 +274,9 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     // A row nothing could take the tap of is not listed.
     ...(options.bookCatalogue !== undefined && options.requests?.steps.has('book') === true
       ? { catalogue: options.bookCatalogue }
+      : {}),
+    ...(options.albumCatalogue !== undefined && options.requests?.steps.has('album') === true
+      ? { albumCatalogue: options.albumCatalogue }
       : {}),
   });
   settingsRoutes(app, { db, sessions, now: options.now ?? Date.now });

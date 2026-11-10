@@ -179,7 +179,7 @@ afterEach(async () => {
 async function server(
   karaMe = me,
   karaPlayed = [jf('jf-played-tracks')],
-  { household = true }: { household?: boolean } = {},
+  { household = true, albumSteps = false }: { household?: boolean; albumSteps?: boolean } = {},
 ) {
   const asked: string[] = [];
   const upstream = { down: false };
@@ -251,6 +251,18 @@ async function server(
         : {}),
     },
     playedPageSize: Number(jf('jf-played-tracks').request.query.Limit),
+    ...(albumSteps
+      ? {
+          requests: {
+            steps: stepsRegistry([standInSteps('album')]),
+            everyMs: 3_600_000,
+            notIndexedAfterMs: 60_000,
+            stepTimeoutMs: 0,
+            stallAfterMs: 60_000,
+            holdAfterMs: 60_000,
+          },
+        }
+      : {}),
   });
   apps.push(app);
   const list = async (medium: string, name = 'kara') => {
@@ -894,6 +906,7 @@ describe('[M1.shell] a book, show or album page, from the index and the personâ€
       chapters: fourFiles.media.chapters.map(({ title, start, end }) => ({ title, start, end })),
       episodes: [],
       tracks: [],
+      request: null,
     });
     expect(book.chapters).toHaveLength(4);
   });
@@ -977,6 +990,88 @@ describe('[M1.shell] a book, show or album page, from the index and the personâ€
     expect((await s.item(`abs:${show.id}?sort=title`)).status).toBe(400);
   });
 
+  /** Each of the album's tracks as a song kept from YouTube Music, matched to `group` where given. */
+  const keptAll = (s: Awaited<ReturnType<typeof server>>, group: (i: number) => string | null) =>
+    albumTracks(db, album.Id).forEach((track, i) => {
+      const youtubeMusicId = `keptTrack${String(i).padStart(2, '0')}`;
+      const ref: RequestRef = {
+        medium: 'song',
+        target: { title: track.title, creator: null, ids: { youtubeMusicId } },
+      };
+      const { request } = createRequest(db, s.person('kara'), ref, 0);
+      const releaseGroupId = group(i);
+      const match =
+        releaseGroupId === null
+          ? { source: 'YouTube Music', title: track.title, artist: 'A', artists: [], album: 'B' }
+          : {
+              source: 'MusicBrainz',
+              by: 'release',
+              title: track.title,
+              artist: 'A',
+              artists: [],
+              album: album.Name,
+              albumArtist: 'A',
+              albumArtists: [],
+              trackNumber: i + 1,
+              trackTotal: 2,
+              discNumber: 1,
+              discTotal: 1,
+              date: null,
+              originalDate: null,
+              recordingId: `recording-${i}`,
+              releaseTrackId: `track-${i}`,
+              releaseId: 'release',
+              releaseGroupId,
+              hasFrontCover: false,
+            };
+      saveRequest(
+        db,
+        request.id,
+        {
+          state: { status: 'inLibrary' },
+          release: {
+            id: youtubeMusicId,
+            title: track.title,
+            source: 'YouTube Music',
+            size: 1,
+            details: { youtubeMusicId, match },
+          },
+          result: { source: 'jellyfin', id: track.id },
+        },
+        0,
+      );
+    });
+  const GROUP = '5990b23f-6412-3eaf-989c-a4831f4f95f7';
+
+  it('[M3.albums] an album whose every track is a kept song offers the request for its release group', async () => {
+    await index(db);
+    const s = await server(undefined, undefined, { albumSteps: true });
+    keptAll(s, () => GROUP);
+
+    const page = await s.page(`jellyfin:${album.Id}`);
+
+    expect(page.request).toEqual({
+      medium: 'album',
+      target: {
+        title: album.Name,
+        creator: album.AlbumArtists[0]!.Name,
+        ids: { mbid: GROUP },
+      },
+    });
+  });
+
+  it('[M3.albums] any other album offers no request: one the household holds, songs kept by names alone, or albums off', async () => {
+    await index(db);
+    const on = await server(undefined, undefined, { albumSteps: true });
+    expect((await on.page(`jellyfin:${album.Id}`)).request).toBeNull();
+
+    keptAll(on, () => null);
+    expect((await on.page(`jellyfin:${album.Id}`)).request).toBeNull();
+
+    const off = await server();
+    expect((await off.page(`jellyfin:${album.Id}`)).request).toBeNull();
+  });
+
   it('[M1.shell] opens an album with its album artists and art, and its tracks in disc and track order', async () => {
     await index(db);
     const s = await server();
@@ -1048,6 +1143,7 @@ describe("[M1.shell] an episode's page, from the index, its show and the person'
         publishedAt: row.publishedAt,
         finished: true,
       },
+      request: null,
     });
     expect(s.asked).toEqual(['/api/me', `/api/items/${show.id}`]);
   });

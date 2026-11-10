@@ -293,6 +293,7 @@ describe('[M2.sorting] a show asked an order it does not know', () => {
           episodes: [],
           tracks: [],
           sort: 'newest',
+          request: null,
         };
         return url.pathname.startsWith('/api/items/')
           ? Response.json(show)

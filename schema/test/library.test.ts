@@ -33,6 +33,7 @@ const header = {
   progress: 0.25,
   duration: 46578,
   availability: owned,
+  request: null,
 };
 
 describe('availability', () => {
@@ -256,6 +257,22 @@ describe('an item page', () => {
       episode: { show, description: 'Notes', publishedAt: 1_760_000_000_000, finished: false },
     };
     expect(ItemDetail.parse(page)).toEqual(page);
+  });
+
+  it('[M3.albums] holds the request for an album’s lossless copy on an album page, and on no other', () => {
+    const request = {
+      medium: 'album',
+      target: {
+        title: 'The Slip',
+        creator: 'Nine Inch Nails',
+        ids: { mbid: '5990b23f-6412-3eaf-989c-a4831f4f95f7' },
+      },
+    };
+    const empty = { chapters: [], episodes: [], tracks: [] };
+    const page = { ref: album, kind: 'album', ...header, ...empty, request };
+    expect(ItemDetail.parse(page)).toEqual(page);
+    const onBook = { ref: book, kind: 'book', ...header, ...empty, request };
+    expect(ItemDetail.safeParse(onBook).success).toBe(false);
   });
 
   it('refuses an episode page without its show, and episode details on any other page', () => {

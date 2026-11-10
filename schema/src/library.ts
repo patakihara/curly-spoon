@@ -5,7 +5,7 @@
  * is one object with its kind, and the details only that kind has.
  */
 import { ArtUrl, MediaRef, MediaRefKey, PlaybackChapter } from './play.js';
-import { RequestStatus } from './requests.js';
+import { RequestRef, RequestStatus } from './requests.js';
 import { z } from './zod.js';
 
 /** A share of a whole, from 0 to 1: how far through an item, or a download. */
@@ -218,7 +218,9 @@ export type ItemEpisodeAbout = z.infer<typeof ItemEpisodeAbout>;
  * chapters, a show's episodes in the order asked (`sort`, which a show's page alone carries:
  * the show's own order unless the other was asked, the episodes then exactly reversed), or an
  * album's tracks. The other two lists are empty. An episode's page lists none and carries
- * `episode`; no other page does.
+ * `episode`; no other page does. `request` is what asks for an album's lossless copy, on an album
+ * whose every track is a song kept from YouTube Music by its MusicBrainz release group, while albums
+ * can be requested; null on every other page.
  */
 export const ItemDetail = z
   .object({
@@ -235,6 +237,7 @@ export const ItemDetail = z
     tracks: z.array(ItemTrack),
     episode: ItemEpisodeAbout.optional(),
     sort: EpisodeOrder.optional(),
+    request: RequestRef.nullable(),
   })
   .superRefine((value, ctx) => {
     const owner = { chapters: 'book', episodes: 'show', tracks: 'album' } as const;
@@ -245,6 +248,13 @@ export const ItemDetail = z
     }
     if ((value.kind === 'show') !== (value.sort !== undefined)) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['sort'], message: 'only a show has' });
+    }
+    if (value.request !== null && value.kind !== 'album') {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['request'],
+        message: 'only an album has',
+      });
     }
     if ((value.kind === 'episode') !== (value.episode !== undefined)) {
       ctx.addIssue({

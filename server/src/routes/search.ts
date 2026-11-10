@@ -9,7 +9,8 @@
  * Either answer also says whether the person has any request, as the page offers them from there.
  *
  * A search, never a suggestion, also lists the books the library lacks, from the catalogue, while
- * books can be requested. It waits for that source only up to the catalogue's limit, and whatever goes
+ * books can be requested, and the albums it lacks, from MusicBrainz, while albums can. It waits for
+ * each source only up to its catalogue's limit, and whatever goes
  * wrong there the library's results still answer. It lists the songs the library lacks the same way,
  * from YouTube Music, each playing straight away, and saying so when a keep the person is on is
  * under way; a kept song is the library's own track. While streaming is unavailable it lists none and
@@ -20,7 +21,9 @@ import {
   getSearch,
   getSearchSuggest,
   mediaRefKey,
+  searchAlbumArt,
   searchBookArt,
+  type SearchAlbum,
   type SearchSong,
   type SearchBook,
   type SearchKind,
@@ -29,6 +32,7 @@ import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { personalView } from '../library/personal.js';
 import { songRows } from '../music/catalogue.js';
 import type { Music } from '../music/index.js';
+import { albumRows, type AlbumCatalogue } from '../requests/albums/catalogue.js';
 import { bookRows, type BookCatalogue } from '../requests/books/catalogue.js';
 import { clientGone, Refusal, serve, serveStream } from '../route.js';
 import { librarySource } from '../search/library.js';
@@ -42,14 +46,20 @@ import { signedIn } from './auth.js';
 /** The kinds that name someone or a series, not an item. */
 const NAME_KINDS: readonly SearchKind[] = ['artist', 'author', 'series'];
 
-/** How a book row's cover is cached: a day, by the person's own client only. */
+/** How a book or album row's cover is cached: a day, by the person's own client only. */
 const ART_CACHE = 'private, max-age=86400';
 
 export function searchRoutes(
   app: FastifyInstance,
-  options: { db: Db; now: () => number; catalogue?: BookCatalogue; music?: Music | null },
+  options: {
+    db: Db;
+    now: () => number;
+    catalogue?: BookCatalogue;
+    albumCatalogue?: AlbumCatalogue;
+    music?: Music | null;
+  },
 ): void {
-  const { db, now, catalogue } = options;
+  const { db, now, catalogue, albumCatalogue } = options;
   const music = options.music ?? null;
   const sources: readonly SearchSource[] = [librarySource(db)];
 
@@ -66,6 +76,26 @@ export function searchRoutes(
       return bookRows(db, userId, await catalogue.search(q, gone));
     } catch (err) {
       request.log.warn({ err }, 'no book rows');
+      return [];
+    }
+  };
+
+  /** The rows for this search; none for a search of other kinds, or when anything goes wrong. */
+  const albums = async (
+    request: FastifyRequest,
+    q: string,
+    kinds: readonly SearchKind[] | undefined,
+    userId: string,
+    gone: AbortSignal,
+  ): Promise<SearchAlbum[]> => {
+    if (albumCatalogue === undefined || (kinds !== undefined && !kinds.includes('album'))) {
+      return [];
+    }
+    try {
+      const art = albumCatalogue.hasArt;
+      return albumRows(db, userId, await albumCatalogue.search(q, gone), { art });
+    } catch (err) {
+      request.log.warn({ err }, 'no album rows');
       return [];
     }
   };
@@ -101,9 +131,10 @@ export function searchRoutes(
     const user = signedIn(request);
     const gone = clientGone(reply);
     const asked = query.kinds === undefined ? { q: query.q } : { q: query.q, kinds: query.kinds };
-    const [lists, found, streamed] = await Promise.all([
+    const [lists, found, foundAlbums, streamed] = await Promise.all([
       Promise.all(sources.map((source) => source.search(asked, gone))),
       books(request, query.q, query.kinds, user.id, gone),
+      albums(request, query.q, query.kinds, user.id, gone),
       songs(request, query.q, query.kinds, user, gone),
     ]);
     // A recent search is a convenience: failing to keep one never costs the results.
@@ -121,6 +152,7 @@ export function searchRoutes(
       query: query.q,
       hasRequests: requestsListed(db, user.id).length > 0,
       books: found,
+      albums: foundAlbums,
       songs: streamed,
       streaming:
         music === null || music.state.available ? ('ok' as const) : ('unavailable' as const),
@@ -138,6 +170,21 @@ export function searchRoutes(
   serveStream(app, searchBookArt, async (request, { params, signal }) => {
     signedIn(request);
     const art = await catalogue?.art(params.asin, signal);
+    if (art === undefined || art === null) throw new Refusal(404, 'not_found');
+    return {
+      status: 200,
+      headers: {
+        'content-type': art.type,
+        'content-length': String(art.bytes.byteLength),
+        'cache-control': ART_CACHE,
+      },
+      body: new Blob([art.bytes]).stream(),
+    };
+  });
+
+  serveStream(app, searchAlbumArt, async (request, { params, signal }) => {
+    signedIn(request);
+    const art = await albumCatalogue?.art(params.mbid, signal);
     if (art === undefined || art === null) throw new Refusal(404, 'not_found');
     return {
       status: 200,

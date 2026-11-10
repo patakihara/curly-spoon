@@ -45,7 +45,7 @@ import { type MediumSteps, stepsRegistry } from '../steps.js';
 import { type Clone, reflinkClone } from './clone.js';
 import { ALBUM_STAGING, albumImport, type AlbumImportDeps } from './import.js';
 import { AlbumRefused } from './refused.js';
-import { recordedAlbumEditions } from './testAlbums.js';
+import { recordedAlbumEditions } from './fixtures/albums.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const adapters = join(here, '..', '..', 'adapters');

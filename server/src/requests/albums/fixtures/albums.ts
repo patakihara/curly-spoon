@@ -6,15 +6,15 @@
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { recordingSchema } from '../../adapters/http/recording.js';
-import { replayFetch } from '../../adapters/http/replay.js';
-import { MusicBrainzClient, MUSICBRAINZ_USER_AGENT } from '../../adapters/musicbrainz/client.js';
-import { ALBUM_GROUPS } from '../../adapters/record-musicbrainz.js';
-import type { Db } from '../../store/connection.js';
-import { type TorrentFile, torrentContents } from '../download/torrentFiles.js';
-import { AlbumEditions, type Edition } from './editions.js';
+import { recordingSchema } from '../../../adapters/http/recording.js';
+import { replayFetch } from '../../../adapters/http/replay.js';
+import { MusicBrainzClient, MUSICBRAINZ_USER_AGENT } from '../../../adapters/musicbrainz/client.js';
+import { ALBUM_GROUPS } from '../../../adapters/record-musicbrainz.js';
+import type { Db } from '../../../store/connection.js';
+import { type TorrentFile, torrentContents } from '../../download/torrentFiles.js';
+import { AlbumEditions, type Edition } from '../editions.js';
 
-const ADAPTERS = join(dirname(fileURLToPath(import.meta.url)), '../../adapters');
+const ADAPTERS = join(dirname(fileURLToPath(import.meta.url)), '../../../adapters');
 const recording = (call: string) =>
   recordingSchema.parse(
     JSON.parse(readFileSync(join(ADAPTERS, 'musicbrainz', 'recordings', `${call}.json`), 'utf8')),

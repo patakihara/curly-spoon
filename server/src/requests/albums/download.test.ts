@@ -25,7 +25,7 @@ import { type DownloadHandle, type Release, StepUnavailable, stepsRegistry } fro
 import type { TorrentFile } from '../download/torrentFiles.js';
 import { albumDownload, FIT_TAG, MUSIC_CATEGORY } from './download.js';
 import type { AlbumEditions, Edition } from './editions.js';
-import { ghostsFiles, nineInchNailsPack, PACK, recordedAlbumEditions } from './testAlbums.js';
+import { ghostsFiles, nineInchNailsPack, PACK, recordedAlbumEditions } from './fixtures/albums.js';
 
 const QBIT = join(dirname(fileURLToPath(import.meta.url)), '../../adapters/qbittorrent/recordings');
 const recorded = (call: string): Recording =>

@@ -48,6 +48,7 @@ describe('a search', () => {
       query: 'rumours',
       hasRequests: false,
       books: [],
+      albums: [],
       songs: [],
       streaming: 'ok',
       results: [
@@ -193,7 +194,14 @@ describe('a song outside the library', () => {
   });
 
   it('comes with whether streaming is up, in every answer', () => {
-    const answer = { query: 'a', results: [], books: [], songs: [song], hasRequests: false };
+    const answer = {
+      query: 'a',
+      results: [],
+      books: [],
+      albums: [],
+      songs: [song],
+      hasRequests: false,
+    };
     expect(SearchResults.parse({ ...answer, streaming: 'unavailable' }).streaming).toBe(
       'unavailable',
     );

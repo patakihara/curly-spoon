@@ -19,6 +19,7 @@ const detail = (over: Partial<ItemDetail>): ItemDetail =>
     chapters: [],
     episodes: [],
     tracks: [],
+    request: null,
     ...over,
   });
 

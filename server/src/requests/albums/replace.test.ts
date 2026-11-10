@@ -50,7 +50,7 @@ import type { SongMatch } from '../songs/match.js';
 import { songComments } from '../songs/tags.js';
 import { albumImport, type AlbumImportDeps } from './import.js';
 import { jellyfinPeople } from './replace.js';
-import { recordedAlbumEditions } from './testAlbums.js';
+import { recordedAlbumEditions } from './fixtures/albums.js';
 import { saveLink } from '../../store/upstreamLinks.js';
 
 const here = dirname(fileURLToPath(import.meta.url));

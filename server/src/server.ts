@@ -20,6 +20,9 @@ import { loadSecretKey } from './crypto/secretBox.js';
 import { startIndexJob } from './libraryIndex/start.js';
 import { lyricsService, startLyricsJob } from './lyrics/start.js';
 import { type Music, type MusicLog, ytMusic } from './music/index.js';
+import { albumSteps } from './requests/albums/index.js';
+import { jellyfinPeople } from './requests/albums/replace.js';
+import type { AlbumCatalogue } from './requests/albums/catalogue.js';
 import { bookSteps } from './requests/books/index.js';
 import { Wake } from './requests/job.js';
 import { songSteps } from './requests/songs/index.js';
@@ -30,8 +33,8 @@ import { readSecretFile } from './secretFile.js';
 import { type Db, openDatabase } from './store/connection.js';
 import { startSessionSweep } from './store/sessions.js';
 import { issueSetupCode } from './store/setupCode.js';
-import { hasAdmin } from './store/users.js';
-import { Linker, type Provisioner } from './upstream/links.js';
+import { getUserById, hasAdmin } from './store/users.js';
+import { Linker, type Provisioner, upstreamFor } from './upstream/links.js';
 
 export interface Server {
   /** Built and ready, not yet listening. */
@@ -72,10 +75,12 @@ export async function assembleServer(
   deps: {
     fetch: FetchLike;
     logger?: BuildAppOptions['logger'];
-    /** Steps of other media to request, as a harness brings; books and songs come from the configuration. */
+    /** Steps of other media to request, as a harness brings; books, albums and songs come from the configuration. */
     steps?: readonly MediumSteps[];
     /** What Search lists of the books the library lacks, in place of the configured one. */
     bookCatalogue?: BookCatalogue;
+    /** What Search lists of the albums the library lacks, in place of the configured one. */
+    albumCatalogue?: AlbumCatalogue;
     /** Songs from outside the library, in place of the configured extractor, as a harness brings. */
     music?: (log: MusicLog, db: Db) => { music: Music; stop: () => void | Promise<void> };
   },
@@ -136,6 +141,22 @@ export async function assembleServer(
     now: Date.now,
   });
 
+  // An album's import carries each person's favourites and plays onto its tracks, acting as them.
+  const upstreamConfig = { absUrl: config.abs?.url, jellyfinUrl: config.jellyfin?.url };
+  const jellyfinAs = (userId: string) => {
+    const user = getUserById(db, userId);
+    return user === null
+      ? null
+      : upstreamFor({ db, key: secretKey, config: upstreamConfig, fetch, linker }, user).jellyfin;
+  };
+  const albums = albumSteps(config, {
+    db,
+    fetch,
+    log: { error: (details, message) => app.log.error(details, message) },
+    now: Date.now,
+    people: () => jellyfinPeople(db, jellyfinAs),
+  });
+
   // Makes no upstream call at start, so a server with no network still starts.
   const musicLog: MusicLog = {
     warn: (details, message) => app.log.warn(details, message),
@@ -167,7 +188,7 @@ export async function assembleServer(
     linker,
     upstreams: {
       key: secretKey,
-      config: { absUrl: config.abs?.url, jellyfinUrl: config.jellyfin?.url },
+      config: upstreamConfig,
       fetch,
       linker,
       household: householdClients(config, fetch),
@@ -180,6 +201,7 @@ export async function assembleServer(
       steps: stepsRegistry([
         ...(deps.steps ?? []),
         ...('steps' in books ? [books.steps] : []),
+        ...('steps' in albums ? [albums.steps] : []),
         ...('steps' in songs ? [songs.steps] : []),
       ]),
       wake,
@@ -195,10 +217,16 @@ export async function assembleServer(
       : 'steps' in books
         ? { bookCatalogue: books.catalogue }
         : {}),
+    ...(deps.albumCatalogue !== undefined
+      ? { albumCatalogue: deps.albumCatalogue }
+      : 'steps' in albums
+        ? { albumCatalogue: albums.catalogue }
+        : {}),
     logger: deps.logger ?? true,
   });
 
   if ('off' in books) app.log.info({ missing: books.off }, 'Books cannot be requested');
+  if ('off' in albums) app.log.info({ missing: albums.off }, 'Albums cannot be requested');
   if ('off' in songs) app.log.info({ missing: songs.off }, 'Songs cannot be kept');
 
   if (!hasAdmin(db)) {

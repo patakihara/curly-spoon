@@ -155,7 +155,7 @@ const jellyfinCall = async <T>(call: () => Promise<T>): Promise<T> => {
 const fold = (text: string) => searchFold(text).trim();
 
 /** A song request's match and handle, or null for one that is not a kept song's. */
-function keptSong(request: StoredRequest) {
+export function keptSong(request: StoredRequest) {
   const details = SongDetails.safeParse(request.release?.details);
   if (!details.success) return null;
   const match = SongMatchSchema.safeParse(details.data.match);

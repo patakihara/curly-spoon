@@ -657,6 +657,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/search/albums/{mbid}/art": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The front cover of an album a search found, one the library lacks, from the Cover Art Archive */
+        get: operations["getSearchAlbumArt"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        /** The front cover of an album a search found, one the library lacks, from the Cover Art Archive */
+        head: operations["getSearchAlbumArtHead"];
+        patch?: never;
+        trace?: never;
+    };
     "/api/lyrics/{ref}": {
         parameters: {
             query?: never;
@@ -811,12 +829,34 @@ export interface components {
             from: components["schemas"]["PlayingFrom"];
             items: components["schemas"]["QueueItem"][];
         };
+        /** @enum {string} */
+        RequestMedium: "book" | "album" | "song" | "podcast";
+        RequestIds: {
+            asin?: string;
+            isbn?: string;
+            /** Format: uuid */
+            mbid?: string;
+            /** Format: uri */
+            feedUrl?: string;
+            youtubeMusicId?: string;
+        };
+        RequestTarget: {
+            title: string;
+            creator: string | null;
+            ids: components["schemas"]["RequestIds"];
+        };
+        RequestRef: {
+            medium: components["schemas"]["RequestMedium"];
+            target: components["schemas"]["RequestTarget"];
+        };
         SearchParent: {
             ref: components["schemas"]["MediaRef"];
             title: string;
         };
         /** @enum {string} */
         RequestStatus: "requested" | "searching" | "needsChoice" | "queued" | "downloading" | "importing" | "inLibrary" | "failed";
+        /** @enum {string} */
+        AlbumType: "album" | "ep" | "single" | "broadcast" | "other";
         /** @enum {string} */
         LyricsSource: "jellyfin" | "lrclib";
         /** @enum {string} */
@@ -985,8 +1025,6 @@ export interface components {
             title: string;
         };
         /** @enum {string} */
-        RequestMedium: "book" | "album" | "song" | "podcast";
-        /** @enum {string} */
         RequestVerb: "retry" | "cancel" | "choose" | "pickAnother";
         RequestCandidate: {
             id: string;
@@ -1007,24 +1045,6 @@ export interface components {
             reason: components["schemas"]["RequestFailure"] | null;
             verbs: components["schemas"]["RequestVerb"][];
             candidates: components["schemas"]["RequestCandidate"][];
-        };
-        RequestIds: {
-            asin?: string;
-            isbn?: string;
-            /** Format: uuid */
-            mbid?: string;
-            /** Format: uri */
-            feedUrl?: string;
-            youtubeMusicId?: string;
-        };
-        RequestTarget: {
-            title: string;
-            creator: string | null;
-            ids: components["schemas"]["RequestIds"];
-        };
-        RequestRef: {
-            medium: components["schemas"]["RequestMedium"];
-            target: components["schemas"]["RequestTarget"];
         };
         RequestList: {
             inFlight: components["schemas"]["RequestView"][];
@@ -1221,6 +1241,7 @@ export interface components {
             tracks: components["schemas"]["ItemTrack"][];
             episode?: components["schemas"]["ItemEpisodeAbout"];
             sort?: components["schemas"]["EpisodeOrder"];
+            request: components["schemas"]["RequestRef"] | null;
         };
         /** @enum {string} */
         ArtSize: "small" | "medium" | "large";
@@ -1261,6 +1282,18 @@ export interface components {
             progress: number | null;
             item: components["schemas"]["MediaRef"] | null;
         };
+        SearchAlbum: {
+            ref: components["schemas"]["RequestRef"];
+            title: string;
+            artist: string | null;
+            year: number | null;
+            type: components["schemas"]["AlbumType"] | null;
+            art: string | null;
+            status: components["schemas"]["RequestStatus"] | null;
+            progress: number | null;
+            item: components["schemas"]["MediaRef"] | null;
+            kept: number;
+        };
         SearchSong: {
             ref: components["schemas"]["MediaRef"];
             title: string;
@@ -1276,6 +1309,7 @@ export interface components {
             query: string;
             results: components["schemas"]["SearchResult"][];
             books: components["schemas"]["SearchBook"][];
+            albums: components["schemas"]["SearchAlbum"][];
             songs: components["schemas"]["SearchSong"][];
             streaming: components["schemas"]["StreamingState"];
             hasRequests: boolean;
@@ -3605,6 +3639,100 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description The image, as the catalogue holds it. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The request does not parse, or was refused. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No session. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Without the role this route needs, or sent from another site. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    getSearchAlbumArt: {
+        parameters: {
+            query?: {
+                size?: components["schemas"]["ArtSize"];
+            };
+            header?: never;
+            path: {
+                mbid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The image, as the archive holds it. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/*": string;
+                };
+            };
+            /** @description The request does not parse, or was refused. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description No session. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Without the role this route needs, or sent from another site. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getSearchAlbumArtHead: {
+        parameters: {
+            query?: {
+                size?: components["schemas"]["ArtSize"];
+            };
+            header?: never;
+            path: {
+                mbid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The image, as the archive holds it. */
             200: {
                 headers: {
                     [name: string]: unknown;
