@@ -72,6 +72,14 @@ describe('[M3.requests] the Requests page from GET /api/requests', () => {
     expect(data.failed[0]?.detail).toBe('The download stalled');
   });
 
+  it('[M3.albums] says a release whose files were not the album was not the album', () => {
+    const data = requestsData(
+      list([failed({ medium: 'album', reason: 'wrongRelease' })]),
+      frame.placeholder,
+    );
+    expect(data.failed[0]?.detail).toBe('The release was not this album');
+  });
+
   it('offers a failed row a retry and a cancel, and says why it failed', () => {
     const data = requestsData(list([failed()]), frame.placeholder);
     expect(data.inFlight).toEqual([]);

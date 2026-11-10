@@ -17,7 +17,8 @@
  *
  * Requests run on stand-in mediums (`standInMedia.ts`), since a real medium's download is never
  * recorded, and the job turns every second so a test sees them move. Search lists books from a
- * stand-in catalogue (`standInBooks.ts`) over the recorded Audible search.
+ * stand-in catalogue (`standInBooks.ts`) over the recorded Audible search, and albums from the real
+ * album catalogue over MusicBrainz's recorded searches (`standInAlbums.ts`).
  *
  * Nothing here ships: the image copies `server/src` without its tests and recordings, and never
  * this folder (`scripts/guards/image.test.mjs`).
@@ -53,6 +54,7 @@ import { topLevelOfKind } from '../src/libraryIndex/store.js';
 import { assembleServer } from '../src/server.js';
 import { openDatabase } from '../src/store/connection.js';
 import { s256 } from '../src/store/signIn.js';
+import { keepEveryTrack, standInAlbums } from './standInAlbums.js';
 import { type BookSource, standInBooks } from './standInBooks.js';
 import { standInMedia } from './standInMedia.js';
 import { type MusicSource, standInMusic } from './standInMusic.js';
@@ -78,6 +80,8 @@ export interface RecordedServerOptions {
   bookSource?: BookSource;
   /** How YouTube Music behaves. Default: there is none, as with no extractor named. */
   music?: MusicSource;
+  /** The recorded album as one whose every track is a kept song, so its page offers its copy. */
+  keptAlbum?: boolean;
 }
 
 export interface RecordedServer {
@@ -471,6 +475,11 @@ export async function recordedServer(options: RecordedServerOptions = {}): Promi
     jellyfin: { recordings: jellyfin, fetch: jellyfinFetch },
   });
   const multiFileId = call(abs, 'multi-play').request.path.split('/')[3] ?? '';
+  const albumId = call(jellyfin, 'jf-album').request.path.split('/')[2] ?? '';
+  if (options.keptAlbum === true) keepEveryTrack(database, { source: 'jellyfin', id: albumId });
+  const deepInertia = fileURLToPath(
+    new URL('../../web/public/art/deep-inertia.jpg', import.meta.url),
+  );
   const server = await assembleServer(config, {
     fetch: byOrigin({
       [SIGN_ON_ISSUER]: signOn.fetch,
@@ -485,12 +494,13 @@ export async function recordedServer(options: RecordedServerOptions = {}): Promi
       ADAPTERS,
       heldTitles(database),
     ),
+    albumCatalogue: standInAlbums(recordingsOf('musicbrainz'), deepInertia),
     ...(options.music === undefined
       ? {}
       : {
           music: standInMusic(options.music, {
             adapters: ADAPTERS,
-            art: fileURLToPath(new URL('../../web/public/art/deep-inertia.jpg', import.meta.url)),
+            art: deepInertia,
             dataDir: config.dataDir,
           }),
         }),
@@ -504,7 +514,6 @@ export async function recordedServer(options: RecordedServerOptions = {}): Promi
   const [showId = '', episodeId = ''] = call(abs, 'episode-play')
     .request.path.split('/')
     .filter((_, i) => i === 3 || i === 5);
-  const albumId = call(jellyfin, 'jf-album').request.path.split('/')[2] ?? '';
   const signOnHttp = signOnListener(signOn.authorize, signOnOrigin);
 
   return {

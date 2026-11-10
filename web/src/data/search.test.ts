@@ -1,4 +1,5 @@
 import {
+  type SearchAlbum,
   type SearchBook,
   type SearchResult,
   SearchResults,
@@ -833,5 +834,130 @@ describe('[M3.keep] keeping a song from YouTube Music', () => {
       fetch: async () => Response.json({ error: 'unauthorized' }, { status: 401 }),
     });
     await expect(searchVerb(api, 'ytmusic:lYBUbBu4W08', 'keep')).rejects.toBeInstanceOf(SignedOut);
+  });
+});
+
+describe('[M3.albums] an album the library lacks, in Search', () => {
+  const MBID = '5990b23f-6412-3eaf-989c-a4831f4f95f7';
+  const album = (over: Partial<SearchAlbum> = {}): SearchAlbum => ({
+    ref: {
+      medium: 'album',
+      target: { title: 'The Slip', creator: 'Nine Inch Nails', ids: { mbid: MBID } },
+    },
+    title: 'The Slip',
+    artist: 'Nine Inch Nails',
+    year: 2008,
+    type: 'album',
+    art: `/api/search/albums/${MBID}/art`,
+    status: null,
+    progress: null,
+    item: null,
+    kept: 0,
+    ...over,
+  });
+  const answered = (...albums: SearchAlbum[]) =>
+    SearchResults.parse({
+      query: 'the slip',
+      results: [],
+      books: [],
+      albums,
+      songs: [],
+      streaming: 'ok',
+      hasRequests: false,
+    });
+  const rows = (...albums: SearchAlbum[]) => searchData(answered(...albums), empty).outside.albums;
+
+  it('offers an album nobody has asked for as Add to library, with the request its string ref stands for', () => {
+    const [row] = rows(album());
+    expect(row?.standing).toEqual([]);
+    expect(row?.arrived).toEqual([]);
+    expect(row?.asking[0]).toMatchObject({
+      title: 'The Slip',
+      meta: 'Album · Nine Inch Nails · 2008',
+      status: null,
+      tone: null,
+      action: 'Add to library',
+    });
+    expect(row?.asking[0]?.image).toContain(`/api/search/albums/${MBID}/art`);
+    expect(requestOf(row?.asking[0]?.ref ?? '')).toEqual(album().ref);
+  });
+
+  it('names a kind other than an album, and says how many of its songs the person kept', () => {
+    expect(rows(album({ type: 'ep' }))[0]?.asking[0]?.meta).toBe('EP · Nine Inch Nails · 2008');
+    expect(rows(album({ type: 'single' }))[0]?.asking[0]?.meta).toBe(
+      'Single · Nine Inch Nails · 2008',
+    );
+    expect(rows(album({ kept: 1 }))[0]?.asking[0]?.meta).toBe(
+      'Album · Nine Inch Nails · 2008 · 1 song kept',
+    );
+    expect(rows(album({ kept: 3 }))[0]?.asking[0]?.meta).toBe(
+      'Album · Nine Inch Nails · 2008 · 3 songs kept',
+    );
+  });
+
+  it('leaves out what it does not know of an album', () => {
+    const [row] = rows(album({ artist: null, year: null, type: null, art: null }));
+    expect(row?.asking[0]?.meta).toBe('Album');
+    expect(row?.asking[0]?.image).toBe('');
+  });
+
+  it('draws a request on its way or failed as its status alone, leading to Requests', () => {
+    const say = (over: Partial<SearchAlbum>) => {
+      const [row] = rows(album(over));
+      expect(row?.asking).toEqual([]);
+      expect(row?.arrived).toEqual([]);
+      expect(Object.keys(row?.standing[0] ?? {})).not.toContain('action');
+      return [row?.standing[0]?.status, row?.standing[0]?.tone];
+    };
+    expect(say({ status: 'searching' })).toEqual(['Searching…', 'progress']);
+    expect(say({ status: 'needsChoice' })).toEqual(['Needs choice', 'request']);
+    expect(say({ status: 'downloading', progress: 0.4 })).toEqual([
+      'Downloading · 40%',
+      'progress',
+    ]);
+    expect(say({ status: 'failed' })).toEqual(['Failed', 'error']);
+  });
+
+  it('draws an album its request brought as In library, opening and playing the album it became', () => {
+    const [row] = rows(
+      album({ status: 'inLibrary', item: { source: 'jellyfin', id: 'al1' }, kept: 2 }),
+    );
+    expect(row?.asking).toEqual([]);
+    expect(row?.standing).toEqual([]);
+    expect(row?.arrived[0]).toMatchObject({
+      status: 'In library',
+      tone: 'library',
+      ref: 'jellyfin:al1',
+    });
+  });
+
+  it('says on its row that a tap did not go through, leaving the books alone', () => {
+    const answer = SearchResults.parse({ ...answered(album()), books: [] });
+    const data = searchData(answer, empty);
+    const said = searchRequestFailed(data, data.outside.albums[0]!.asking[0]!.ref);
+    expect(said.outside.albums[0]!.asking[0]).toMatchObject({
+      status: 'Request failed',
+      tone: 'error',
+      action: 'Add to library',
+    });
+    expect(said.errors).toEqual([]);
+  });
+
+  it('counts albums as found, and looks again while one is on its way', async () => {
+    const loaded = (...albums: SearchAlbum[]) =>
+      loadSearchPage(
+        createApiClient({
+          baseUrl: 'http://auralis.test',
+          fetch: async () => Response.json(answered(...albums)),
+        }),
+        { q: 'the slip' },
+        empty,
+      );
+    expect((await loaded(album())).found).toBe(true);
+    expect((await loaded(album())).moving).toBe(false);
+    expect((await loaded(album({ status: 'downloading', progress: 0.1 }))).moving).toBe(true);
+    expect((await loaded(album({ status: 'needsChoice' }))).moving).toBe(true);
+    expect((await loaded(album({ status: 'failed' }))).moving).toBe(false);
+    expect((await loaded(album({ status: 'inLibrary' }))).moving).toBe(false);
   });
 });
