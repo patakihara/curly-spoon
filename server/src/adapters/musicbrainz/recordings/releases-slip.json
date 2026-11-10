@@ -1,0 +1,1636 @@
+{
+  "upstream": "musicbrainz",
+  "upstreamVersion": "MusicBrainz web service 2",
+  "call": "releases-slip",
+  "request": {
+    "method": "GET",
+    "path": "/ws/2/release",
+    "query": {
+      "fmt": "json",
+      "inc": "recordings+media",
+      "limit": "100",
+      "offset": "0",
+      "release-group": "5990b23f-6412-3eaf-989c-a4831f4f95f7",
+      "status": "official"
+    },
+    "headers": {
+      "accept": "application/json",
+      "user-agent": "Auralis/0.0.0 ( https://github.com/patakihara/curly-spoon )"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "releases": [
+          {
+            "packaging-id": "119eba76-b343-3e02-a292-f0f00644bb9b",
+            "packaging": "None",
+            "release-events": [
+              {
+                "date": "2008-05-05",
+                "area": {
+                  "disambiguation": "",
+                  "name": "[Worldwide]",
+                  "type": null,
+                  "sort-name": "[Worldwide]",
+                  "id": "525d4e18-3d00-31b9-a58b-a146a916de8f",
+                  "type-id": null,
+                  "iso-3166-1-codes": [
+                    "XW"
+                  ]
+                }
+              }
+            ],
+            "status-id": "4e304316-386d-3409-af2e-78857eec5cfe",
+            "barcode": "",
+            "title": "The Slip",
+            "media": [
+              {
+                "format": "Digital Media",
+                "tracks": [
+                  {
+                    "number": "1",
+                    "recording": {
+                      "first-release-date": "2008-05-05",
+                      "id": "30f3f33e-8d0c-4e69-8539-cbd701d18f28",
+                      "disambiguation": "",
+                      "length": 85586,
+                      "video": false,
+                      "title": "999,999"
+                    },
+                    "id": "311f950d-9954-35ff-904c-636a2a06c276",
+                    "position": 1,
+                    "title": "999,999",
+                    "length": 85586
+                  },
+                  {
+                    "recording": {
+                      "video": false,
+                      "length": 236133,
+                      "disambiguation": "",
+                      "title": "1,000,000",
+                      "first-release-date": "2008-05-05",
+                      "id": "99244237-850b-4a93-904d-57305bcadb4e"
+                    },
+                    "number": "2",
+                    "position": 2,
+                    "id": "2b4fe5d8-cbb9-32f6-83c5-d60863bd0510",
+                    "length": 236133,
+                    "title": "1,000,000"
+                  },
+                  {
+                    "title": "Letting You",
+                    "length": 229560,
+                    "id": "1ec4ff2a-0af9-325b-bb75-afa00cb92299",
+                    "position": 3,
+                    "number": "3",
+                    "recording": {
+                      "id": "b4a88e68-f66e-4155-8ef4-9f9f46944767",
+                      "first-release-date": "2008-05-05",
+                      "title": "Letting You",
+                      "disambiguation": "",
+                      "video": false,
+                      "length": 229560
+                    }
+                  },
+                  {
+                    "id": "1a1ac5f0-ef6b-38df-ab01-decfe8a96b4c",
+                    "position": 4,
+                    "title": "Discipline",
+                    "length": 259200,
+                    "recording": {
+                      "title": "Discipline",
+                      "disambiguation": "album version, abrupt ending",
+                      "length": 259200,
+                      "video": false,
+                      "id": "a58a2b13-70b5-44c2-9fd5-67f93db17de7",
+                      "first-release-date": "2008-05-05"
+                    },
+                    "number": "4"
+                  },
+                  {
+                    "recording": {
+                      "disambiguation": "",
+                      "length": 285106,
+                      "video": false,
+                      "title": "Echoplex",
+                      "first-release-date": "2008-05-02",
+                      "id": "52646e3f-1fc0-4a1d-a089-08ac33a30973"
+                    },
+                    "number": "5",
+                    "position": 5,
+                    "id": "0efecb5c-86c2-325b-bfff-26d030c9b15a",
+                    "length": 285106,
+                    "title": "Echoplex"
+                  },
+                  {
+                    "recording": {
+                      "title": "Head Down",
+                      "video": false,
+                      "length": 295560,
+                      "disambiguation": "",
+                      "id": "b4f9917f-4514-4e3e-aea3-3f901a9c69a7",
+                      "first-release-date": "2008-05-05"
+                    },
+                    "number": "6",
+                    "position": 6,
+                    "id": "e049a2b3-daba-3864-87c9-95c1441bfcfb",
+                    "length": 295000,
+                    "title": "Head Down"
+                  },
+                  {
+                    "number": "7",
+                    "recording": {
+                      "first-release-date": "2008-05-05",
+                      "id": "d7d5eb38-bb10-4cd8-9542-f489e9f16e73",
+                      "video": false,
+                      "length": 209680,
+                      "disambiguation": "",
+                      "title": "Lights in the Sky"
+                    },
+                    "id": "5316cdae-bcd1-3564-bc30-0a1a0b40a056",
+                    "position": 7,
+                    "title": "Lights in the Sky",
+                    "length": 209680
+                  },
+                  {
+                    "number": "8",
+                    "recording": {
+                      "length": 453520,
+                      "video": false,
+                      "disambiguation": "",
+                      "title": "Corona Radiata",
+                      "first-release-date": "2008-05-05",
+                      "id": "3c55ef28-626b-4cb2-81a6-acc37b189a3f"
+                    },
+                    "title": "Corona Radiata",
+                    "length": 453520,
+                    "id": "f4a8f88d-eefa-352f-b2ec-87f02d5fc2cc",
+                    "position": 8
+                  },
+                  {
+                    "recording": {
+                      "length": 277813,
+                      "video": false,
+                      "disambiguation": "",
+                      "title": "The Four of Us Are Dying",
+                      "first-release-date": "2008-05-05",
+                      "id": "d7cbbdd6-96da-4da5-b01f-53eb72e73d16"
+                    },
+                    "number": "9",
+                    "title": "The Four of Us Are Dying",
+                    "length": 277813,
+                    "id": "310bfe6a-043e-32fc-8a46-acf6e27dc130",
+                    "position": 9
+                  },
+                  {
+                    "number": "10",
+                    "recording": {
+                      "first-release-date": "2008-05-05",
+                      "id": "9f06df64-a373-492e-9a23-6a14a3fde97e",
+                      "length": 299400,
+                      "video": false,
+                      "disambiguation": "",
+                      "title": "Demon Seed"
+                    },
+                    "title": "Demon Seed",
+                    "length": 298000,
+                    "id": "a97a0015-9cf6-30d7-97e3-f0f72756f77a",
+                    "position": 10
+                  }
+                ],
+                "title": "",
+                "track-offset": 0,
+                "track-count": 10,
+                "format-id": "907a28d9-b3b2-3ef6-89a8-7b18d91d4794",
+                "id": "c1dfc44a-8c57-3cf2-9b7f-9052f7dbb3cf",
+                "position": 1
+              }
+            ],
+            "disambiguation": "track specific artwork",
+            "country": "XW",
+            "date": "2008-05-05",
+            "asin": "B001CFOPMQ",
+            "status": "Official",
+            "text-representation": {
+              "script": "Latn",
+              "language": "eng"
+            },
+            "id": "12b57d46-a192-499e-a91f-7da66790a1c1",
+            "quality": "high",
+            "cover-art-archive": {
+              "back": false,
+              "darkened": false,
+              "front": true,
+              "count": 15,
+              "artwork": true
+            }
+          },
+          {
+            "cover-art-archive": {
+              "artwork": true,
+              "count": 1,
+              "back": false,
+              "darkened": false,
+              "front": true
+            },
+            "quality": "normal",
+            "id": "34b48e96-b1fa-4f5f-a95b-95d668bd956c",
+            "text-representation": {
+              "script": "Latn",
+              "language": "eng"
+            },
+            "asin": null,
+            "status": "Official",
+            "country": "XW",
+            "date": "2008-06-12",
+            "disambiguation": "",
+            "media": [
+              {
+                "tracks": [
+                  {
+                    "recording": {
+                      "title": "999,999",
+                      "disambiguation": "",
+                      "length": 85586,
+                      "video": false,
+                      "id": "30f3f33e-8d0c-4e69-8539-cbd701d18f28",
+                      "first-release-date": "2008-05-05"
+                    },
+                    "number": "1",
+                    "length": 85159,
+                    "title": "999,999",
+                    "position": 1,
+                    "id": "e08f1dac-2fc3-4384-ae1b-c988d808a655"
+                  },
+                  {
+                    "number": "2",
+                    "recording": {
+                      "id": "99244237-850b-4a93-904d-57305bcadb4e",
+                      "first-release-date": "2008-05-05",
+                      "title": "1,000,000",
+                      "length": 236133,
+                      "video": false,
+                      "disambiguation": ""
+                    },
+                    "title": "1,000,000",
+                    "length": 236197,
+                    "id": "77fb178a-1496-4566-9325-ea5d278bbde9",
+                    "position": 2
+                  },
+                  {
+                    "position": 3,
+                    "id": "9e994cff-68f5-44e6-bb21-dd1e223bb779",
+                    "length": 229510,
+                    "title": "Letting You",
+                    "recording": {
+                      "video": false,
+                      "length": 229560,
+                      "disambiguation": "",
+                      "title": "Letting You",
+                      "first-release-date": "2008-05-05",
+                      "id": "b4a88e68-f66e-4155-8ef4-9f9f46944767"
+                    },
+                    "number": "3"
+                  },
+                  {
+                    "position": 4,
+                    "id": "62bc9d58-9b42-49da-954f-09f9ddd6fb5f",
+                    "length": 259183,
+                    "title": "Discipline",
+                    "number": "4",
+                    "recording": {
+                      "first-release-date": "2008-05-05",
+                      "id": "a58a2b13-70b5-44c2-9fd5-67f93db17de7",
+                      "disambiguation": "album version, abrupt ending",
+                      "video": false,
+                      "length": 259200,
+                      "title": "Discipline"
+                    }
+                  },
+                  {
+                    "recording": {
+                      "disambiguation": "",
+                      "length": 285106,
+                      "video": false,
+                      "title": "Echoplex",
+                      "first-release-date": "2008-05-02",
+                      "id": "52646e3f-1fc0-4a1d-a089-08ac33a30973"
+                    },
+                    "number": "5",
+                    "length": 285238,
+                    "title": "Echoplex",
+                    "position": 5,
+                    "id": "a61feac9-c407-4b1e-8611-0c73f8768497"
+                  },
+                  {
+                    "recording": {
+                      "title": "Head Down",
+                      "length": 295560,
+                      "video": false,
+                      "disambiguation": "",
+                      "id": "b4f9917f-4514-4e3e-aea3-3f901a9c69a7",
+                      "first-release-date": "2008-05-05"
+                    },
+                    "number": "6",
+                    "id": "bdee816b-8f83-42df-beae-131a80bccc4a",
+                    "position": 6,
+                    "title": "Head Down",
+                    "length": 295459
+                  },
+                  {
+                    "title": "Lights in the Sky",
+                    "length": 209637,
+                    "id": "aa466363-96bf-46ec-9a7c-48a41d98a863",
+                    "position": 7,
+                    "number": "7",
+                    "recording": {
+                      "first-release-date": "2008-05-05",
+                      "id": "d7d5eb38-bb10-4cd8-9542-f489e9f16e73",
+                      "disambiguation": "",
+                      "length": 209680,
+                      "video": false,
+                      "title": "Lights in the Sky"
+                    }
+                  },
+                  {
+                    "id": "3a282d9f-9ece-4fb4-a610-156ab441e1e0",
+                    "position": 8,
+                    "title": "Corona Radiata",
+                    "length": 453698,
+                    "number": "8",
+                    "recording": {
+                      "title": "Corona Radiata",
+                      "length": 453520,
+                      "video": false,
+                      "disambiguation": "",
+                      "id": "3c55ef28-626b-4cb2-81a6-acc37b189a3f",
+                      "first-release-date": "2008-05-05"
+                    }
+                  },
+                  {
+                    "length": 277628,
+                    "title": "The Four of Us Are Dying",
+                    "position": 9,
+                    "id": "2f584195-0d68-4b01-8ea6-695043335434",
+                    "recording": {
+                      "title": "The Four of Us Are Dying",
+                      "length": 277813,
+                      "video": false,
+                      "disambiguation": "",
+                      "id": "d7cbbdd6-96da-4da5-b01f-53eb72e73d16",
+                      "first-release-date": "2008-05-05"
+                    },
+                    "number": "9"
+                  },
+                  {
+                    "position": 10,
+                    "id": "ab101f9b-87fd-4ba2-960a-944546d7e0e5",
+                    "length": 299408,
+                    "title": "Demon Seed",
+                    "number": "10",
+                    "recording": {
+                      "title": "Demon Seed",
+                      "video": false,
+                      "length": 299400,
+                      "disambiguation": "",
+                      "id": "9f06df64-a373-492e-9a23-6a14a3fde97e",
+                      "first-release-date": "2008-05-05"
+                    }
+                  }
+                ],
+                "format": "Digital Media",
+                "track-offset": 0,
+                "title": "",
+                "position": 1,
+                "track-count": 10,
+                "format-id": "907a28d9-b3b2-3ef6-89a8-7b18d91d4794",
+                "id": "a440dbfd-40ef-3f52-bd8e-6719078dd326"
+              }
+            ],
+            "barcode": "766929934627",
+            "title": "The Slip",
+            "status-id": "4e304316-386d-3409-af2e-78857eec5cfe",
+            "release-events": [
+              {
+                "area": {
+                  "name": "[Worldwide]",
+                  "disambiguation": "",
+                  "type": null,
+                  "sort-name": "[Worldwide]",
+                  "id": "525d4e18-3d00-31b9-a58b-a146a916de8f",
+                  "type-id": null,
+                  "iso-3166-1-codes": [
+                    "XW"
+                  ]
+                },
+                "date": "2008-06-12"
+              }
+            ],
+            "packaging": "None",
+            "packaging-id": "119eba76-b343-3e02-a292-f0f00644bb9b"
+          },
+          {
+            "release-events": [
+              {
+                "area": {
+                  "disambiguation": "",
+                  "name": "United States",
+                  "id": "489ce91b-6658-3307-9877-795b68554c98",
+                  "type-id": null,
+                  "sort-name": "United States",
+                  "type": null,
+                  "iso-3166-1-codes": [
+                    "US"
+                  ]
+                },
+                "date": "2008-07-22"
+              }
+            ],
+            "packaging-id": null,
+            "packaging": null,
+            "title": "The Slip",
+            "barcode": "766929934627",
+            "disambiguation": "limited edition",
+            "media": [
+              {
+                "format": "CD",
+                "tracks": [
+                  {
+                    "number": "1",
+                    "recording": {
+                      "first-release-date": "2008-05-05",
+                      "id": "30f3f33e-8d0c-4e69-8539-cbd701d18f28",
+                      "length": 85586,
+                      "video": false,
+                      "disambiguation": "",
+                      "title": "999,999"
+                    },
+                    "position": 1,
+                    "id": "00ac3ce3-98f5-38e1-bd74-ff4216edfbc8",
+                    "length": 85586,
+                    "title": "999,999"
+                  },
+                  {
+                    "position": 2,
+                    "id": "011306ec-390c-3c59-bd5d-274e126f72c2",
+                    "length": 236133,
+                    "title": "1,000,000",
+                    "recording": {
+                      "first-release-date": "2008-05-05",
+                      "id": "99244237-850b-4a93-904d-57305bcadb4e",
+                      "disambiguation": "",
+                      "length": 236133,
+                      "video": false,
+                      "title": "1,000,000"
+                    },
+                    "number": "2"
+                  },
+                  {
+                    "length": 229560,
+                    "title": "Letting You",
+                    "position": 3,
+                    "id": "6e3446e0-d6de-3f18-ae56-32181d77613b",
+                    "recording": {
+                      "title": "Letting You",
+                      "video": false,
+                      "length": 229560,
+                      "disambiguation": "",
+                      "id": "b4a88e68-f66e-4155-8ef4-9f9f46944767",
+                      "first-release-date": "2008-05-05"
+                    },
+                    "number": "3"
+                  },
+                  {
+                    "number": "4",
+                    "recording": {
+                      "disambiguation": "album version, abrupt ending",
+                      "video": false,
+                      "length": 259200,
+                      "title": "Discipline",
+                      "first-release-date": "2008-05-05",
+                      "id": "a58a2b13-70b5-44c2-9fd5-67f93db17de7"
+                    },
+                    "title": "Discipline",
+                    "length": 259200,
+                    "id": "290a9200-72d7-307d-916b-9434f901f200",
+                    "position": 4
+                  },
+                  {
+                    "number": "5",
+                    "recording": {
+                      "title": "Echoplex",
+                      "length": 285106,
+                      "video": false,
+                      "disambiguation": "",
+                      "id": "52646e3f-1fc0-4a1d-a089-08ac33a30973",
+                      "first-release-date": "2008-05-02"
+                    },
+                    "id": "49fb2478-a977-39b9-a6e8-db8fd10a954b",
+                    "position": 5,
+                    "title": "Echoplex",
+                    "length": 285106
+                  },
+                  {
+                    "recording": {
+                      "id": "b4f9917f-4514-4e3e-aea3-3f901a9c69a7",
+                      "first-release-date": "2008-05-05",
+                      "title": "Head Down",
+                      "video": false,
+                      "length": 295560,
+                      "disambiguation": ""
+                    },
+                    "number": "6",
+                    "id": "62eb9674-feb0-3c4f-87b5-12d3e803fe1d",
+                    "position": 6,
+                    "title": "Head Down",
+                    "length": 295560
+                  },
+                  {
+                    "recording": {
+                      "first-release-date": "2008-05-05",
+                      "id": "d7d5eb38-bb10-4cd8-9542-f489e9f16e73",
+                      "disambiguation": "",
+                      "length": 209680,
+                      "video": false,
+                      "title": "Lights in the Sky"
+                    },
+                    "number": "7",
+                    "id": "92e2a7af-a076-35bc-9b90-69115c48a671",
+                    "position": 7,
+                    "title": "Lights in the Sky",
+                    "length": 209680
+                  },
+                  {
+                    "recording": {
+                      "title": "Corona Radiata",
+                      "disambiguation": "",
+                      "video": false,
+                      "length": 453520,
+                      "id": "3c55ef28-626b-4cb2-81a6-acc37b189a3f",
+                      "first-release-date": "2008-05-05"
+                    },
+                    "number": "8",
+                    "position": 8,
+                    "id": "4940f25b-ba93-3dff-af68-5a5a4b8a93d3",
+                    "length": 453520,
+                    "title": "Corona Radiata"
+                  },
+                  {
+                    "recording": {
+                      "first-release-date": "2008-05-05",
+                      "id": "d7cbbdd6-96da-4da5-b01f-53eb72e73d16",
+                      "disambiguation": "",
+                      "length": 277813,
+                      "video": false,
+                      "title": "The Four of Us Are Dying"
+                    },
+                    "number": "9",
+                    "position": 9,
+                    "id": "b1db8b37-60d2-3955-a117-e9cb99ac7ca9",
+                    "length": 277813,
+                    "title": "The Four of Us Are Dying"
+                  },
+                  {
+                    "length": 299400,
+                    "title": "Demon Seed",
+                    "position": 10,
+                    "id": "ff362807-6bbb-35e2-9600-922d2b3f0441",
+                    "number": "10",
+                    "recording": {
+                      "title": "Demon Seed",
+                      "disambiguation": "",
+                      "length": 299400,
+                      "video": false,
+                      "id": "9f06df64-a373-492e-9a23-6a14a3fde97e",
+                      "first-release-date": "2008-05-05"
+                    }
+                  }
+                ],
+                "id": "f2263736-7533-3c35-af7a-6e4c388b16c0",
+                "format-id": "9712d52a-4509-3d4b-a1a2-67c88c643e31",
+                "track-count": 10,
+                "position": 1,
+                "title": "The Slip",
+                "track-offset": 0
+              },
+              {
+                "track-offset": 0,
+                "title": "Live From Rehearsals June 2008",
+                "position": 2,
+                "track-count": 5,
+                "id": "cfce3733-fc50-3814-9ec4-d384ed0a385f",
+                "format-id": "2875c583-4580-3a90-b723-ba1b39921e23",
+                "tracks": [
+                  {
+                    "number": "1",
+                    "recording": {
+                      "first-release-date": "2008-07-22",
+                      "id": "4c88081b-b172-4f42-9dd2-74a849888132",
+                      "disambiguation": "",
+                      "video": true,
+                      "length": 254000,
+                      "title": "1,000,000"
+                    },
+                    "id": "67a8a53e-e863-39d9-8ce3-335316996d35",
+                    "position": 1,
+                    "title": "1,000,000",
+                    "length": 254000
+                  },
+                  {
+                    "recording": {
+                      "length": 237000,
+                      "video": true,
+                      "disambiguation": "",
+                      "title": "Letting You",
+                      "first-release-date": "2008-07-22",
+                      "id": "58dd77a8-a1a3-4957-9e36-61599b21f39b"
+                    },
+                    "number": "2",
+                    "position": 2,
+                    "id": "ae493eac-e014-3ae0-be94-4fbedc2ed79d",
+                    "length": 237000,
+                    "title": "Letting You"
+                  },
+                  {
+                    "id": "f76b9f27-4b60-3492-afa5-8838d5a01feb",
+                    "position": 3,
+                    "title": "Discipline",
+                    "length": 252000,
+                    "recording": {
+                      "first-release-date": "2008-07-22",
+                      "id": "37b38ad0-da60-42e2-8491-efb71c319cf3",
+                      "video": true,
+                      "length": 252000,
+                      "disambiguation": "live, July 2008 rehearsals",
+                      "title": "Discipline"
+                    },
+                    "number": "3"
+                  },
+                  {
+                    "length": 290000,
+                    "title": "Echoplex",
+                    "position": 4,
+                    "id": "b27fa0bf-7d34-3d5b-9f1f-521a62688bfe",
+                    "recording": {
+                      "title": "Echoplex",
+                      "disambiguation": "",
+                      "length": 290000,
+                      "video": true,
+                      "id": "eaf9f68e-0328-4118-9dc5-497897339535",
+                      "first-release-date": "2008-07-22"
+                    },
+                    "number": "4"
+                  },
+                  {
+                    "id": "f2a191a4-179e-366a-bdb4-bed330025092",
+                    "position": 5,
+                    "title": "Head Down",
+                    "length": 244000,
+                    "recording": {
+                      "id": "72f048ef-bbb9-4a16-a46e-6592d3fb826a",
+                      "first-release-date": "2008-07-22",
+                      "title": "Head Down",
+                      "video": true,
+                      "length": 244000,
+                      "disambiguation": ""
+                    },
+                    "number": "5"
+                  }
+                ],
+                "format": "DVD"
+              }
+            ],
+            "status-id": "4e304316-386d-3409-af2e-78857eec5cfe",
+            "text-representation": {
+              "script": "Latn",
+              "language": "eng"
+            },
+            "asin": "B001B71NOI",
+            "status": "Official",
+            "country": "US",
+            "date": "2008-07-22",
+            "cover-art-archive": {
+              "count": 42,
+              "artwork": true,
+              "front": true,
+              "darkened": false,
+              "back": true
+            },
+            "quality": "high",
+            "id": "6842b8f3-b108-3c13-8998-6886e3b84300"
+          },
+          {
+            "cover-art-archive": {
+              "back": true,
+              "darkened": false,
+              "front": true,
+              "artwork": true,
+              "count": 10
+            },
+            "id": "9244e17d-5559-3836-810b-3c12999b6cfa",
+            "quality": "high",
+            "asin": "B001B71NPC",
+            "status": "Official",
+            "text-representation": {
+              "script": "Latn",
+              "language": "eng"
+            },
+            "country": "US",
+            "date": "2008-08-12",
+            "title": "The Slip",
+            "barcode": "766929934719",
+            "media": [
+              {
+                "format-id": "3e9080b0-5e6c-34ab-bd15-f526b6306a64",
+                "track-count": 10,
+                "id": "f8444fe4-b8f6-36b6-ae6d-c38fd6859db7",
+                "position": 1,
+                "title": "",
+                "track-offset": 0,
+                "format": "12\" Vinyl",
+                "tracks": [
+                  {
+                    "id": "d3915c4a-22e4-31d8-bb7e-2c29bf83ab13",
+                    "position": 1,
+                    "title": "999,999",
+                    "length": 85586,
+                    "recording": {
+                      "first-release-date": "2008-05-05",
+                      "id": "30f3f33e-8d0c-4e69-8539-cbd701d18f28",
+                      "length": 85586,
+                      "video": false,
+                      "disambiguation": "",
+                      "title": "999,999"
+                    },
+                    "number": "A1"
+                  },
+                  {
+                    "number": "A2",
+                    "recording": {
+                      "disambiguation": "",
+                      "length": 236133,
+                      "video": false,
+                      "title": "1,000,000",
+                      "first-release-date": "2008-05-05",
+                      "id": "99244237-850b-4a93-904d-57305bcadb4e"
+                    },
+                    "length": 236133,
+                    "title": "1,000,000",
+                    "position": 2,
+                    "id": "d6eb70de-3fb4-3468-b39e-a40b13d6a284"
+                  },
+                  {
+                    "position": 3,
+                    "id": "1cb4a1ef-bc4a-3660-8713-bf6dfd6310b7",
+                    "length": 229560,
+                    "title": "Letting You",
+                    "recording": {
+                      "id": "b4a88e68-f66e-4155-8ef4-9f9f46944767",
+                      "first-release-date": "2008-05-05",
+                      "title": "Letting You",
+                      "disambiguation": "",
+                      "length": 229560,
+                      "video": false
+                    },
+                    "number": "A3"
+                  },
+                  {
+                    "recording": {
+                      "video": false,
+                      "length": 259200,
+                      "disambiguation": "album version, abrupt ending",
+                      "title": "Discipline",
+                      "first-release-date": "2008-05-05",
+                      "id": "a58a2b13-70b5-44c2-9fd5-67f93db17de7"
+                    },
+                    "number": "A4",
+                    "length": 259200,
+                    "title": "Discipline",
+                    "position": 4,
+                    "id": "2c5918d9-3b41-3768-9af3-1054514f6e52"
+                  },
+                  {
+                    "length": 285106,
+                    "title": "Echoplex",
+                    "position": 5,
+                    "id": "21fc1755-2157-3bb8-a06a-8a42f86b18ce",
+                    "number": "A5",
+                    "recording": {
+                      "title": "Echoplex",
+                      "length": 285106,
+                      "video": false,
+                      "disambiguation": "",
+                      "id": "52646e3f-1fc0-4a1d-a089-08ac33a30973",
+                      "first-release-date": "2008-05-02"
+                    }
+                  },
+                  {
+                    "number": "B1",
+                    "recording": {
+                      "title": "Head Down",
+                      "disambiguation": "",
+                      "video": false,
+                      "length": 295560,
+                      "id": "b4f9917f-4514-4e3e-aea3-3f901a9c69a7",
+                      "first-release-date": "2008-05-05"
+                    },
+                    "title": "Head Down",
+                    "length": 295560,
+                    "id": "6b603152-cff9-368f-bde3-5c52957d2be6",
+                    "position": 6
+                  },
+                  {
+                    "number": "B2",
+                    "recording": {
+                      "title": "Lights in the Sky",
+                      "length": 209680,
+                      "video": false,
+                      "disambiguation": "",
+                      "id": "d7d5eb38-bb10-4cd8-9542-f489e9f16e73",
+                      "first-release-date": "2008-05-05"
+                    },
+                    "title": "Lights in the Sky",
+                    "length": 209680,
+                    "id": "704296dd-5070-3f19-a7d6-d8c9b68cdda0",
+                    "position": 7
+                  },
+                  {
+                    "number": "B3",
+                    "recording": {
+                      "id": "3c55ef28-626b-4cb2-81a6-acc37b189a3f",
+                      "first-release-date": "2008-05-05",
+                      "title": "Corona Radiata",
+                      "video": false,
+                      "length": 453520,
+                      "disambiguation": ""
+                    },
+                    "id": "cb86bfb1-4533-3385-90e3-3d516dd404db",
+                    "position": 8,
+                    "title": "Corona Radiata",
+                    "length": 453520
+                  },
+                  {
+                    "recording": {
+                      "title": "The Four of Us Are Dying",
+                      "length": 277813,
+                      "video": false,
+                      "disambiguation": "",
+                      "id": "d7cbbdd6-96da-4da5-b01f-53eb72e73d16",
+                      "first-release-date": "2008-05-05"
+                    },
+                    "number": "B4",
+                    "length": 277813,
+                    "title": "The Four of Us Are Dying",
+                    "position": 9,
+                    "id": "dea3889b-e59a-3b2a-b487-ae22fe3c1e67"
+                  },
+                  {
+                    "recording": {
+                      "disambiguation": "",
+                      "length": 299400,
+                      "video": false,
+                      "title": "Demon Seed",
+                      "first-release-date": "2008-05-05",
+                      "id": "9f06df64-a373-492e-9a23-6a14a3fde97e"
+                    },
+                    "number": "B5",
+                    "title": "Demon Seed",
+                    "length": 299400,
+                    "id": "37548021-1c61-3db4-b3f7-014c37e34218",
+                    "position": 10
+                  }
+                ]
+              }
+            ],
+            "disambiguation": "",
+            "status-id": "4e304316-386d-3409-af2e-78857eec5cfe",
+            "release-events": [
+              {
+                "area": {
+                  "disambiguation": "",
+                  "name": "United States",
+                  "type-id": null,
+                  "id": "489ce91b-6658-3307-9877-795b68554c98",
+                  "sort-name": "United States",
+                  "type": null,
+                  "iso-3166-1-codes": [
+                    "US"
+                  ]
+                },
+                "date": "2008-08-12"
+              }
+            ],
+            "packaging-id": "e724a489-a7e8-30a1-a17c-30dfd6831202",
+            "packaging": "Gatefold Cover"
+          },
+          {
+            "cover-art-archive": {
+              "back": false,
+              "front": false,
+              "darkened": false,
+              "artwork": false,
+              "count": 0
+            },
+            "id": "bca982fd-ab73-3c9f-ad07-9104a4f53a32",
+            "quality": "normal",
+            "status": "Official",
+            "asin": "B001CCHJ04",
+            "text-representation": {
+              "script": "Latn",
+              "language": "eng"
+            },
+            "date": "2008-09-10",
+            "country": "JP",
+            "disambiguation": "",
+            "media": [
+              {
+                "tracks": [
+                  {
+                    "length": 85586,
+                    "title": "999,999",
+                    "position": 1,
+                    "id": "955e92e2-0650-3c84-96bf-478ed7d2a1b3",
+                    "recording": {
+                      "first-release-date": "2008-05-05",
+                      "id": "30f3f33e-8d0c-4e69-8539-cbd701d18f28",
+                      "disambiguation": "",
+                      "video": false,
+                      "length": 85586,
+                      "title": "999,999"
+                    },
+                    "number": "1"
+                  },
+                  {
+                    "recording": {
+                      "title": "1,000,000",
+                      "disambiguation": "",
+                      "video": false,
+                      "length": 236133,
+                      "id": "99244237-850b-4a93-904d-57305bcadb4e",
+                      "first-release-date": "2008-05-05"
+                    },
+                    "number": "2",
+                    "position": 2,
+                    "id": "637ef293-3b30-3887-b8cf-aa0d3c679987",
+                    "length": 236133,
+                    "title": "1,000,000"
+                  },
+                  {
+                    "position": 3,
+                    "id": "996275bf-4ab7-36f2-970c-1816b17e334c",
+                    "length": 229560,
+                    "title": "Letting You",
+                    "recording": {
+                      "first-release-date": "2008-05-05",
+                      "id": "b4a88e68-f66e-4155-8ef4-9f9f46944767",
+                      "disambiguation": "",
+                      "video": false,
+                      "length": 229560,
+                      "title": "Letting You"
+                    },
+                    "number": "3"
+                  },
+                  {
+                    "length": 259200,
+                    "title": "Discipline",
+                    "position": 4,
+                    "id": "21bc4ead-8320-321b-a19a-f2aa87e0a975",
+                    "number": "4",
+                    "recording": {
+                      "video": false,
+                      "length": 259200,
+                      "disambiguation": "album version, abrupt ending",
+                      "title": "Discipline",
+                      "first-release-date": "2008-05-05",
+                      "id": "a58a2b13-70b5-44c2-9fd5-67f93db17de7"
+                    }
+                  },
+                  {
+                    "number": "5",
+                    "recording": {
+                      "id": "52646e3f-1fc0-4a1d-a089-08ac33a30973",
+                      "first-release-date": "2008-05-02",
+                      "title": "Echoplex",
+                      "video": false,
+                      "length": 285106,
+                      "disambiguation": ""
+                    },
+                    "length": 285106,
+                    "title": "Echoplex",
+                    "position": 5,
+                    "id": "9f6a208a-92a8-33f1-9f91-fdc6c5020f0b"
+                  },
+                  {
+                    "recording": {
+                      "title": "Head Down",
+                      "disambiguation": "",
+                      "video": false,
+                      "length": 295560,
+                      "id": "b4f9917f-4514-4e3e-aea3-3f901a9c69a7",
+                      "first-release-date": "2008-05-05"
+                    },
+                    "number": "6",
+                    "length": 295560,
+                    "title": "Head Down",
+                    "position": 6,
+                    "id": "41c7493b-292e-3841-9a39-a77ac2964e60"
+                  },
+                  {
+                    "recording": {
+                      "first-release-date": "2008-05-05",
+                      "id": "d7d5eb38-bb10-4cd8-9542-f489e9f16e73",
+                      "length": 209680,
+                      "video": false,
+                      "disambiguation": "",
+                      "title": "Lights in the Sky"
+                    },
+                    "number": "7",
+                    "title": "Lights in the Sky",
+                    "length": 209680,
+                    "id": "9dc747e9-cf96-3a30-88db-1eafff5bfe7b",
+                    "position": 7
+                  },
+                  {
+                    "number": "8",
+                    "recording": {
+                      "title": "Corona Radiata",
+                      "disambiguation": "",
+                      "length": 453520,
+                      "video": false,
+                      "id": "3c55ef28-626b-4cb2-81a6-acc37b189a3f",
+                      "first-release-date": "2008-05-05"
+                    },
+                    "length": 453520,
+                    "title": "Corona Radiata",
+                    "position": 8,
+                    "id": "63a3b9a5-81a6-3751-97fd-d568262e8786"
+                  },
+                  {
+                    "title": "The Four of Us Are Dying",
+                    "length": 277813,
+                    "id": "67b2f61b-f651-33c3-abf7-2ee86f4cbd96",
+                    "position": 9,
+                    "number": "9",
+                    "recording": {
+                      "first-release-date": "2008-05-05",
+                      "id": "d7cbbdd6-96da-4da5-b01f-53eb72e73d16",
+                      "length": 277813,
+                      "video": false,
+                      "disambiguation": "",
+                      "title": "The Four of Us Are Dying"
+                    }
+                  },
+                  {
+                    "position": 10,
+                    "id": "ed20d05a-b0be-33c0-9a84-b3c08a057bf1",
+                    "length": 299400,
+                    "title": "Demon Seed",
+                    "recording": {
+                      "first-release-date": "2008-05-05",
+                      "id": "9f06df64-a373-492e-9a23-6a14a3fde97e",
+                      "length": 299400,
+                      "video": false,
+                      "disambiguation": "",
+                      "title": "Demon Seed"
+                    },
+                    "number": "10"
+                  }
+                ],
+                "format": "CD",
+                "track-offset": 0,
+                "title": "",
+                "position": 1,
+                "track-count": 10,
+                "id": "b7254ab0-07aa-3f15-9977-7002ea56e353",
+                "format-id": "9712d52a-4509-3d4b-a1a2-67c88c643e31"
+              },
+              {
+                "format": "DVD",
+                "tracks": [
+                  {
+                    "title": "1,000,000",
+                    "length": 254000,
+                    "id": "f2f6d8a8-655e-3806-9fc7-9d5793e1be9f",
+                    "position": 1,
+                    "recording": {
+                      "id": "4c88081b-b172-4f42-9dd2-74a849888132",
+                      "first-release-date": "2008-07-22",
+                      "title": "1,000,000",
+                      "length": 254000,
+                      "video": true,
+                      "disambiguation": ""
+                    },
+                    "number": "1"
+                  },
+                  {
+                    "title": "Letting You",
+                    "length": 237000,
+                    "id": "5c28e0f0-a94d-3533-af22-5dcf2b0b1186",
+                    "position": 2,
+                    "number": "2",
+                    "recording": {
+                      "id": "58dd77a8-a1a3-4957-9e36-61599b21f39b",
+                      "first-release-date": "2008-07-22",
+                      "title": "Letting You",
+                      "disambiguation": "",
+                      "length": 237000,
+                      "video": true
+                    }
+                  },
+                  {
+                    "length": 252000,
+                    "title": "Discipline",
+                    "position": 3,
+                    "id": "4e8f80dc-410d-30c6-ba8f-2d5e17296d8f",
+                    "recording": {
+                      "title": "Discipline",
+                      "disambiguation": "live, July 2008 rehearsals",
+                      "length": 252000,
+                      "video": true,
+                      "id": "37b38ad0-da60-42e2-8491-efb71c319cf3",
+                      "first-release-date": "2008-07-22"
+                    },
+                    "number": "3"
+                  },
+                  {
+                    "number": "4",
+                    "recording": {
+                      "title": "Echoplex",
+                      "disambiguation": "",
+                      "length": 290000,
+                      "video": true,
+                      "id": "eaf9f68e-0328-4118-9dc5-497897339535",
+                      "first-release-date": "2008-07-22"
+                    },
+                    "position": 4,
+                    "id": "9bb481e4-8354-38c4-9066-1b96c9254af6",
+                    "length": 290000,
+                    "title": "Echoplex"
+                  },
+                  {
+                    "id": "9a0c7f95-100e-3912-8ef4-e9a5ac27f1fc",
+                    "position": 5,
+                    "title": "Head Down",
+                    "length": 244000,
+                    "recording": {
+                      "title": "Head Down",
+                      "video": true,
+                      "length": 244000,
+                      "disambiguation": "",
+                      "id": "72f048ef-bbb9-4a16-a46e-6592d3fb826a",
+                      "first-release-date": "2008-07-22"
+                    },
+                    "number": "5"
+                  }
+                ],
+                "title": "Video",
+                "track-offset": 0,
+                "track-count": 5,
+                "format-id": "2875c583-4580-3a90-b723-ba1b39921e23",
+                "id": "20aa2365-cfa1-34c1-9213-9e7b5cdfc0e5",
+                "position": 2
+              }
+            ],
+            "title": "The Slip",
+            "barcode": "4582214503431",
+            "status-id": "4e304316-386d-3409-af2e-78857eec5cfe",
+            "release-events": [
+              {
+                "area": {
+                  "iso-3166-1-codes": [
+                    "JP"
+                  ],
+                  "type": null,
+                  "sort-name": "Japan",
+                  "type-id": null,
+                  "id": "2db42837-c832-3c27-b4a3-08198f75693c",
+                  "name": "Japan",
+                  "disambiguation": ""
+                },
+                "date": "2008-09-10"
+              }
+            ],
+            "packaging": null,
+            "packaging-id": null
+          },
+          {
+            "status-id": "4e304316-386d-3409-af2e-78857eec5cfe",
+            "disambiguation": "",
+            "media": [
+              {
+                "tracks": [
+                  {
+                    "id": "e7312f71-d59c-4924-9685-b089c4c6bc30",
+                    "position": 1,
+                    "title": "999,999",
+                    "length": 85354,
+                    "number": "1",
+                    "recording": {
+                      "disambiguation": "",
+                      "video": false,
+                      "length": 85586,
+                      "title": "999,999",
+                      "first-release-date": "2008-05-05",
+                      "id": "30f3f33e-8d0c-4e69-8539-cbd701d18f28"
+                    }
+                  },
+                  {
+                    "number": "2",
+                    "recording": {
+                      "title": "1,000,000",
+                      "disambiguation": "",
+                      "video": false,
+                      "length": 236133,
+                      "id": "99244237-850b-4a93-904d-57305bcadb4e",
+                      "first-release-date": "2008-05-05"
+                    },
+                    "id": "5337ec1b-15d0-47f2-9657-9769496d6536",
+                    "position": 2,
+                    "title": "1,000,000",
+                    "length": 236181
+                  },
+                  {
+                    "number": "3",
+                    "recording": {
+                      "title": "Letting You",
+                      "length": 229560,
+                      "video": false,
+                      "disambiguation": "",
+                      "id": "b4a88e68-f66e-4155-8ef4-9f9f46944767",
+                      "first-release-date": "2008-05-05"
+                    },
+                    "length": 229524,
+                    "title": "Letting You",
+                    "position": 3,
+                    "id": "fe903f7f-b680-4459-9981-1cbe680007b6"
+                  },
+                  {
+                    "id": "45ea88ee-40c8-49a8-bb98-09cc41eb8473",
+                    "position": 4,
+                    "title": "Discipline",
+                    "length": 259181,
+                    "recording": {
+                      "title": "Discipline",
+                      "disambiguation": "album version, abrupt ending",
+                      "length": 259200,
+                      "video": false,
+                      "id": "a58a2b13-70b5-44c2-9fd5-67f93db17de7",
+                      "first-release-date": "2008-05-05"
+                    },
+                    "number": "4"
+                  },
+                  {
+                    "title": "Echoplex",
+                    "length": 283294,
+                    "id": "8690ca06-1501-48a1-ae34-297b9570fbbc",
+                    "position": 5,
+                    "number": "5",
+                    "recording": {
+                      "video": false,
+                      "length": 285106,
+                      "disambiguation": "",
+                      "title": "Echoplex",
+                      "first-release-date": "2008-05-02",
+                      "id": "52646e3f-1fc0-4a1d-a089-08ac33a30973"
+                    }
+                  },
+                  {
+                    "recording": {
+                      "id": "b4f9917f-4514-4e3e-aea3-3f901a9c69a7",
+                      "first-release-date": "2008-05-05",
+                      "title": "Head Down",
+                      "length": 295560,
+                      "video": false,
+                      "disambiguation": ""
+                    },
+                    "number": "6",
+                    "title": "Head Down",
+                    "length": 290913,
+                    "id": "c6e68484-2b04-412b-838f-3d8f132692ea",
+                    "position": 6
+                  },
+                  {
+                    "length": 209548,
+                    "title": "Lights in the Sky",
+                    "position": 7,
+                    "id": "0f8ea30f-20fc-4ff7-8fa4-4e37644270cb",
+                    "recording": {
+                      "title": "Lights in the Sky",
+                      "disambiguation": "",
+                      "video": false,
+                      "length": 209680,
+                      "id": "d7d5eb38-bb10-4cd8-9542-f489e9f16e73",
+                      "first-release-date": "2008-05-05"
+                    },
+                    "number": "7"
+                  },
+                  {
+                    "number": "8",
+                    "recording": {
+                      "disambiguation": "",
+                      "length": 453520,
+                      "video": false,
+                      "title": "Corona Radiata",
+                      "first-release-date": "2008-05-05",
+                      "id": "3c55ef28-626b-4cb2-81a6-acc37b189a3f"
+                    },
+                    "id": "43b10b99-486a-4663-9c55-f1c93df5bfb1",
+                    "position": 8,
+                    "title": "Corona Radiata",
+                    "length": 452773
+                  },
+                  {
+                    "position": 9,
+                    "id": "7ba032b5-c446-4f1d-bb11-c7f82394c5f8",
+                    "length": 277590,
+                    "title": "The Four of Us Are Dying",
+                    "recording": {
+                      "disambiguation": "",
+                      "video": false,
+                      "length": 277813,
+                      "title": "The Four of Us Are Dying",
+                      "first-release-date": "2008-05-05",
+                      "id": "d7cbbdd6-96da-4da5-b01f-53eb72e73d16"
+                    },
+                    "number": "9"
+                  },
+                  {
+                    "recording": {
+                      "title": "Demon Seed",
+                      "disambiguation": "",
+                      "video": false,
+                      "length": 299400,
+                      "id": "9f06df64-a373-492e-9a23-6a14a3fde97e",
+                      "first-release-date": "2008-05-05"
+                    },
+                    "number": "10",
+                    "length": 294117,
+                    "title": "Demon Seed",
+                    "position": 10,
+                    "id": "959e2900-a1ca-421e-9a7e-e148c4c31b7d"
+                  }
+                ],
+                "format": "Digital Media",
+                "position": 1,
+                "format-id": "907a28d9-b3b2-3ef6-89a8-7b18d91d4794",
+                "track-count": 10,
+                "id": "f6ac5314-e48f-40c2-9e91-d083d66ba7a6",
+                "track-offset": 0,
+                "title": ""
+              }
+            ],
+            "barcode": "602488389051",
+            "title": "The Slip",
+            "packaging": "None",
+            "packaging-id": "119eba76-b343-3e02-a292-f0f00644bb9b",
+            "release-events": [
+              {
+                "area": {
+                  "sort-name": "[Worldwide]",
+                  "type": null,
+                  "type-id": null,
+                  "id": "525d4e18-3d00-31b9-a58b-a146a916de8f",
+                  "disambiguation": "",
+                  "name": "[Worldwide]",
+                  "iso-3166-1-codes": [
+                    "XW"
+                  ]
+                },
+                "date": "2025-12-17"
+              }
+            ],
+            "id": "d3252f73-5a42-4ab7-b20a-4d65debd8b10",
+            "quality": "normal",
+            "cover-art-archive": {
+              "count": 1,
+              "artwork": true,
+              "front": true,
+              "darkened": false,
+              "back": false
+            },
+            "date": "2025-12-17",
+            "country": "XW",
+            "asin": null,
+            "status": "Official",
+            "text-representation": {
+              "script": "Latn",
+              "language": "eng"
+            }
+          },
+          {
+            "text-representation": {
+              "script": "Latn",
+              "language": "eng"
+            },
+            "asin": null,
+            "status": "Official",
+            "country": "GB",
+            "date": "2008-08-18",
+            "cover-art-archive": {
+              "darkened": false,
+              "front": true,
+              "back": false,
+              "artwork": true,
+              "count": 1
+            },
+            "quality": "high",
+            "id": "e292c47a-49d6-3b11-88f9-9938e77fd15b",
+            "release-events": [
+              {
+                "area": {
+                  "iso-3166-1-codes": [
+                    "GB"
+                  ],
+                  "id": "8a754a16-0027-3a29-b6d7-2b40ea0481ed",
+                  "type-id": null,
+                  "sort-name": "United Kingdom",
+                  "type": null,
+                  "name": "United Kingdom",
+                  "disambiguation": ""
+                },
+                "date": "2008-08-18"
+              }
+            ],
+            "packaging": null,
+            "packaging-id": null,
+            "media": [
+              {
+                "title": "",
+                "track-offset": 0,
+                "id": "5da3ef1a-434b-34f5-b513-e3fdedd5f086",
+                "format-id": "10e17707-9751-3aaf-95b2-2432acd5374c",
+                "track-count": 10,
+                "position": 1,
+                "format": "Vinyl",
+                "tracks": [
+                  {
+                    "position": 1,
+                    "id": "9cebe6fe-5f9e-3aae-a47d-9f7954fc71c3",
+                    "length": 85586,
+                    "title": "999,999",
+                    "number": "1",
+                    "recording": {
+                      "title": "999,999",
+                      "disambiguation": "",
+                      "video": false,
+                      "length": 85586,
+                      "id": "30f3f33e-8d0c-4e69-8539-cbd701d18f28",
+                      "first-release-date": "2008-05-05"
+                    }
+                  },
+                  {
+                    "id": "671c0613-38c0-32e7-8fa4-2e80ee625159",
+                    "position": 2,
+                    "title": "1,000,000",
+                    "length": 236133,
+                    "number": "2",
+                    "recording": {
+                      "title": "1,000,000",
+                      "video": false,
+                      "length": 236133,
+                      "disambiguation": "",
+                      "id": "99244237-850b-4a93-904d-57305bcadb4e",
+                      "first-release-date": "2008-05-05"
+                    }
+                  },
+                  {
+                    "title": "Letting You",
+                    "length": 229560,
+                    "id": "b45fc338-139b-39dd-8e43-3b113989cc7e",
+                    "position": 3,
+                    "recording": {
+                      "first-release-date": "2008-05-05",
+                      "id": "b4a88e68-f66e-4155-8ef4-9f9f46944767",
+                      "video": false,
+                      "length": 229560,
+                      "disambiguation": "",
+                      "title": "Letting You"
+                    },
+                    "number": "3"
+                  },
+                  {
+                    "number": "4",
+                    "recording": {
+                      "first-release-date": "2008-05-05",
+                      "id": "a58a2b13-70b5-44c2-9fd5-67f93db17de7",
+                      "video": false,
+                      "length": 259200,
+                      "disambiguation": "album version, abrupt ending",
+                      "title": "Discipline"
+                    },
+                    "position": 4,
+                    "id": "fa6c7c06-609e-3ae6-8b12-9dbbaf78f786",
+                    "length": 259200,
+                    "title": "Discipline"
+                  },
+                  {
+                    "recording": {
+                      "first-release-date": "2008-05-02",
+                      "id": "52646e3f-1fc0-4a1d-a089-08ac33a30973",
+                      "length": 285106,
+                      "video": false,
+                      "disambiguation": "",
+                      "title": "Echoplex"
+                    },
+                    "number": "5",
+                    "id": "dfb9d155-3e9d-36b8-99f3-48e521052db4",
+                    "position": 5,
+                    "title": "Echoplex",
+                    "length": 285106
+                  },
+                  {
+                    "number": "6",
+                    "recording": {
+                      "id": "b4f9917f-4514-4e3e-aea3-3f901a9c69a7",
+                      "first-release-date": "2008-05-05",
+                      "title": "Head Down",
+                      "video": false,
+                      "length": 295560,
+                      "disambiguation": ""
+                    },
+                    "id": "b8ad1f06-5440-3f82-94e9-0b0875c4adbb",
+                    "position": 6,
+                    "title": "Head Down",
+                    "length": 295560
+                  },
+                  {
+                    "length": 209680,
+                    "title": "Lights in the Sky",
+                    "position": 7,
+                    "id": "cd64c755-adf4-3783-bfba-6c0484a0680a",
+                    "number": "7",
+                    "recording": {
+                      "id": "d7d5eb38-bb10-4cd8-9542-f489e9f16e73",
+                      "first-release-date": "2008-05-05",
+                      "title": "Lights in the Sky",
+                      "disambiguation": "",
+                      "video": false,
+                      "length": 209680
+                    }
+                  },
+                  {
+                    "recording": {
+                      "length": 453520,
+                      "video": false,
+                      "disambiguation": "",
+                      "title": "Corona Radiata",
+                      "first-release-date": "2008-05-05",
+                      "id": "3c55ef28-626b-4cb2-81a6-acc37b189a3f"
+                    },
+                    "number": "8",
+                    "id": "97a78b1c-1c24-30c4-b01f-5e8aef95b956",
+                    "position": 8,
+                    "title": "Corona Radiata",
+                    "length": 453520
+                  },
+                  {
+                    "title": "The Four of Us Are Dying",
+                    "length": 277813,
+                    "id": "6b79b52d-584e-35dd-a540-bc7ca01a84a1",
+                    "position": 9,
+                    "recording": {
+                      "id": "d7cbbdd6-96da-4da5-b01f-53eb72e73d16",
+                      "first-release-date": "2008-05-05",
+                      "title": "The Four of Us Are Dying",
+                      "length": 277813,
+                      "video": false,
+                      "disambiguation": ""
+                    },
+                    "number": "9"
+                  },
+                  {
+                    "recording": {
+                      "title": "Demon Seed",
+                      "length": 299400,
+                      "video": false,
+                      "disambiguation": "",
+                      "id": "9f06df64-a373-492e-9a23-6a14a3fde97e",
+                      "first-release-date": "2008-05-05"
+                    },
+                    "number": "10",
+                    "length": 299400,
+                    "title": "Demon Seed",
+                    "position": 10,
+                    "id": "b6704548-8676-3d93-9e68-707e79447a00"
+                  }
+                ]
+              }
+            ],
+            "disambiguation": "",
+            "barcode": "766929934719",
+            "title": "The Slip",
+            "status-id": "4e304316-386d-3409-af2e-78857eec5cfe"
+          }
+        ],
+        "release-offset": 0,
+        "release-count": 7
+      }
+    }
+  }
+}

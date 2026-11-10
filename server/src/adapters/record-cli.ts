@@ -87,8 +87,10 @@
  * afterwards. No read lists a household torrent. It needs only QBITTORRENT_API_KEY.
  *
  * `--only musicbrainz` records M3.keep's MusicBrainz searches and lookups, and one busy answer, from
- * this machine; `--only coverart`, the Cover Art Archive's redirects to one front cover
- * (record-musicbrainz.ts). Neither takes a key; nothing goes on stdin.
+ * this machine; `--only albums-musicbrainz`, M3.albums' release groups, their official releases,
+ * two releases and two release-group searches, for freely licensed albums only; `--only coverart`,
+ * the Cover Art Archive's redirects to one front cover (record-musicbrainz.ts). None takes a key;
+ * nothing goes on stdin.
  *
  * `--only keep --jellyfin <url>` records M3.keep's Jellyfin calls: the music library and where it
  * reads, one walk down its folders with each item's path, and one report of a file made at a dot path under it,
@@ -131,7 +133,12 @@ import { recordShelf } from './record-shelf.js';
 import { recordProgress } from './record-progress.js';
 import { recordSessions } from './record-sessions.js';
 import { recordShell } from './record-shell.js';
-import { recordCoverArt, recordKeep, recordMusicBrainz } from './record-musicbrainz.js';
+import {
+  recordAlbumGroups,
+  recordCoverArt,
+  recordKeep,
+  recordMusicBrainz,
+} from './record-musicbrainz.js';
 import { MUSICBRAINZ_URL } from './musicbrainz/client.js';
 import { COVERART_URL } from './coverart/client.js';
 
@@ -157,7 +164,7 @@ Records Audiobookshelf's and Jellyfin's calls into server/src/adapters/*/recordi
                      the track to mark if the test user has played nothing
   --only <name>      record only abs, jellyfin, index, play, episode, jfplay, progress,
                      sessions, shell, lyrics, lists, played, books, albums, shelf, qbit, ytmusic,
-                     extractor, musicbrainz, coverart or keep; or
+                     extractor, musicbrainz, albums-musicbrainz, coverart or keep; or
                      oidc, a sign-in and its links
   --lrclib <url>     LRCLIB's base URL, for --only lyrics
   --prowlarr <url>   Prowlarr's base URL, for --only books and albums
@@ -740,13 +747,14 @@ export async function runRecord(io: RecordIo): Promise<number> {
       'extractor',
       'github',
       'musicbrainz',
+      'albums-musicbrainz',
       'coverart',
       'keep',
       'oidc',
     ].includes(only)
   ) {
     io.err(
-      `--only is abs, jellyfin, index, play, episode, jfplay, progress, sessions, shell, lyrics, lists, played, household, books, albums, shelf, qbit, ytmusic, extractor, github, musicbrainz, coverart, keep or oidc, not ${only}`,
+      `--only is abs, jellyfin, index, play, episode, jfplay, progress, sessions, shell, lyrics, lists, played, household, books, albums, shelf, qbit, ytmusic, extractor, github, musicbrainz, albums-musicbrainz, coverart, keep or oidc, not ${only}`,
     );
     return 2;
   }
@@ -775,6 +783,7 @@ export async function runRecord(io: RecordIo): Promise<number> {
   if (only === 'extractor') return runExtractor(io, values, root);
   if (only === 'github') return runGithub(io, root);
   if (only === 'musicbrainz') return runMusicBrainz(io, root);
+  if (only === 'albums-musicbrainz') return runAlbumGroups(io, root);
   if (only === 'coverart') return runCoverArt(io, root);
   if (only === 'keep') return runKeep(io, values, parseKeys(io.stdin), root);
   const wantIndex = only === undefined || only === 'index';
@@ -1317,6 +1326,16 @@ async function runGithub(io: RecordIo, root: string): Promise<number> {
 
 async function runMusicBrainz(io: RecordIo, root: string): Promise<number> {
   const { written } = await recordMusicBrainz({
+    fetch: io.fetch,
+    out: io.out,
+    root,
+    musicBrainzUrl: MUSICBRAINZ_URL,
+  });
+  return scanWritten(io, written, []);
+}
+
+async function runAlbumGroups(io: RecordIo, root: string): Promise<number> {
+  const { written } = await recordAlbumGroups({
     fetch: io.fetch,
     out: io.out,
     root,

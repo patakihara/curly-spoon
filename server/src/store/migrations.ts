@@ -1024,6 +1024,22 @@ export const migrations: readonly Migration[] = [
       `);
     },
   },
+  {
+    id: 31,
+    name: 'album_editions',
+    up: (db) => {
+      // An album's release group and its editions, as MusicBrainz gave them, for a week: the
+      // search, the gate and the import read them through. release_group and editions are JSON.
+      db.exec(`
+        CREATE TABLE album_editions (
+          release_group_id TEXT PRIMARY KEY,
+          at               INTEGER NOT NULL,
+          release_group    TEXT NOT NULL,
+          editions         TEXT NOT NULL
+        );
+      `);
+    },
+  },
 ];
 
 export function runMigrations(

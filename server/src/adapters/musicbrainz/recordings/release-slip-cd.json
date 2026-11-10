@@ -1,0 +1,806 @@
+{
+  "upstream": "musicbrainz",
+  "upstreamVersion": "MusicBrainz web service 2",
+  "call": "release-slip-cd",
+  "request": {
+    "method": "GET",
+    "path": "/ws/2/release/6842b8f3-b108-3c13-8998-6886e3b84300",
+    "query": {
+      "fmt": "json",
+      "inc": "recordings+artist-credits+release-groups+media"
+    },
+    "headers": {
+      "accept": "application/json",
+      "user-agent": "Auralis/0.0.0 ( https://github.com/patakihara/curly-spoon )"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "packaging-id": null,
+        "artist-credit": [
+          {
+            "name": "Nine Inch Nails",
+            "joinphrase": "",
+            "artist": {
+              "name": "Nine Inch Nails",
+              "disambiguation": "",
+              "sort-name": "Nine Inch Nails",
+              "type": "Group",
+              "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+              "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+              "country": "US"
+            }
+          }
+        ],
+        "packaging": null,
+        "release-events": [
+          {
+            "date": "2008-07-22",
+            "area": {
+              "iso-3166-1-codes": [
+                "US"
+              ],
+              "name": "United States",
+              "disambiguation": "",
+              "sort-name": "United States",
+              "type": null,
+              "id": "489ce91b-6658-3307-9877-795b68554c98",
+              "type-id": null
+            }
+          }
+        ],
+        "status-id": "4e304316-386d-3409-af2e-78857eec5cfe",
+        "barcode": "766929934627",
+        "title": "The Slip",
+        "release-group": {
+          "first-release-date": "2008-05-05",
+          "artist-credit": [
+            {
+              "artist": {
+                "country": "US",
+                "sort-name": "Nine Inch Nails",
+                "type": "Group",
+                "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                "disambiguation": "",
+                "name": "Nine Inch Nails"
+              },
+              "name": "Nine Inch Nails",
+              "joinphrase": ""
+            }
+          ],
+          "primary-type": "Album",
+          "primary-type-id": "f529b476-6e62-324f-b0aa-1f3e33d313fc",
+          "secondary-type-ids": [],
+          "secondary-types": [],
+          "id": "5990b23f-6412-3eaf-989c-a4831f4f95f7",
+          "disambiguation": "",
+          "title": "The Slip"
+        },
+        "disambiguation": "limited edition",
+        "media": [
+          {
+            "format": "CD",
+            "tracks": [
+              {
+                "recording": {
+                  "video": false,
+                  "length": 85586,
+                  "disambiguation": "",
+                  "title": "999,999",
+                  "first-release-date": "2008-05-05",
+                  "id": "30f3f33e-8d0c-4e69-8539-cbd701d18f28",
+                  "artist-credit": [
+                    {
+                      "artist": {
+                        "country": "US",
+                        "sort-name": "Nine Inch Nails",
+                        "type": "Group",
+                        "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                        "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                        "name": "Nine Inch Nails",
+                        "disambiguation": ""
+                      },
+                      "name": "Nine Inch Nails",
+                      "joinphrase": ""
+                    }
+                  ]
+                },
+                "number": "1",
+                "artist-credit": [
+                  {
+                    "artist": {
+                      "country": "US",
+                      "disambiguation": "",
+                      "name": "Nine Inch Nails",
+                      "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                      "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                      "sort-name": "Nine Inch Nails",
+                      "type": "Group"
+                    },
+                    "joinphrase": "",
+                    "name": "Nine Inch Nails"
+                  }
+                ],
+                "position": 1,
+                "id": "00ac3ce3-98f5-38e1-bd74-ff4216edfbc8",
+                "length": 85586,
+                "title": "999,999"
+              },
+              {
+                "title": "1,000,000",
+                "length": 236133,
+                "id": "011306ec-390c-3c59-bd5d-274e126f72c2",
+                "position": 2,
+                "artist-credit": [
+                  {
+                    "name": "Nine Inch Nails",
+                    "joinphrase": "",
+                    "artist": {
+                      "country": "US",
+                      "name": "Nine Inch Nails",
+                      "disambiguation": "",
+                      "type": "Group",
+                      "sort-name": "Nine Inch Nails",
+                      "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                      "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b"
+                    }
+                  }
+                ],
+                "number": "2",
+                "recording": {
+                  "title": "1,000,000",
+                  "disambiguation": "",
+                  "length": 236133,
+                  "video": false,
+                  "artist-credit": [
+                    {
+                      "name": "Nine Inch Nails",
+                      "joinphrase": "",
+                      "artist": {
+                        "disambiguation": "",
+                        "name": "Nine Inch Nails",
+                        "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                        "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                        "sort-name": "Nine Inch Nails",
+                        "type": "Group",
+                        "country": "US"
+                      }
+                    }
+                  ],
+                  "id": "99244237-850b-4a93-904d-57305bcadb4e",
+                  "first-release-date": "2008-05-05"
+                }
+              },
+              {
+                "length": 229560,
+                "title": "Letting You",
+                "position": 3,
+                "id": "6e3446e0-d6de-3f18-ae56-32181d77613b",
+                "number": "3",
+                "recording": {
+                  "first-release-date": "2008-05-05",
+                  "id": "b4a88e68-f66e-4155-8ef4-9f9f46944767",
+                  "artist-credit": [
+                    {
+                      "artist": {
+                        "country": "US",
+                        "name": "Nine Inch Nails",
+                        "disambiguation": "",
+                        "type": "Group",
+                        "sort-name": "Nine Inch Nails",
+                        "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                        "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b"
+                      },
+                      "name": "Nine Inch Nails",
+                      "joinphrase": ""
+                    }
+                  ],
+                  "video": false,
+                  "length": 229560,
+                  "disambiguation": "",
+                  "title": "Letting You"
+                },
+                "artist-credit": [
+                  {
+                    "artist": {
+                      "sort-name": "Nine Inch Nails",
+                      "type": "Group",
+                      "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                      "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                      "disambiguation": "",
+                      "name": "Nine Inch Nails",
+                      "country": "US"
+                    },
+                    "name": "Nine Inch Nails",
+                    "joinphrase": ""
+                  }
+                ]
+              },
+              {
+                "title": "Discipline",
+                "length": 259200,
+                "id": "290a9200-72d7-307d-916b-9434f901f200",
+                "position": 4,
+                "artist-credit": [
+                  {
+                    "artist": {
+                      "country": "US",
+                      "disambiguation": "",
+                      "name": "Nine Inch Nails",
+                      "sort-name": "Nine Inch Nails",
+                      "type": "Group",
+                      "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                      "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da"
+                    },
+                    "name": "Nine Inch Nails",
+                    "joinphrase": ""
+                  }
+                ],
+                "recording": {
+                  "first-release-date": "2008-05-05",
+                  "id": "a58a2b13-70b5-44c2-9fd5-67f93db17de7",
+                  "artist-credit": [
+                    {
+                      "artist": {
+                        "country": "US",
+                        "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                        "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                        "sort-name": "Nine Inch Nails",
+                        "type": "Group",
+                        "disambiguation": "",
+                        "name": "Nine Inch Nails"
+                      },
+                      "joinphrase": "",
+                      "name": "Nine Inch Nails"
+                    }
+                  ],
+                  "video": false,
+                  "length": 259200,
+                  "disambiguation": "album version, abrupt ending",
+                  "title": "Discipline"
+                },
+                "number": "4"
+              },
+              {
+                "recording": {
+                  "artist-credit": [
+                    {
+                      "artist": {
+                        "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                        "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                        "sort-name": "Nine Inch Nails",
+                        "type": "Group",
+                        "name": "Nine Inch Nails",
+                        "disambiguation": "",
+                        "country": "US"
+                      },
+                      "joinphrase": "",
+                      "name": "Nine Inch Nails"
+                    }
+                  ],
+                  "id": "52646e3f-1fc0-4a1d-a089-08ac33a30973",
+                  "first-release-date": "2008-05-02",
+                  "title": "Echoplex",
+                  "disambiguation": "",
+                  "length": 285106,
+                  "video": false
+                },
+                "number": "5",
+                "artist-credit": [
+                  {
+                    "name": "Nine Inch Nails",
+                    "joinphrase": "",
+                    "artist": {
+                      "sort-name": "Nine Inch Nails",
+                      "type": "Group",
+                      "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                      "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                      "disambiguation": "",
+                      "name": "Nine Inch Nails",
+                      "country": "US"
+                    }
+                  }
+                ],
+                "position": 5,
+                "id": "49fb2478-a977-39b9-a6e8-db8fd10a954b",
+                "length": 285106,
+                "title": "Echoplex"
+              },
+              {
+                "length": 295560,
+                "title": "Head Down",
+                "position": 6,
+                "id": "62eb9674-feb0-3c4f-87b5-12d3e803fe1d",
+                "recording": {
+                  "id": "b4f9917f-4514-4e3e-aea3-3f901a9c69a7",
+                  "artist-credit": [
+                    {
+                      "artist": {
+                        "disambiguation": "",
+                        "name": "Nine Inch Nails",
+                        "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                        "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                        "sort-name": "Nine Inch Nails",
+                        "type": "Group",
+                        "country": "US"
+                      },
+                      "joinphrase": "",
+                      "name": "Nine Inch Nails"
+                    }
+                  ],
+                  "first-release-date": "2008-05-05",
+                  "title": "Head Down",
+                  "length": 295560,
+                  "video": false,
+                  "disambiguation": ""
+                },
+                "number": "6",
+                "artist-credit": [
+                  {
+                    "joinphrase": "",
+                    "name": "Nine Inch Nails",
+                    "artist": {
+                      "country": "US",
+                      "sort-name": "Nine Inch Nails",
+                      "type": "Group",
+                      "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                      "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                      "name": "Nine Inch Nails",
+                      "disambiguation": ""
+                    }
+                  }
+                ]
+              },
+              {
+                "artist-credit": [
+                  {
+                    "joinphrase": "",
+                    "name": "Nine Inch Nails",
+                    "artist": {
+                      "country": "US",
+                      "type": "Group",
+                      "sort-name": "Nine Inch Nails",
+                      "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                      "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                      "name": "Nine Inch Nails",
+                      "disambiguation": ""
+                    }
+                  }
+                ],
+                "recording": {
+                  "id": "d7d5eb38-bb10-4cd8-9542-f489e9f16e73",
+                  "artist-credit": [
+                    {
+                      "artist": {
+                        "name": "Nine Inch Nails",
+                        "disambiguation": "",
+                        "type": "Group",
+                        "sort-name": "Nine Inch Nails",
+                        "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                        "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                        "country": "US"
+                      },
+                      "name": "Nine Inch Nails",
+                      "joinphrase": ""
+                    }
+                  ],
+                  "first-release-date": "2008-05-05",
+                  "title": "Lights in the Sky",
+                  "length": 209680,
+                  "video": false,
+                  "disambiguation": ""
+                },
+                "number": "7",
+                "title": "Lights in the Sky",
+                "length": 209680,
+                "id": "92e2a7af-a076-35bc-9b90-69115c48a671",
+                "position": 7
+              },
+              {
+                "number": "8",
+                "recording": {
+                  "artist-credit": [
+                    {
+                      "joinphrase": "",
+                      "name": "Nine Inch Nails",
+                      "artist": {
+                        "country": "US",
+                        "type": "Group",
+                        "sort-name": "Nine Inch Nails",
+                        "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                        "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                        "disambiguation": "",
+                        "name": "Nine Inch Nails"
+                      }
+                    }
+                  ],
+                  "id": "3c55ef28-626b-4cb2-81a6-acc37b189a3f",
+                  "first-release-date": "2008-05-05",
+                  "title": "Corona Radiata",
+                  "disambiguation": "",
+                  "video": false,
+                  "length": 453520
+                },
+                "artist-credit": [
+                  {
+                    "name": "Nine Inch Nails",
+                    "joinphrase": "",
+                    "artist": {
+                      "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                      "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                      "sort-name": "Nine Inch Nails",
+                      "type": "Group",
+                      "name": "Nine Inch Nails",
+                      "disambiguation": "",
+                      "country": "US"
+                    }
+                  }
+                ],
+                "position": 8,
+                "id": "4940f25b-ba93-3dff-af68-5a5a4b8a93d3",
+                "length": 453520,
+                "title": "Corona Radiata"
+              },
+              {
+                "length": 277813,
+                "title": "The Four of Us Are Dying",
+                "position": 9,
+                "id": "b1db8b37-60d2-3955-a117-e9cb99ac7ca9",
+                "recording": {
+                  "id": "d7cbbdd6-96da-4da5-b01f-53eb72e73d16",
+                  "artist-credit": [
+                    {
+                      "joinphrase": "",
+                      "name": "Nine Inch Nails",
+                      "artist": {
+                        "country": "US",
+                        "disambiguation": "",
+                        "name": "Nine Inch Nails",
+                        "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                        "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                        "type": "Group",
+                        "sort-name": "Nine Inch Nails"
+                      }
+                    }
+                  ],
+                  "first-release-date": "2008-05-05",
+                  "title": "The Four of Us Are Dying",
+                  "length": 277813,
+                  "video": false,
+                  "disambiguation": ""
+                },
+                "number": "9",
+                "artist-credit": [
+                  {
+                    "artist": {
+                      "name": "Nine Inch Nails",
+                      "disambiguation": "",
+                      "type": "Group",
+                      "sort-name": "Nine Inch Nails",
+                      "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                      "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                      "country": "US"
+                    },
+                    "name": "Nine Inch Nails",
+                    "joinphrase": ""
+                  }
+                ]
+              },
+              {
+                "title": "Demon Seed",
+                "length": 299400,
+                "id": "ff362807-6bbb-35e2-9600-922d2b3f0441",
+                "position": 10,
+                "artist-credit": [
+                  {
+                    "artist": {
+                      "country": "US",
+                      "disambiguation": "",
+                      "name": "Nine Inch Nails",
+                      "type": "Group",
+                      "sort-name": "Nine Inch Nails",
+                      "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                      "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da"
+                    },
+                    "name": "Nine Inch Nails",
+                    "joinphrase": ""
+                  }
+                ],
+                "number": "10",
+                "recording": {
+                  "id": "9f06df64-a373-492e-9a23-6a14a3fde97e",
+                  "artist-credit": [
+                    {
+                      "joinphrase": "",
+                      "name": "Nine Inch Nails",
+                      "artist": {
+                        "name": "Nine Inch Nails",
+                        "disambiguation": "",
+                        "type": "Group",
+                        "sort-name": "Nine Inch Nails",
+                        "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                        "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                        "country": "US"
+                      }
+                    }
+                  ],
+                  "first-release-date": "2008-05-05",
+                  "title": "Demon Seed",
+                  "length": 299400,
+                  "video": false,
+                  "disambiguation": ""
+                }
+              }
+            ],
+            "title": "The Slip",
+            "track-offset": 0,
+            "track-count": 10,
+            "format-id": "9712d52a-4509-3d4b-a1a2-67c88c643e31",
+            "id": "f2263736-7533-3c35-af7a-6e4c388b16c0",
+            "position": 1
+          },
+          {
+            "format": "DVD",
+            "tracks": [
+              {
+                "position": 1,
+                "id": "67a8a53e-e863-39d9-8ce3-335316996d35",
+                "length": 254000,
+                "title": "1,000,000",
+                "number": "1",
+                "recording": {
+                  "disambiguation": "",
+                  "video": true,
+                  "length": 254000,
+                  "title": "1,000,000",
+                  "first-release-date": "2008-07-22",
+                  "artist-credit": [
+                    {
+                      "artist": {
+                        "country": "US",
+                        "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                        "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                        "sort-name": "Nine Inch Nails",
+                        "type": "Group",
+                        "disambiguation": "",
+                        "name": "Nine Inch Nails"
+                      },
+                      "name": "Nine Inch Nails",
+                      "joinphrase": ""
+                    }
+                  ],
+                  "id": "4c88081b-b172-4f42-9dd2-74a849888132"
+                },
+                "artist-credit": [
+                  {
+                    "joinphrase": "",
+                    "name": "Nine Inch Nails",
+                    "artist": {
+                      "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                      "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                      "type": "Group",
+                      "sort-name": "Nine Inch Nails",
+                      "name": "Nine Inch Nails",
+                      "disambiguation": "",
+                      "country": "US"
+                    }
+                  }
+                ]
+              },
+              {
+                "artist-credit": [
+                  {
+                    "artist": {
+                      "country": "US",
+                      "name": "Nine Inch Nails",
+                      "disambiguation": "",
+                      "sort-name": "Nine Inch Nails",
+                      "type": "Group",
+                      "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                      "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b"
+                    },
+                    "name": "Nine Inch Nails",
+                    "joinphrase": ""
+                  }
+                ],
+                "recording": {
+                  "first-release-date": "2008-07-22",
+                  "id": "58dd77a8-a1a3-4957-9e36-61599b21f39b",
+                  "artist-credit": [
+                    {
+                      "joinphrase": "",
+                      "name": "Nine Inch Nails",
+                      "artist": {
+                        "country": "US",
+                        "disambiguation": "",
+                        "name": "Nine Inch Nails",
+                        "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                        "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                        "sort-name": "Nine Inch Nails",
+                        "type": "Group"
+                      }
+                    }
+                  ],
+                  "video": true,
+                  "length": 237000,
+                  "disambiguation": "",
+                  "title": "Letting You"
+                },
+                "number": "2",
+                "title": "Letting You",
+                "length": 237000,
+                "id": "ae493eac-e014-3ae0-be94-4fbedc2ed79d",
+                "position": 2
+              },
+              {
+                "id": "f76b9f27-4b60-3492-afa5-8838d5a01feb",
+                "position": 3,
+                "title": "Discipline",
+                "length": 252000,
+                "artist-credit": [
+                  {
+                    "artist": {
+                      "country": "US",
+                      "disambiguation": "",
+                      "name": "Nine Inch Nails",
+                      "sort-name": "Nine Inch Nails",
+                      "type": "Group",
+                      "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                      "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da"
+                    },
+                    "joinphrase": "",
+                    "name": "Nine Inch Nails"
+                  }
+                ],
+                "number": "3",
+                "recording": {
+                  "title": "Discipline",
+                  "length": 252000,
+                  "video": true,
+                  "disambiguation": "live, July 2008 rehearsals",
+                  "id": "37b38ad0-da60-42e2-8491-efb71c319cf3",
+                  "artist-credit": [
+                    {
+                      "joinphrase": "",
+                      "name": "Nine Inch Nails",
+                      "artist": {
+                        "country": "US",
+                        "type": "Group",
+                        "sort-name": "Nine Inch Nails",
+                        "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                        "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                        "name": "Nine Inch Nails",
+                        "disambiguation": ""
+                      }
+                    }
+                  ],
+                  "first-release-date": "2008-07-22"
+                }
+              },
+              {
+                "position": 4,
+                "id": "b27fa0bf-7d34-3d5b-9f1f-521a62688bfe",
+                "length": 290000,
+                "title": "Echoplex",
+                "recording": {
+                  "first-release-date": "2008-07-22",
+                  "artist-credit": [
+                    {
+                      "name": "Nine Inch Nails",
+                      "joinphrase": "",
+                      "artist": {
+                        "country": "US",
+                        "disambiguation": "",
+                        "name": "Nine Inch Nails",
+                        "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                        "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                        "sort-name": "Nine Inch Nails",
+                        "type": "Group"
+                      }
+                    }
+                  ],
+                  "id": "eaf9f68e-0328-4118-9dc5-497897339535",
+                  "disambiguation": "",
+                  "length": 290000,
+                  "video": true,
+                  "title": "Echoplex"
+                },
+                "number": "4",
+                "artist-credit": [
+                  {
+                    "name": "Nine Inch Nails",
+                    "joinphrase": "",
+                    "artist": {
+                      "country": "US",
+                      "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                      "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                      "type": "Group",
+                      "sort-name": "Nine Inch Nails",
+                      "name": "Nine Inch Nails",
+                      "disambiguation": ""
+                    }
+                  }
+                ]
+              },
+              {
+                "position": 5,
+                "id": "f2a191a4-179e-366a-bdb4-bed330025092",
+                "length": 244000,
+                "title": "Head Down",
+                "number": "5",
+                "recording": {
+                  "title": "Head Down",
+                  "video": true,
+                  "length": 244000,
+                  "disambiguation": "",
+                  "id": "72f048ef-bbb9-4a16-a46e-6592d3fb826a",
+                  "artist-credit": [
+                    {
+                      "name": "Nine Inch Nails",
+                      "joinphrase": "",
+                      "artist": {
+                        "type": "Group",
+                        "sort-name": "Nine Inch Nails",
+                        "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                        "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                        "disambiguation": "",
+                        "name": "Nine Inch Nails",
+                        "country": "US"
+                      }
+                    }
+                  ],
+                  "first-release-date": "2008-07-22"
+                },
+                "artist-credit": [
+                  {
+                    "artist": {
+                      "country": "US",
+                      "disambiguation": "",
+                      "name": "Nine Inch Nails",
+                      "type": "Group",
+                      "sort-name": "Nine Inch Nails",
+                      "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                      "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da"
+                    },
+                    "name": "Nine Inch Nails",
+                    "joinphrase": ""
+                  }
+                ]
+              }
+            ],
+            "title": "Live From Rehearsals June 2008",
+            "track-offset": 0,
+            "format-id": "2875c583-4580-3a90-b723-ba1b39921e23",
+            "track-count": 5,
+            "id": "cfce3733-fc50-3814-9ec4-d384ed0a385f",
+            "position": 2
+          }
+        ],
+        "date": "2008-07-22",
+        "country": "US",
+        "asin": "B001B71NOI",
+        "status": "Official",
+        "text-representation": {
+          "language": "eng",
+          "script": "Latn"
+        },
+        "id": "6842b8f3-b108-3c13-8998-6886e3b84300",
+        "quality": "high",
+        "cover-art-archive": {
+          "artwork": true,
+          "count": 42,
+          "front": true,
+          "darkened": false,
+          "back": true
+        }
+      }
+    }
+  }
+}

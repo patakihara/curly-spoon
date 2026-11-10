@@ -1,0 +1,51 @@
+{
+  "upstream": "musicbrainz",
+  "upstreamVersion": "MusicBrainz web service 2",
+  "call": "rg-artificial-heart",
+  "request": {
+    "method": "GET",
+    "path": "/ws/2/release-group/c99bcaea-d214-4cb9-b15d-3f1558b1c1b3",
+    "query": {
+      "fmt": "json",
+      "inc": "artist-credits"
+    },
+    "headers": {
+      "accept": "application/json",
+      "user-agent": "Auralis/0.0.0 ( https://github.com/patakihara/curly-spoon )"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "primary-type-id": "f529b476-6e62-324f-b0aa-1f3e33d313fc",
+        "artist-credit": [
+          {
+            "name": "Jonathan Coulton",
+            "joinphrase": "",
+            "artist": {
+              "id": "d8df7087-06d5-4545-9024-831bb8558ad1",
+              "type": "Person",
+              "sort-name": "Coulton, Jonathan",
+              "type-id": "b6e035f4-3ce9-331c-97df-83397230b0df",
+              "disambiguation": "",
+              "country": "US",
+              "name": "Jonathan Coulton"
+            }
+          }
+        ],
+        "primary-type": "Album",
+        "disambiguation": "",
+        "secondary-type-ids": [],
+        "first-release-date": "2011-09-02",
+        "secondary-types": [],
+        "id": "c99bcaea-d214-4cb9-b15d-3f1558b1c1b3",
+        "title": "Artificial Heart"
+      }
+    }
+  }
+}
