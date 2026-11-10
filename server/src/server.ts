@@ -25,6 +25,7 @@ import { jellyfinPeople } from './requests/albums/replace.js';
 import type { AlbumCatalogue } from './requests/albums/catalogue.js';
 import { bookSteps } from './requests/books/index.js';
 import { Wake } from './requests/job.js';
+import { musicBrainzOf } from './requests/musicBrainz.js';
 import { songSteps } from './requests/songs/index.js';
 import type { BookCatalogue } from './requests/books/catalogue.js';
 import { type MediumSteps, stepsRegistry } from './requests/steps.js';
@@ -149,12 +150,15 @@ export async function assembleServer(
       ? null
       : upstreamFor({ db, key: secretKey, config: upstreamConfig, fetch, linker }, user).jellyfin;
   };
+  // One MusicBrainz client, so songs and albums wait in one queue for its one call a second.
+  const musicBrainz = musicBrainzOf(config, fetch);
   const albums = albumSteps(config, {
     db,
     fetch,
     log: { error: (details, message) => app.log.error(details, message) },
     now: Date.now,
     people: () => jellyfinPeople(db, jellyfinAs),
+    musicBrainz,
   });
 
   // Makes no upstream call at start, so a server with no network still starts.
@@ -173,6 +177,7 @@ export async function assembleServer(
     log: { error: (details, message) => app.log.error(details, message) },
     music: streamed?.music ?? null,
     wake: () => wake.now(),
+    musicBrainz,
   });
 
   const setupCodeFile = join(config.dataDir, 'setup-code');

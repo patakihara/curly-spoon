@@ -20,6 +20,7 @@ import { openDatabase, type Db } from '../../store/connection.js';
 import { createRequest, saveRequest } from '../../store/requests.js';
 import { upsertUser } from '../../store/users.js';
 import type { SongStream } from './download.js';
+import { musicBrainzOf } from '../musicBrainz.js';
 import { INSTANCE_FILE, type SongArt, songSteps, STAGING_FOLDER } from './index.js';
 
 let dir: string;
@@ -52,14 +53,20 @@ const music: SongStream & SongArt = {
   open: () => Promise.reject(new Error('nothing streams here')),
   openArt: () => Promise.reject(new Error('no art here')),
 };
-const stepsWith = (vars: Record<string, string>, streams: (SongStream & SongArt) | null = music) =>
-  songSteps(loadConfig(vars), {
+const stepsWith = (
+  vars: Record<string, string>,
+  streams: (SongStream & SongArt) | null = music,
+) => {
+  const config = loadConfig(vars);
+  return songSteps(config, {
     db,
     fetch: noFetch,
     log: { error: () => undefined },
     music: streams,
     wake: () => undefined,
+    musicBrainz: musicBrainzOf(config, noFetch),
   });
+};
 const without = (name: string) =>
   Object.fromEntries(Object.entries(env).filter(([one]) => one !== name));
 

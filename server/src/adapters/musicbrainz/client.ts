@@ -5,7 +5,7 @@
  * second. It answers 503 when a client goes over (twice in 16 calls at about one a second, checked
  * live). So every call waits its turn in one queue, starting at least 1.1 s after the one before;
  * a 503 waits 2 s and is tried twice more, and a third 503 is `StepUnavailable`. One client serves
- * the whole server, so its queue is the whole server's.
+ * the whole server (`requests/musicBrainz.ts`), so its queue is the whole server's.
  *
  * Search terms go in quoted Lucene phrases, with brackets left to the caller to drop: MusicBrainz
  * matches "I'm" only as written, not folded to "im" (checked live).

@@ -12,7 +12,7 @@ import { join } from 'node:path';
 import { CoverArtClient } from '../../adapters/coverart/client.js';
 import type { FetchLike } from '../../adapters/http/fetch.js';
 import { JellyfinClient } from '../../adapters/jellyfin/client.js';
-import { MusicBrainzClient, MUSICBRAINZ_USER_AGENT } from '../../adapters/musicbrainz/client.js';
+import type { MusicBrainzClient } from '../../adapters/musicbrainz/client.js';
 import { ProwlarrClient } from '../../adapters/prowlarr/client.js';
 import { QbittorrentClient } from '../../adapters/qbittorrent/client.js';
 import type { AppConfig } from '../../config.js';
@@ -36,6 +36,8 @@ export interface AlbumStepsDeps {
   now: () => number;
   /** Everyone linked on Jellyfin, each with a client acting as them; asked only by an import. */
   people: () => JellyfinPerson[];
+  /** The server's one MusicBrainz client, which songs share; null with MusicBrainz switched off. */
+  musicBrainz: MusicBrainzClient | null;
 }
 
 /** The steps with Search's catalogue, or which setting keeps albums from being requested. */
@@ -43,13 +45,13 @@ export type AlbumSteps = { steps: MediumSteps; catalogue: AlbumCatalogue } | { o
 
 export function albumSteps(config: AppConfig, deps: AlbumStepsDeps): AlbumSteps {
   const { books, jellyfin, songs } = config;
-  const { db, fetch, log, now, people } = deps;
+  const { db, fetch, log, now, people, musicBrainz } = deps;
   if (books.prowlarr === null) return { off: 'PROWLARR_URL and PROWLARR_API_KEY_FILE' };
   if (books.qbittorrent === null) return { off: 'QBITTORRENT_URL and QBITTORRENT_API_KEY_FILE' };
   if (books.downloadsPath === null) return { off: 'QBITTORRENT_DOWNLOADS_PATH' };
   if (books.mediaDir === null) return { off: 'MEDIA_DIR' };
   if (jellyfin === null) return { off: 'JELLYFIN_URL and JELLYFIN_API_KEY_FILE' };
-  if (songs.musicBrainzUrl === null) return { off: 'MUSICBRAINZ_URL' };
+  if (musicBrainz === null) return { off: 'MUSICBRAINZ_URL' };
   const { mediaDir, downloadsPath } = books;
   const lacking = folderLacking(join(mediaDir, 'Music'), 'Music');
   if (lacking !== null) return { off: lacking };
@@ -72,11 +74,6 @@ export function albumSteps(config: AppConfig, deps: AlbumStepsDeps): AlbumSteps 
     baseUrl: books.qbittorrent.url,
     apiKey: qbittorrentKey,
     fetch,
-  });
-  const musicBrainz = new MusicBrainzClient({
-    baseUrl: songs.musicBrainzUrl,
-    fetch,
-    userAgent: MUSICBRAINZ_USER_AGENT,
   });
   const coverArt =
     songs.coverArtUrl === null ? null : new CoverArtClient({ baseUrl: songs.coverArtUrl, fetch });

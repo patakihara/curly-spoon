@@ -14,6 +14,7 @@ import { createDevice } from '../../store/devices.js';
 import { getRequest } from '../../store/requests.js';
 import { createSession } from '../../store/sessions.js';
 import { upsertUser } from '../../store/users.js';
+import { musicBrainzOf } from '../musicBrainz.js';
 import { albumSteps } from './index.js';
 
 const KEY = Buffer.alloc(32, 7).toString('base64');
@@ -63,24 +64,30 @@ const noFetch: FetchLike = async (url) => {
   throw new Error(`no network in this test: ${url}`);
 };
 const log = { error: () => undefined };
-const stepsWith = (vars: Record<string, string>) =>
-  albumSteps(loadConfig(vars), {
+const stepsWith = (vars: Record<string, string>) => {
+  const config = loadConfig(vars);
+  return albumSteps(config, {
     db: openDatabase(':memory:'),
     fetch: noFetch,
     log,
     now: Date.now,
     people: () => [],
+    musicBrainz: musicBrainzOf(config, noFetch),
   });
+};
 
 describe('[M3.albums] album steps from the configuration', () => {
   it('[M3.albums] registers with all of it, with a catalogue for Search, and calls nothing to do so', () => {
     const calls: string[] = [];
-    const made = albumSteps(loadConfig(env), {
+    const fetch: FetchLike = async (url) => {
+      calls.push(url);
+      throw new Error('refused');
+    };
+    const config = loadConfig(env);
+    const made = albumSteps(config, {
       db: openDatabase(':memory:'),
-      fetch: async (url) => {
-        calls.push(url);
-        throw new Error('refused');
-      },
+      fetch,
+      musicBrainz: musicBrainzOf(config, fetch),
       log,
       now: Date.now,
       people: () => {
