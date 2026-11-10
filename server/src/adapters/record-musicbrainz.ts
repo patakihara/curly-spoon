@@ -632,7 +632,7 @@ export async function recordKeep(input: KeepRecordInput): Promise<{ written: str
     const rec = recorder();
     const jf = new JellyfinClient({ baseUrl, token, fetch: rec.fetch });
     const probe = `${library!.locations[0]!.replace(/\/$/, '')}/${UNINDEXED_PROBE}`;
-    await rec.capture('media-updated', () => jf.reportCreated(probe), scanOnly);
+    await rec.capture('media-updated', () => jf.reportCreated([probe]), scanOnly);
     out('media-updated: reported a path Jellyfin ignores');
     calls.push('media-updated');
   }

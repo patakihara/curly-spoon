@@ -22,8 +22,8 @@
  *
  * A download whose bytes stand still for the stall limit fails `downloadStalled`, and goes on by
  * itself to the next release the search found, up to `MAX_AUTO_STARTS`; a person's own choices don't
- * count. A download whose files are not the release asked for (`wrongRelease`) gives way the same,
- * under the same count. Past that, or with none left, the request stays failed and offers what
+ * count. A download whose files are not the release asked for (`wrongRelease`), found by its poll
+ * or by its import, gives way the same, under the same count. Past that, or with none left, the request stays failed and offers what
  * remains. Listed
  * seeders can be false, so only bytes count. A look after an outage of any length, or a full limit
  * after the last one, has seen nothing stand still, so it restarts the clock: an outage can never
@@ -306,6 +306,9 @@ async function importing(deps: RequestJobDeps, steps: MediumSteps, request: Stor
     if (imported.kind === 'arrived') {
       const change = { state: ready.state, result: imported.ref, stepKey: null };
       saveRequest(deps.db, ready.id, change, deps.now(), ready.version);
+    } else if (imported.kind === 'failed') {
+      if (GIVES_WAY.has(imported.reason)) await givesWay(deps, ready, imported.reason);
+      else apply(deps, ready, { type: 'failed', reason: imported.reason });
     } else if (deps.now() - ready.updatedAt >= deps.notIndexedAfterMs) {
       apply(deps, ready, { type: 'failed', reason: 'notIndexed' });
     }

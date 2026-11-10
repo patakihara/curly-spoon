@@ -17,14 +17,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { SongMatch } from './match.js';
-import {
-  COVER_FILE,
-  householdTrack,
-  placeSong,
-  type PlaceSongInput,
-  songFolders,
-  songPlace,
-} from './place.js';
+import { albumFolders, COVER_FILE } from '../../music/folders.js';
+import { householdTrack, placeSong, type PlaceSongInput, songPlace } from './place.js';
 
 const MATCH: SongMatch = {
   source: 'MusicBrainz',
@@ -76,7 +70,7 @@ async function place(
   const { made = [], ...rest } = input;
   return placeSong({
     musicDir: music,
-    folders: await songFolders(music, PLACE),
+    folders: await albumFolders(music, PLACE),
     place: PLACE,
     youtubeMusicId: 'lYBUbBu4W08',
     built,
@@ -99,19 +93,19 @@ describe('[M3.keep/a] a kept song is filed into the album’s folder already the
 
   it('[M3.keep/a] a folder whose bracket starts with the year, as `(2015 original Broadway cast)`', async () => {
     folder('Peter Tosh/Mama Africa (1983 Jamaican pressing)');
-    expect((await songFolders(music, PLACE)).album).toBe('Mama Africa (1983 Jamaican pressing)');
+    expect((await albumFolders(music, PLACE)).album).toBe('Mama Africa (1983 Jamaican pressing)');
   });
 
   it('[M3.keep/a] not a folder of the album from another year, nor another album', async () => {
     folder('Peter Tosh/Mama Africa (2002)');
     folder('Peter Tosh/1983 - Mama Africa Live');
-    expect((await songFolders(music, PLACE)).album).toBe('1983 - Mama Africa');
+    expect((await albumFolders(music, PLACE)).album).toBe('1983 - Mama Africa');
   });
 
   it('[M3.keep/a] a song with no year takes the album’s folder of any year', async () => {
     folder('Peter Tosh/Mama Africa (1983)');
     const noYear = songPlace({ ...MATCH, date: null, originalDate: null });
-    expect((await songFolders(music, noYear)).album).toBe('Mama Africa (1983)');
+    expect((await albumFolders(music, noYear)).album).toBe('Mama Africa (1983)');
   });
 });
 
@@ -124,7 +118,7 @@ describe('[M3.keep/a] the household’s own file of the track is the song, and n
   ])('[M3.keep/a] %s', async (name) => {
     folder('Peter Tosh/Mama Africa (1983)');
     writeFileSync(join(music, 'Peter Tosh/Mama Africa (1983)', name), 'the household’s');
-    const folders = await songFolders(music, PLACE);
+    const folders = await albumFolders(music, PLACE);
     expect(await householdTrack(music, folders, PLACE)).toEqual({
       relPath: `Peter Tosh/Mama Africa (1983)/${name}`,
       outcome: 'household',
@@ -142,7 +136,7 @@ describe('[M3.keep/a] the household’s own file of the track is the song, and n
       if (name.endsWith('/')) mkdirSync(join(music, 'Peter Tosh/Mama Africa (1983)', name));
       else writeFileSync(join(music, 'Peter Tosh/Mama Africa (1983)', name), 'another');
     }
-    const folders = await songFolders(music, PLACE);
+    const folders = await albumFolders(music, PLACE);
     expect(await householdTrack(music, folders, PLACE)).toBeNull();
   });
 });

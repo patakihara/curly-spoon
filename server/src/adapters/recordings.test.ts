@@ -1541,7 +1541,7 @@ describe("[M3.keep] Jellyfin's calls for a kept song, as recorded", () => {
 
   it('[M3.keep] a file made is reported by its path, as Created, and Jellyfin answers 204', async () => {
     const path = `/data/media/Music/${UNINDEXED_PROBE}`;
-    await expect(jellyfin.reportCreated(path)).resolves.toBeUndefined();
+    await expect(jellyfin.reportCreated([path])).resolves.toBeUndefined();
     expect(updated.request).toMatchObject({ method: 'POST', path: '/Library/Media/Updated' });
     expect(json(updated.request.body)).toEqual({
       Updates: [{ Path: path, UpdateType: 'Created' }],

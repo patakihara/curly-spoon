@@ -50,11 +50,16 @@ export type PollOutcome =
   | { kind: 'failed'; reason: RequestFailure };
 
 /**
- * An import's answer: the item the index will find once it is in, or that it is not ready to name
- * one yet, as when a server only assigns an id once it has seen the folder. A waiting import saves
- * nothing, and is called again next turn under the same key.
+ * An import's answer: the item the index will find once it is in; that it is not ready to name one
+ * yet, as when a server only assigns an id once it has seen the folder; or that the download is not
+ * what was asked for, with the reason. A waiting import saves nothing, and is called again next turn
+ * under the same key. A failed one ends the request as a poll's failure does: `wrongRelease` (an
+ * album whose files fit none of its editions) gives way to the next release the search found.
  */
-export type ImportOutcome = { kind: 'arrived'; ref: MediaRef } | { kind: 'waiting' };
+export type ImportOutcome =
+  | { kind: 'arrived'; ref: MediaRef }
+  | { kind: 'waiting' }
+  | { kind: 'failed'; reason: RequestFailure };
 
 /**
  * Thrown by a step for an upstream it could not reach: a refused connection, a time limit of its

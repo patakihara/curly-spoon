@@ -25,6 +25,8 @@ export const qbitFileSchema = z.object({
   /** Relative to the torrent's save path. */
   name: z.string(),
   size: z.number(),
+  /** 0 for a file set aside, which is never fetched. */
+  priority: z.number().int(),
 });
 export type QbitFile = z.infer<typeof qbitFileSchema>;
 

@@ -7,7 +7,7 @@
 import { z } from 'zod';
 import { type TrackTags, trackComments } from '../../music/tags.js';
 import type { VorbisComment } from '../../music/vorbis.js';
-import type { SongMatch } from './match.js';
+import type { MusicBrainzMatch, SongMatch } from './match.js';
 
 /** The comment a kept file is known by. */
 export const YOUTUBE_MUSIC_ID = 'YOUTUBE_MUSIC_ID';
@@ -50,28 +50,33 @@ export const SongMatchSchema = z.discriminatedUnion('source', [
     .strict(),
 ]) satisfies z.ZodType<SongMatch>;
 
+/** A MusicBrainz match's tags: its names, its place on the release, its dates and its ids. */
+export function musicBrainzTags(match: MusicBrainzMatch): TrackTags {
+  return {
+    title: match.title,
+    artist: match.artist,
+    artists: match.artists,
+    album: match.album,
+    albumArtist: match.albumArtist,
+    albumArtists: match.albumArtists,
+    trackNumber: match.trackNumber,
+    trackTotal: match.trackTotal,
+    discNumber: match.discNumber,
+    discTotal: match.discTotal,
+    date: match.date,
+    originalDate: match.originalDate,
+    recordingId: match.recordingId,
+    releaseTrackId: match.releaseTrackId,
+    releaseId: match.releaseId,
+    releaseGroupId: match.releaseGroupId,
+  };
+}
+
 /** The comments a kept song's file is written with: the track's own, then `YOUTUBE_MUSIC_ID`. */
 export function songComments(youtubeMusicId: string, match: SongMatch): VorbisComment[] {
   const tags: TrackTags =
     match.source === 'MusicBrainz'
-      ? {
-          title: match.title,
-          artist: match.artist,
-          artists: match.artists,
-          album: match.album,
-          albumArtist: match.albumArtist,
-          albumArtists: match.albumArtists,
-          trackNumber: match.trackNumber,
-          trackTotal: match.trackTotal,
-          discNumber: match.discNumber,
-          discTotal: match.discTotal,
-          date: match.date,
-          originalDate: match.originalDate,
-          recordingId: match.recordingId,
-          releaseTrackId: match.releaseTrackId,
-          releaseId: match.releaseId,
-          releaseGroupId: match.releaseGroupId,
-        }
+      ? musicBrainzTags(match)
       : {
           title: match.title,
           artist: match.artist,

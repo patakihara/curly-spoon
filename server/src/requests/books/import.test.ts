@@ -145,6 +145,7 @@ function deps(fetch: FetchLike, more: Partial<BookImportDeps> = {}): BookImportD
           index,
           name,
           size: 1,
+          priority: 1,
         })),
     },
     abs: new AbsClient({ baseUrl: ABS, token: 'k', fetch }),
@@ -529,7 +530,7 @@ describe('the import step', () => {
         deps(fetch, {
           qbittorrent: {
             withHashes: async () => rows as never,
-            files: async () => [{ index: 0, name: 'Jekyll/01.mp3', size: 1 }],
+            files: async () => [{ index: 0, name: 'Jekyll/01.mp3', size: 1, priority: 1 }],
           },
         }),
       );
@@ -556,6 +557,7 @@ describe('the import step', () => {
               index,
               name,
               size: 1,
+              priority: 1,
             })),
         },
       }),

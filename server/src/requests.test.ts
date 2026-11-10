@@ -1559,6 +1559,47 @@ describe('[M3.albums] a download whose files are not the album', () => {
     expect(otherReleases(reread(one))).toEqual([]);
   });
 
+  it('[M3.albums] found by the import, drops that torrent and starts the next by itself', async () => {
+    const steps = standInSteps('album', {
+      search: { kind: 'picked', release: standInRelease('a'), others },
+    });
+    const job = deps({
+      ...steps,
+      // The first release's files fit no edition once downloaded; the next one's import is asked.
+      import: (request, key, signal) =>
+        request.release?.id === 'a' ? Promise.resolve(wrong) : steps.import(request, key, signal),
+    });
+    const one = request('album');
+    await runUntil(job, one, 'importing');
+    await turns(job, 1);
+    expect(steps.cancelled).toEqual([{ release: 'a', start: 1 }]);
+    expect(reread(one)).toMatchObject({
+      state: { status: 'queued' },
+      release: { id: 'b' },
+      handle: null,
+      stepKey: null,
+      autoStarts: 1,
+    });
+    await runUntilImported(job, one);
+    expect(steps.calls.start).toBe(2);
+  });
+
+  it('[M3.albums] found by the import with no others, stays failed at the import', async () => {
+    const steps = standInSteps('album', {
+      search: { kind: 'picked', release: standInRelease('a'), others: [] },
+    });
+    const job = deps({ ...steps, import: () => Promise.resolve(wrong) });
+    const one = request('album');
+    await runUntil(job, one, 'importing');
+    await turns(job, 3);
+    expect(reread(one).state).toEqual({
+      status: 'failed',
+      failedStep: 'importing',
+      reason: 'wrongRelease',
+    });
+    expect(steps.calls.start).toBe(1);
+  });
+
   it('[M3.albums] a retry starts that release afresh, dropping the old torrent', async () => {
     const steps = standInSteps('album', {
       search: { kind: 'picked', release: standInRelease('a'), others: [] },
