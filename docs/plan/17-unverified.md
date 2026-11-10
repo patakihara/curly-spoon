@@ -7,6 +7,7 @@ part: Delivery
 
 ::: small
 - Where audiobook previews come from (a retail sample URL keyed by ASIN) (M4.browse).
+- MusicBrainz ids in Jellyfin's `ProviderIds` for the household's own tracks: they carry none (M4.identity).
 - How well YouTube Music and Deezer fill MusicBrainz's gaps for your artists (M3.catalog).
 - How long YouTube Music extraction keeps working from this server's IP (M3.ytmusic).
 - Watched-state and position sync on your account: reading watch history and marking videos watched with sign-in cookies works in the extractor but is untried here; no known tool sets YouTube's resume position to a real position rather than "the end"; exported cookies' lifetime is unknown (M3.ytsync).
