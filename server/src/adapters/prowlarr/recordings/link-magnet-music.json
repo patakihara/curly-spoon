@@ -1,0 +1,22 @@
+{
+  "upstream": "prowlarr",
+  "upstreamVersion": "10.0.0.22097",
+  "call": "link-magnet-music",
+  "request": {
+    "method": "GET",
+    "path": "/1/download",
+    "query": {
+      "apikey": "<token>",
+      "link": "link-c10af1640615"
+    },
+    "headers": {},
+    "body": null
+  },
+  "response": {
+    "status": 301,
+    "headers": {
+      "location": "magnet:?xt=urn:btih:6941A469928AA388EFF7D25FFC9CFDD100FA9A7C"
+    },
+    "body": null
+  }
+}

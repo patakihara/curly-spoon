@@ -15,10 +15,27 @@ export const prowlarrRowSchema = z.object({
   downloadUrl: z.string().nullish(),
   magnetUrl: z.string().nullish(),
   infoHash: z.string().nullish(),
+  /** How many files the torrent holds, where the indexer lists it. */
+  files: z.number().int().nonnegative().nullish(),
 });
 export type ProwlarrRow = z.infer<typeof prowlarrRowSchema>;
 
 /** The rows are parsed one by one, so that a malformed one costs only itself. */
 export const prowlarrSearchSchema = z.array(z.unknown());
+
+/** An indexer as Prowlarr lists it, read for its categories alone: the rest holds its settings. */
+const categorySchema = z.object({
+  id: z.number().int(),
+  subCategories: z.array(z.object({ id: z.number().int() })).nullish(),
+});
+export const prowlarrIndexerSchema = z.object({
+  id: z.number().int(),
+  name: z.string(),
+  enable: z.boolean(),
+  protocol: z.string(),
+  capabilities: z.object({ categories: z.array(categorySchema).nullish() }).nullish(),
+});
+export type ProwlarrIndexer = z.infer<typeof prowlarrIndexerSchema>;
+export const prowlarrIndexersSchema = z.array(prowlarrIndexerSchema);
 
 export const prowlarrStatusSchema = z.object({ version: z.string() });

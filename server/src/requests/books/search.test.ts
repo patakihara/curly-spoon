@@ -263,6 +263,7 @@ describe('[M3.books/a] the pick starts only what is plainly this book', () => {
     source: 'an indexer',
     size: null,
     seeders: 1,
+    files: null,
     infoUrl: null,
     details: {},
   };
@@ -329,6 +330,7 @@ describe('[M3.books/a] what the pick weighs', () => {
     source: 'an indexer',
     size: null,
     seeders: 1,
+    files: null,
     infoUrl: null,
     details: {},
   };
@@ -453,6 +455,7 @@ describe('[M3.books/a] how far the search goes', () => {
     source,
     size: null,
     seeders: 1,
+    files: null,
     infoUrl: `http://upstream.invalid/${at}`,
     details: { link: `/${at}` },
   });

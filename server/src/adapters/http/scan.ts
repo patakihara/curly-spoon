@@ -111,7 +111,7 @@ const FILE_EXTENSIONS = new Set(
   (
     'jpg jpeg png gif webp svg bmp mp3 m4a m4b mp4 mkv avi webm flac ogg oga opus aac wav wma ' +
     'ts json xml nfo txt epub pdf srt vtt ass lrc cue js mjs cjs css html htm db sqlite log zip ' +
-    'rar gz xz tar md yml yaml ini conf cfg invalid'
+    'rar gz xz tar md yml yaml ini conf cfg invalid torrent'
   ).split(' '),
 );
 /** Dotted words that are not hosts either: a sign-on's JWT response modes, like `query.jwt`. */

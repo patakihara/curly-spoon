@@ -1006,6 +1006,24 @@ export const migrations: readonly Migration[] = [
       for (const one of attached) db.exec(one.sql);
     },
   },
+  {
+    id: 30,
+    name: 'prowlarr_searches',
+    up: (db) => {
+      // What Prowlarr answered a search, for a day: a retry, another person's request or a search
+      // after a restart asks no indexer again. indexer_ids is the sorted ids, comma-separated; rows
+      // is the parsed releases as JSON, with no key and no address.
+      db.exec(`
+        CREATE TABLE prowlarr_searches (
+          query       TEXT NOT NULL,
+          indexer_ids TEXT NOT NULL,
+          at          INTEGER NOT NULL,
+          rows        TEXT NOT NULL,
+          PRIMARY KEY (query, indexer_ids)
+        );
+      `);
+    },
+  },
 ];
 
 export function runMigrations(

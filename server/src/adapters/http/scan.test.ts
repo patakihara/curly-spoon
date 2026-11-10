@@ -432,6 +432,13 @@ describe('[M0.record/c] scanning recordings for leaks', () => {
     ]);
   });
 
+  it("[M3.albums] a torrent stand-in's file name is a file, not a host", () => {
+    const torrent = leak((r) => {
+      r.response.body = { bytes: 'torrent-ghosts-ia.torrent', synthesized: 'a torrent cut' };
+    });
+    expect(scanRecording(torrent)).toEqual([]);
+  });
+
   it('[M0.record/c] the scrubbed placeholders pass the scan', () => {
     expect(
       scanRecording(

@@ -10,10 +10,14 @@
  * address: never log them. A malformed row is skipped and logged by its place and fields alone.
  */
 import type { JobLog } from '../../jobs/schedule.js';
+import { TORRENT_MAX_BYTES } from '../../requests/download/torrentFiles.js';
 import { infoHashFromMagnet, infoHashFromTorrentFile } from '../../requests/download/torrentId.js';
+import { decodeEntities } from '../http/entities.js';
 import { AdapterError, type FetchLike, requestJson } from '../http/fetch.js';
 import { stepFailure } from '../http/unavailable.js';
 import {
+  type ProwlarrIndexer,
+  prowlarrIndexersSchema,
   type ProwlarrRow,
   prowlarrRowSchema,
   prowlarrSearchSchema,
@@ -23,8 +27,6 @@ import {
 /** A search waits on every indexer; a step may take 120 s before the job fails its request. */
 export const PROWLARR_SEARCH_LIMIT_MS = 90_000;
 const LINK_LIMIT_MS = 30_000;
-/** A torrent file past this is refused rather than read: the bytes are a third party's. */
-const TORRENT_MAX_BYTES = 8 * 1024 * 1024;
 const API_KEY_PARAM = 'apikey';
 
 /** What it takes to fetch a release, safe to store. */
@@ -42,6 +44,8 @@ export interface ProwlarrRelease {
   size: number | null;
   /** As the indexer lists it, which can be false. */
   seeders: number | null;
+  /** How many files the torrent holds, where the indexer lists it. */
+  files: number | null;
   /** The release's page on its indexer. */
   infoUrl: string | null;
   details: ProwlarrDetails;
@@ -89,7 +93,7 @@ function linkOf(value: string | null | undefined): string | null {
 function toRelease(row: ProwlarrRow): ProwlarrRelease | null {
   if (row.protocol !== 'torrent') return null;
   const magnet = [row.guid, row.magnetUrl, row.downloadUrl].find(isMagnet);
-  const link = linkOf(row.magnetUrl) ?? linkOf(row.downloadUrl);
+  const link = linkOf(row.downloadUrl) ?? linkOf(row.magnetUrl);
   if (magnet === undefined && link === null) return null;
   const hash = row.infoHash?.toLowerCase();
   const details: ProwlarrDetails = {
@@ -98,13 +102,31 @@ function toRelease(row: ProwlarrRow): ProwlarrRelease | null {
     ...(hash !== undefined && /^[0-9a-f]{40}$/.test(hash) ? { infoHash: hash } : {}),
   };
   return {
-    title: row.title,
+    title: decodeEntities(row.title).trim(),
     source: row.indexer ?? 'Prowlarr',
     size: row.size ?? null,
     seeders: row.seeders ?? null,
+    files: row.files ?? null,
     infoUrl: row.infoUrl ?? null,
     details,
   };
+}
+
+/** Newznab's Audio category, and its audiobook subcategory. */
+export const AUDIO_CATEGORY = 3000;
+const AUDIOBOOK_CATEGORY = 3030;
+
+/**
+ * An indexer that lists music: on, a torrent site, and listing Audio with no subcategory or with one
+ * other than audiobooks. A books-only site lists Audio with audiobooks alone, and answers a music
+ * search with books (recorded).
+ */
+export function isMusicIndexer(indexer: ProwlarrIndexer): boolean {
+  if (!indexer.enable || indexer.protocol !== 'torrent') return false;
+  const audio = indexer.capabilities?.categories?.find((one) => one.id === AUDIO_CATEGORY);
+  if (audio === undefined) return false;
+  const subs = audio.subCategories ?? [];
+  return subs.length === 0 || subs.some((sub) => sub.id !== AUDIOBOOK_CATEGORY);
 }
 
 /** A body's bytes, up to the cap. */
@@ -144,6 +166,21 @@ export class ProwlarrClient {
       prowlarrStatusSchema,
     );
     return version;
+  }
+
+  /** The ids of the indexers that list music, in Prowlarr's order. */
+  async musicIndexers(): Promise<number[]> {
+    try {
+      const indexers = await requestJson(
+        this.opts.fetch,
+        this.url('api/v1/indexer').toString(),
+        { headers: this.keyHeader },
+        prowlarrIndexersSchema,
+      );
+      return indexers.filter(isMusicIndexer).map((indexer) => indexer.id);
+    } catch (error) {
+      throw stepFailure('prowlarr', error);
+    }
   }
 
   /**

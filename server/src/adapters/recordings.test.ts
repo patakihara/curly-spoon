@@ -27,6 +27,9 @@ import {
 import { FOLDER_KEPT, MUSICBRAINZ_SONGS, UNINDEXED_PROBE } from './record-musicbrainz.js';
 import { StepUnavailable } from '../requests/steps.js';
 import { ABS_PROGRESS_CALLS, JELLYFIN_PROGRESS_CALLS, TEST_BOOKMARK } from './record-progress.js';
+import { AUDIO_CATEGORY, ProwlarrClient } from './prowlarr/client.js';
+import { ALBUM_SEARCHES } from './record-albums.js';
+import { torrentContents } from '../requests/download/torrentFiles.js';
 
 const adapters = dirname(fileURLToPath(import.meta.url));
 
@@ -958,6 +961,118 @@ describe("[M3.books] Prowlarr's and AudiobookBay's calls, as recorded", () => {
     const asked = recording('prowlarr', 'download-redirect');
     expect(asked.request.query.apikey).toBe('<token>');
     expect(asked.response.headers.location).toMatch(/^magnet:\?xt=urn:btih:[0-9A-Fa-f]{40}$/);
+  });
+});
+
+describe("[M3.albums] Prowlarr's music calls, as recorded", () => {
+  const calls = [
+    ['indexers', 200],
+    ...ALBUM_SEARCHES.map(([call]) => [call, 200] as const),
+    ['torrent-ghosts-ia', 200],
+    ['link-magnet-music', 301],
+  ] as const;
+  const all = () => calls.map(([call]) => recording('prowlarr', call));
+  const client = () =>
+    new ProwlarrClient({
+      baseUrl: 'http://upstream.invalid',
+      apiKey: '<token>',
+      fetch: replayFetch(all(), { readBytes: standInsBeside(adapters) }),
+    });
+  const search = async (query: string) => {
+    const prowlarr = client();
+    const indexerIds = await prowlarr.musicIndexers();
+    return prowlarr.search(query, { categories: [AUDIO_CATEGORY], indexerIds });
+  };
+  const rowsOf = (call: string) => {
+    const { body } = recording('prowlarr', call).response;
+    if (body === null || !('json' in body)) throw new Error('expected rows');
+    return body.json as { indexer: string; title: string; infoHash?: string }[];
+  };
+
+  it.each(calls)('[M3.albums] %s answered %i', (call, status) => {
+    expect(recording('prowlarr', call).response.status).toBe(status);
+  });
+
+  it('[M3.albums] no recording leaks a key, a host or an address', () => {
+    for (const one of all()) expect(scanRecording(one), one.call).toEqual([]);
+  });
+
+  it('[M3.albums] the only indexer named is the one the plan names', () => {
+    const { body } = recording('prowlarr', 'indexers').response;
+    const listed = (body as { json: { name: string }[] }).json.map((one) => one.name);
+    const searched = ALBUM_SEARCHES.flatMap(([call]) => rowsOf(call).map((row) => row.indexer));
+    for (const name of [...listed, ...searched]) {
+      expect(name).toMatch(/^(?:AudioBook Bay|indexer-[a-z])$/);
+    }
+  });
+
+  it('[M3.albums] the music indexers leave out every site with no music, and the one switched off', async () => {
+    const { body } = recording('prowlarr', 'indexers').response;
+    const listed = (
+      body as {
+        json: {
+          id: number;
+          name: string;
+          enable: boolean;
+          capabilities: { categories: { id: number; subCategories: { id: number }[] }[] };
+        }[];
+      }
+    ).json;
+    const ids = await client().musicIndexers();
+    const noMusic = listed.filter(
+      (one) =>
+        !one.enable ||
+        !one.capabilities.categories.some(
+          (category) =>
+            category.id === AUDIO_CATEGORY &&
+            (category.subCategories.length === 0 ||
+              category.subCategories.some((sub) => sub.id !== 3030)),
+        ),
+    );
+    const audiobookBay = listed.find((one) => one.name === 'AudioBook Bay');
+    expect(audiobookBay).toBeDefined();
+    expect(ids).not.toContain(audiobookBay?.id);
+    expect(noMusic.length).toBeGreaterThanOrEqual(5);
+    for (const one of noMusic) expect(ids).not.toContain(one.id);
+    expect(ids).toHaveLength(listed.length - noMusic.length);
+  });
+
+  it("[M3.albums] The Slip's rows parse with their file counts and decoded titles", async () => {
+    const raw = rowsOf('music-slip').map((row) => row.title);
+    expect(raw.some((title) => /&[a-z]+;|&#\d+;/.test(title))).toBe(true);
+    const rows = await search('Nine Inch Nails The Slip');
+    expect(rows.length).toBeGreaterThan(10);
+    expect(rows.some((row) => /&[a-z]+;|&#\d+;/.test(row.title))).toBe(false);
+    expect(rows.filter((row) => (row.files ?? 0) > 1).length).toBeGreaterThan(5);
+    expect(rows.some((row) => row.files === null)).toBe(true);
+    expect(rows.some((row) => /flac/i.test(row.title) && row.files === 11)).toBe(true);
+  });
+
+  it("[M3.albums] Ghosts on the Internet Archive lists 72 audio files and a web seed, under its row's hash", async () => {
+    const asked = recording('prowlarr', 'torrent-ghosts-ia');
+    expect(asked.request.query.apikey).toBe('<token>');
+    const answer = await client().resolve({
+      link: `${asked.request.path}?link=${asked.request.query.link}`,
+    });
+    if (answer.kind !== 'torrent') throw new Error('expected a torrent');
+    const contents = torrentContents(answer.bytes);
+    if (contents === null) throw new Error('expected a readable torrent');
+    expect(contents.hash).toBe(answer.hash);
+    const audio = contents.files.filter((one) => /\.(?:flac|mp3)$/i.test(one.path));
+    expect(audio).toHaveLength(72);
+    expect(audio.filter((one) => /\.flac$/i.test(one.path))).toHaveLength(36);
+    expect(contents.webSeeds.length).toBeGreaterThan(0);
+    const hashes = rowsOf('music-ghosts').map((row) => row.infoHash?.toLowerCase());
+    expect(hashes).toContain(contents.hash);
+  });
+
+  it('[M3.albums] a row with no hash is asked, and answers a magnet holding only its hash', async () => {
+    const asked = recording('prowlarr', 'link-magnet-music');
+    expect(asked.response.headers.location).toMatch(/^magnet:\?xt=urn:btih:[0-9A-Fa-f]{40}$/);
+    const answer = await client().resolve({
+      link: `${asked.request.path}?link=${asked.request.query.link}`,
+    });
+    expect(answer).toMatchObject({ kind: 'magnet', hash: expect.stringMatching(/^[0-9a-f]{40}$/) });
   });
 });
 

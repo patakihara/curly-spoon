@@ -1,0 +1,1957 @@
+{
+  "upstream": "prowlarr",
+  "upstreamVersion": "10.0.0.22097",
+  "call": "music-slip",
+  "request": {
+    "method": "GET",
+    "path": "/api/v1/search",
+    "query": {
+      "categories": "3000",
+      "indexerIds": "5",
+      "query": "Nine Inch Nails The Slip",
+      "type": "search"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": [
+        {
+          "guid": "http://upstream.invalid/page-181ac027a754",
+          "age": 799,
+          "ageHours": 19179.858141074834,
+          "ageMinutes": 1150791.48846452,
+          "size": 478594203,
+          "indexerId": 1,
+          "indexer": "indexer-a",
+          "title": "Nine Inch Nails The Slip Album  24Bit 44 1kHz FLAC Beats⭐",
+          "sortTitle": "nine inch nails slip album 24bit 44 1khz flac beats",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2024-09-01T21:00:00Z",
+          "downloadUrl": "http://upstream.invalid/1/download?apikey=<token>&link=link-b79454e43ee8",
+          "infoUrl": "http://upstream.invalid/page-181ac027a754",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3040,
+              "name": "Audio/Lossless",
+              "subCategories": []
+            },
+            {
+              "id": 100023,
+              "subCategories": []
+            }
+          ],
+          "seeders": 23,
+          "leechers": 1,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/page-b5b7112685c1",
+          "age": 123,
+          "ageHours": 2967.040085635222,
+          "ageMinutes": 178022.40513813667,
+          "size": 1125714150,
+          "grabs": 109,
+          "indexerId": 4,
+          "indexer": "indexer-e",
+          "title": "Nine Inch Nails - The Slip",
+          "sortTitle": "nine inch nails slip",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2026-07-09T09:49:05Z",
+          "downloadUrl": "http://upstream.invalid/4/download?apikey=<token>&link=link-bce1c23fc802",
+          "infoUrl": "http://upstream.invalid/page-0eb7bd7e7baf",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 127296,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/4/download?apikey=<token>&link=link-2884d9ca9183",
+          "infoHash": "80f9c624bc478a5d4dd2ab0f15d173c2b12c7173",
+          "seeders": 1,
+          "leechers": 1,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/page-14efd40ac61d",
+          "age": 135,
+          "ageHours": 3249.2564746611665,
+          "ageMinutes": 194955.38847969667,
+          "size": 337492368,
+          "grabs": 367,
+          "indexerId": 4,
+          "indexer": "indexer-e",
+          "title": "Nine Inch Nails - The Slip",
+          "sortTitle": "nine inch nails slip",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2026-06-27T15:36:06Z",
+          "downloadUrl": "http://upstream.invalid/4/download?apikey=<token>&link=link-4ac99970cfd8",
+          "infoUrl": "http://upstream.invalid/page-86f609e75808",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 127296,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/4/download?apikey=<token>&link=link-8128986c2717",
+          "infoHash": "d8925922fee4c536c7c2aa2bca7a4d5e9a0a409c",
+          "seeders": 1,
+          "leechers": 1,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/page-e462ecba137c",
+          "age": 5091,
+          "ageHours": 122190.42508588525,
+          "ageMinutes": 7331425.50515312,
+          "size": 368995783,
+          "grabs": 2739,
+          "indexerId": 4,
+          "indexer": "indexer-e",
+          "title": "Nine Inch Nails \"The Slip\" (M4A quality via torrent)",
+          "sortTitle": "nine inch nails slip m4a quality via torrent",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2012-12-01T18:25:59Z",
+          "downloadUrl": "http://upstream.invalid/4/download?apikey=<token>&link=link-f876b5d4edea",
+          "infoUrl": "http://upstream.invalid/page-bdef0f217286",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 127296,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/4/download?apikey=<token>&link=link-6be63ff64d9d",
+          "infoHash": "3e09456a9ffecb6e1cfede294457825083f77d08",
+          "seeders": 1,
+          "leechers": 1,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/page-3b9423d2bc41",
+          "age": 5986,
+          "ageHours": 143670.09786374515,
+          "ageMinutes": 8620205.871824713,
+          "size": 786126754,
+          "grabs": 8899,
+          "indexerId": 4,
+          "indexer": "indexer-e",
+          "title": "Nine Inch Nails - The Slip multi-track stems",
+          "sortTitle": "nine inch nails slip multi track stems",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2010-06-20T18:45:37Z",
+          "downloadUrl": "http://upstream.invalid/4/download?apikey=<token>&link=link-4492bfdf505d",
+          "infoUrl": "http://upstream.invalid/page-4d1813e5d874",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 127296,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/4/download?apikey=<token>&link=link-55d96f87d7db",
+          "infoHash": "279f63f1a09db5f3c7cba186e0245ef99bfa0478",
+          "seeders": 1,
+          "leechers": 1,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "magnet:?xt=urn:btih:B5EDDE87A31883F7FA329F248D2F1C0E2D86928A",
+          "age": 798,
+          "ageHours": 19168.550363813887,
+          "ageMinutes": 1150113.0218288384,
+          "size": 478598068,
+          "files": 11,
+          "indexerId": 5,
+          "indexer": "indexer-i",
+          "title": "Nine Inch Nails &nbsp;The Slip &nbsp;Album -24Bit 44 1kHz FLAC Beats⭐",
+          "sortTitle": "nine inch nails nbspthe slip nbspalbum 24bit 44 1khz flac beats",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2024-09-02T08:18:28Z",
+          "infoUrl": "http://upstream.invalid/page-f171608fae17",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3040,
+              "name": "Audio/Lossless",
+              "subCategories": []
+            },
+            {
+              "id": 100104,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/5/download?apikey=<token>&link=link-12bd7db90955",
+          "infoHash": "B5EDDE87A31883F7FA329F248D2F1C0E2D86928A",
+          "seeders": 40,
+          "leechers": 2,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "magnet:?xt=urn:btih:632DF7C29C7C0EB0E1E725DFB85091505FB9096A",
+          "age": 6623,
+          "ageHours": 158974.4125861181,
+          "ageMinutes": 9538464.755167097,
+          "size": 82987580,
+          "files": 1,
+          "indexerId": 5,
+          "indexer": "indexer-i",
+          "title": "Nine Inch Nails - The Slip full cd",
+          "sortTitle": "nine inch nails slip full cd",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2008-09-21T02:26:44Z",
+          "infoUrl": "http://upstream.invalid/page-1faea8e6195f",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3050,
+              "name": "Audio/Other",
+              "subCategories": []
+            },
+            {
+              "id": 100199,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/5/download?apikey=<token>&link=link-06c6a473b8a3",
+          "infoHash": "632DF7C29C7C0EB0E1E725DFB85091505FB9096A",
+          "seeders": 0,
+          "leechers": 0,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "magnet:?xt=urn:btih:F4E14F1ABE29BC991575A318C4F29D7AC4187757",
+          "age": 6760,
+          "ageHours": 162252.74591955417,
+          "ageMinutes": 9735164.755173262,
+          "size": 270279764,
+          "files": 12,
+          "indexerId": 5,
+          "indexer": "indexer-i",
+          "title": "Nine Inch Nails - The Slip -Flac",
+          "sortTitle": "nine inch nails slip flac",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2008-05-07T12:06:44Z",
+          "infoUrl": "http://upstream.invalid/page-2a6fb04a3a5f",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3040,
+              "name": "Audio/Lossless",
+              "subCategories": []
+            },
+            {
+              "id": 100104,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/5/download?apikey=<token>&link=link-45962750aae2",
+          "infoHash": "F4E14F1ABE29BC991575A318C4F29D7AC4187757",
+          "seeders": 4,
+          "leechers": 0,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "magnet:?xt=urn:btih:BD96B590FF830452D60F4F62D89C5C01BF848D66",
+          "age": 6762,
+          "ageHours": 162305.24286404852,
+          "ageMinutes": 9738314.571842916,
+          "size": 91091570,
+          "files": 11,
+          "indexerId": 5,
+          "indexer": "indexer-i",
+          "title": "Nine Inch Nails - The Slip",
+          "sortTitle": "nine inch nails slip",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2008-05-05T07:36:55Z",
+          "infoUrl": "http://upstream.invalid/page-59e91421bbd2",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 100101,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/5/download?apikey=<token>&link=link-528b7c65eb9a",
+          "infoHash": "BD96B590FF830452D60F4F62D89C5C01BF848D66",
+          "seeders": 2,
+          "leechers": 0,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "magnet:?xt=urn:btih:9962937C7EB18DFA36A81865BE8FDE9C9B1724C3",
+          "age": 6498,
+          "ageHours": 155973.90619745138,
+          "ageMinutes": 9358434.3718471,
+          "size": 275306798,
+          "files": 11,
+          "indexerId": 5,
+          "indexer": "indexer-i",
+          "title": "Nine Inch Nails - The Slip - Apple Lossless",
+          "sortTitle": "nine inch nails slip apple lossless",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2009-01-24T02:57:07Z",
+          "infoUrl": "http://upstream.invalid/page-4cb4b5d2b04f",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3050,
+              "name": "Audio/Other",
+              "subCategories": []
+            },
+            {
+              "id": 100199,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/5/download?apikey=<token>&link=link-33cc5b7a4542",
+          "infoHash": "9962937C7EB18DFA36A81865BE8FDE9C9B1724C3",
+          "seeders": 1,
+          "leechers": 0,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "magnet:?xt=urn:btih:18B1A606FF09EA31694C3AF04F5E68C8E2054398",
+          "age": 6762,
+          "ageHours": 162288.99675307673,
+          "ageMinutes": 9737339.805184612,
+          "size": 261184626,
+          "files": 1,
+          "indexerId": 5,
+          "indexer": "indexer-i",
+          "title": "Nine Inch Nails - The Slip.Wave",
+          "sortTitle": "nine inch nails slip wave",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2008-05-05T23:51:41Z",
+          "infoUrl": "http://upstream.invalid/page-32563508c54d",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 100101,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/5/download?apikey=<token>&link=link-2a933de33ef4",
+          "infoHash": "18B1A606FF09EA31694C3AF04F5E68C8E2054398",
+          "seeders": 0,
+          "leechers": 0,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "magnet:?xt=urn:btih:732F22BEEE546BF8BA3F37DAAEBDF6A0253831CC",
+          "age": 6762,
+          "ageHours": 162288.92230869268,
+          "ageMinutes": 9737335.338521568,
+          "size": 1564661760,
+          "files": 1,
+          "indexerId": 5,
+          "indexer": "indexer-i",
+          "title": "Nine Inch Nails - The Slip - 96/24 DVD-A",
+          "sortTitle": "nine inch nails slip 9624 dvd",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2008-05-05T23:56:09Z",
+          "infoUrl": "http://upstream.invalid/page-7b444cc9e954",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 100101,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/5/download?apikey=<token>&link=link-b2a8ef446b56",
+          "infoHash": "732F22BEEE546BF8BA3F37DAAEBDF6A0253831CC",
+          "seeders": 0,
+          "leechers": 1,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "magnet:?xt=urn:btih:5BCCAD111889AFEFB6EDD30F840EE84E391A0784",
+          "age": 6688,
+          "ageHours": 160524.75869764312,
+          "ageMinutes": 9631485.521858595,
+          "size": 62112628,
+          "files": 14,
+          "indexerId": 5,
+          "indexer": "indexer-i",
+          "title": "Nine Inch Nails - The Slip (2008) -Industrial",
+          "sortTitle": "nine inch nails slip 2008 industrial",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2008-07-18T12:05:58Z",
+          "infoUrl": "http://upstream.invalid/page-2dda15e34ffa",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 100101,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/5/download?apikey=<token>&link=link-b59a8b0bc68f",
+          "infoHash": "5BCCAD111889AFEFB6EDD30F840EE84E391A0784",
+          "seeders": 0,
+          "leechers": 1,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "magnet:?xt=urn:btih:045256C2E2E02F64273CCF6B0292D12648EA084F",
+          "age": 6688,
+          "ageHours": 160518.498975481,
+          "ageMinutes": 9631109.938528867,
+          "size": 29911415,
+          "files": 8,
+          "indexerId": 5,
+          "indexer": "indexer-i",
+          "title": "Nine_Inch_Nails-The_Slip-(Bonus_DVD)-2008-OND",
+          "sortTitle": "nine inch nails slip bonus dvd 2008 ond",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2008-07-18T18:21:33Z",
+          "infoUrl": "http://upstream.invalid/page-d81b542d23a4",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 100101,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/5/download?apikey=<token>&link=link-8fee1e210c84",
+          "infoHash": "045256C2E2E02F64273CCF6B0292D12648EA084F",
+          "seeders": 0,
+          "leechers": 0,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "magnet:?xt=urn:btih:581C2DD72069C0AB10A902928D6BDFD4EB57D652",
+          "age": 6674,
+          "ageHours": 160177.83203109683,
+          "ageMinutes": 9610669.921865819,
+          "size": 152869897,
+          "files": 6,
+          "indexerId": 5,
+          "indexer": "indexer-i",
+          "title": "Nine Inch Nails - The Slip - Rehearsal DVD (FLAC)",
+          "sortTitle": "nine inch nails slip rehearsal dvd flac",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2008-08-01T23:01:34Z",
+          "infoUrl": "http://upstream.invalid/page-afe55f611156",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3040,
+              "name": "Audio/Lossless",
+              "subCategories": []
+            },
+            {
+              "id": 100104,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/5/download?apikey=<token>&link=link-891664a0b2aa",
+          "infoHash": "581C2DD72069C0AB10A902928D6BDFD4EB57D652",
+          "seeders": 0,
+          "leechers": 1,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "magnet:?xt=urn:btih:6176ED1442A44DBC015C0E99CFE37E18D48170A0",
+          "age": 6659,
+          "ageHours": 159817.89842004605,
+          "ageMinutes": 9589073.905202772,
+          "size": 91091588,
+          "files": 12,
+          "indexerId": 5,
+          "indexer": "indexer-i",
+          "title": "Nine Inch Nails - The Slip - [2008][CD+Art+PDF]320Kbps",
+          "sortTitle": "nine inch nails slip 2008cdartpdf320kbps",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2008-08-16T22:57:35Z",
+          "infoUrl": "http://upstream.invalid/page-a8f5a18a05a8",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 100101,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/5/download?apikey=<token>&link=link-8e8c88ad3856",
+          "infoHash": "6176ED1442A44DBC015C0E99CFE37E18D48170A0",
+          "seeders": 0,
+          "leechers": 1,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "magnet:?xt=urn:btih:16417F66519043523C90B0AD76030D602FCE6EBB",
+          "age": 6643,
+          "ageHours": 159437.69647566395,
+          "ageMinutes": 9566261.788539845,
+          "size": 91091570,
+          "files": 11,
+          "indexerId": 5,
+          "indexer": "indexer-i",
+          "title": "Nine Inch Nails - The Slip",
+          "sortTitle": "nine inch nails slip",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2008-09-01T19:09:42Z",
+          "infoUrl": "http://upstream.invalid/page-5b0f743aaf20",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 100101,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/5/download?apikey=<token>&link=link-d870b9b72182",
+          "infoHash": "16417F66519043523C90B0AD76030D602FCE6EBB",
+          "seeders": 0,
+          "leechers": 1,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "magnet:?xt=urn:btih:CAB2D9BF126163BF429590A48196ACEC09ED837C",
+          "age": 6617,
+          "ageHours": 158821.13925350085,
+          "ageMinutes": 9529268.35521006,
+          "size": 30542528,
+          "files": 5,
+          "indexerId": 5,
+          "indexer": "indexer-i",
+          "title": "Nine Inch Nails - The Slip Live from rehearsals june 2008 audio",
+          "sortTitle": "nine inch nails slip live from rehearsals june 2008 audio",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2008-09-27T11:43:08Z",
+          "infoUrl": "http://upstream.invalid/page-917bc246823c",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 100101,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/5/download?apikey=<token>&link=link-95f65fb0a8f4",
+          "infoHash": "CAB2D9BF126163BF429590A48196ACEC09ED837C",
+          "seeders": 0,
+          "leechers": 0,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "magnet:?xt=urn:btih:37E2D2986E778C562C46D7A0B9E3791810EC23D6",
+          "age": 6608,
+          "ageHours": 158598.33814246164,
+          "ageMinutes": 9515900.288547711,
+          "size": 2351682027,
+          "files": 34,
+          "indexerId": 5,
+          "indexer": "indexer-i",
+          "title": "Nine Inch Nails - Halo 27 - The Slip - Surround DVD/FLAC (mundi",
+          "sortTitle": "nine inch nails halo 27 slip surround dvdflac mundi",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2008-10-06T18:31:12Z",
+          "infoUrl": "http://upstream.invalid/page-433e873692f2",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3050,
+              "name": "Audio/Other",
+              "subCategories": []
+            },
+            {
+              "id": 100199,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/5/download?apikey=<token>&link=link-b8d86713adb9",
+          "infoHash": "37E2D2986E778C562C46D7A0B9E3791810EC23D6",
+          "seeders": 0,
+          "leechers": 1,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "magnet:?xt=urn:btih:3CE2549A2C405C4B16BF7D8A564CA6CEC57E59BE",
+          "age": 5077,
+          "ageHours": 121851.21842033592,
+          "ageMinutes": 7311073.10522017,
+          "size": 368345288,
+          "files": 5,
+          "indexerId": 5,
+          "indexer": "indexer-i",
+          "title": "Nine Inch Nails The Slip (DVD-A Rip)",
+          "sortTitle": "nine inch nails slip dvd rip",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2012-12-15T21:38:23Z",
+          "infoUrl": "http://upstream.invalid/page-b057bc162a2f",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 100101,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/5/download?apikey=<token>&link=link-7b2058070000",
+          "infoHash": "3CE2549A2C405C4B16BF7D8A564CA6CEC57E59BE",
+          "seeders": 0,
+          "leechers": 0,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "magnet:?xt=urn:btih:15B5B15C00DAEE1ADDC5115F7FD6AA23CC159726",
+          "age": 3725,
+          "ageHours": 89406.34897595322,
+          "ageMinutes": 5364380.9385572,
+          "size": 925816218,
+          "files": 10,
+          "indexerId": 5,
+          "indexer": "indexer-i",
+          "title": "Nine Inch Nails - The Slip Vinyl 24/96",
+          "sortTitle": "nine inch nails slip vinyl 2496",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2016-08-28T18:30:33Z",
+          "infoUrl": "http://upstream.invalid/page-6e0bee002409",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3040,
+              "name": "Audio/Lossless",
+              "subCategories": []
+            },
+            {
+              "id": 100104,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/5/download?apikey=<token>&link=link-2bc1c3336ce0",
+          "infoHash": "15B5B15C00DAEE1ADDC5115F7FD6AA23CC159726",
+          "seeders": 0,
+          "leechers": 0,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/page-81f564e7ada8",
+          "age": 365,
+          "ageHours": 8760.000016019972,
+          "ageMinutes": 525600.0009612066,
+          "size": 478601543,
+          "indexerId": 6,
+          "indexer": "indexer-g",
+          "title": "Nine Inch Nails The Slip Album 24Bit 44 1kHz FLAC Beats⭐",
+          "sortTitle": "nine inch nails slip album 24bit 44 1khz flac beats",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2025-11-10T00:51:29Z",
+          "downloadUrl": "http://upstream.invalid/6/download?apikey=<token>&link=link-c58f029d2403",
+          "infoUrl": "http://upstream.invalid/page-81f564e7ada8",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 104627,
+              "subCategories": []
+            }
+          ],
+          "seeders": 24,
+          "leechers": 1,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/page-413260bbb349",
+          "age": 365,
+          "ageHours": 8760.000015893556,
+          "ageMinutes": 525600.0009536317,
+          "size": 270280949,
+          "indexerId": 6,
+          "indexer": "indexer-g",
+          "title": "Nine Inch Nails  The Slip  Flac",
+          "sortTitle": "nine inch nails slip flac",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2025-11-10T00:51:29Z",
+          "downloadUrl": "http://upstream.invalid/6/download?apikey=<token>&link=link-384323c37400",
+          "infoUrl": "http://upstream.invalid/page-413260bbb349",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 104627,
+              "subCategories": []
+            }
+          ],
+          "seeders": 4,
+          "leechers": 0,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/page-5d68253d299e",
+          "age": 365,
+          "ageHours": 8760.000015164778,
+          "ageMinutes": 525600.0009098933,
+          "size": 54064578,
+          "indexerId": 6,
+          "indexer": "indexer-g",
+          "title": "Nine Inch Nails The Slip 2008 NiNEiNCHNAiLS",
+          "sortTitle": "nine inch nails slip 2008 nineinchnails",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2025-11-10T00:51:29Z",
+          "downloadUrl": "http://upstream.invalid/6/download?apikey=<token>&link=link-3e5ab375acb0",
+          "infoUrl": "http://upstream.invalid/page-5d68253d299e",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 104627,
+              "subCategories": []
+            }
+          ],
+          "seeders": 0,
+          "leechers": 0,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/page-1ee5d63a5da0",
+          "age": 365,
+          "ageHours": 8760.00001503575,
+          "ageMinutes": 525600.00090215,
+          "size": 368343777,
+          "indexerId": 6,
+          "indexer": "indexer-g",
+          "title": "Nine Inch Nails The Slip (DVD A Rip)",
+          "sortTitle": "nine inch nails slip dvd rip",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2025-11-10T00:51:29Z",
+          "downloadUrl": "http://upstream.invalid/6/download?apikey=<token>&link=link-b5db6c5509df",
+          "infoUrl": "http://upstream.invalid/page-1ee5d63a5da0",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 104627,
+              "subCategories": []
+            }
+          ],
+          "seeders": 0,
+          "leechers": 0,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/page-17e4a68ea759",
+          "age": 365,
+          "ageHours": 8760.000014909972,
+          "ageMinutes": 525600.0008946033,
+          "size": 91089797,
+          "indexerId": 6,
+          "indexer": "indexer-g",
+          "title": "Nine Inch Nails  The Slip [2008]",
+          "sortTitle": "nine inch nails slip 2008",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2025-11-10T00:51:29Z",
+          "downloadUrl": "http://upstream.invalid/6/download?apikey=<token>&link=link-6eaa9977ceb7",
+          "infoUrl": "http://upstream.invalid/page-17e4a68ea759",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 104627,
+              "subCategories": []
+            }
+          ],
+          "seeders": 1,
+          "leechers": 0,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/page-1ae6c7aedaca",
+          "age": 365,
+          "ageHours": 8760.000014810055,
+          "ageMinutes": 525600.0008886217,
+          "size": 270280949,
+          "indexerId": 6,
+          "indexer": "indexer-g",
+          "title": "Nine Inch Nails  The Slip [2008] FLAC",
+          "sortTitle": "nine inch nails slip 2008 flac",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2025-11-10T00:51:29Z",
+          "downloadUrl": "http://upstream.invalid/6/download?apikey=<token>&link=link-e608e1b0a7f9",
+          "infoUrl": "http://upstream.invalid/page-1ae6c7aedaca",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 104627,
+              "subCategories": []
+            }
+          ],
+          "seeders": 0,
+          "leechers": 1,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/page-351df6b538e9",
+          "age": 365,
+          "ageHours": 8760.000014718084,
+          "ageMinutes": 525600.000883105,
+          "size": 91089797,
+          "indexerId": 6,
+          "indexer": "indexer-g",
+          "title": "Nine Inch Nails  The Slip",
+          "sortTitle": "nine inch nails slip",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2025-11-10T00:51:29Z",
+          "downloadUrl": "http://upstream.invalid/6/download?apikey=<token>&link=link-3a0d81f2fd10",
+          "infoUrl": "http://upstream.invalid/page-351df6b538e9",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 104627,
+              "subCategories": []
+            }
+          ],
+          "seeders": 0,
+          "leechers": 0,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/page-baaef0ec5324",
+          "age": 365,
+          "ageHours": 8760.000013164861,
+          "ageMinutes": 525600.0007899083,
+          "size": 83948994,
+          "indexerId": 6,
+          "indexer": "indexer-g",
+          "title": "NIN (Nine Inch Nails)  The Slip (2008)   Album cover",
+          "sortTitle": "nin nine inch nails slip 2008 album cover",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2025-11-10T00:51:29Z",
+          "downloadUrl": "http://upstream.invalid/6/download?apikey=<token>&link=link-f78d8001ce50",
+          "infoUrl": "http://upstream.invalid/page-baaef0ec5324",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 104627,
+              "subCategories": []
+            }
+          ],
+          "seeders": 0,
+          "leechers": 1,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/page-281736c236de",
+          "age": 365,
+          "ageHours": 8760.000013024166,
+          "ageMinutes": 525600.000781465,
+          "size": 1578400481,
+          "indexerId": 6,
+          "indexer": "indexer-g",
+          "title": "Nine Inch Nails  The Slip Audio DVD [High Resolution Stereo]",
+          "sortTitle": "nine inch nails slip audio dvd high resolution stereo",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2025-11-10T00:51:29Z",
+          "downloadUrl": "http://upstream.invalid/6/download?apikey=<token>&link=link-e096245dad64",
+          "infoUrl": "http://upstream.invalid/page-281736c236de",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 104627,
+              "subCategories": []
+            }
+          ],
+          "seeders": 1,
+          "leechers": 6,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/page-649ef26a66b3",
+          "age": 798,
+          "ageHours": 19168.550365315223,
+          "ageMinutes": 1150113.0219189383,
+          "size": 478598068,
+          "indexerId": 8,
+          "indexer": "indexer-f",
+          "title": "Nine Inch Nails &nbsp;The Slip &nbsp;Album -24Bit 44 1kHz FLAC Beats⭐",
+          "sortTitle": "nine inch nails nbspthe slip nbspalbum 24bit 44 1khz flac beats",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2024-09-02T08:18:28Z",
+          "infoUrl": "http://upstream.invalid/page-649ef26a66b3",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3040,
+              "name": "Audio/Lossless",
+              "subCategories": []
+            },
+            {
+              "id": 1102000,
+              "subCategories": []
+            },
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 1100000,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/8/download?apikey=<token>&link=link-848b8cc31532",
+          "infoHash": "B5EDDE87A31883F7FA329F248D2F1C0E2D86928A",
+          "seeders": 40,
+          "leechers": 2,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/page-43a7ab6a7c27",
+          "age": 6760,
+          "ageHours": 162252.74592096612,
+          "ageMinutes": 9735164.755257979,
+          "size": 270279764,
+          "indexerId": 8,
+          "indexer": "indexer-f",
+          "title": "Nine Inch Nails - The Slip -Flac",
+          "sortTitle": "nine inch nails slip flac",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2008-05-07T12:06:44Z",
+          "infoUrl": "http://upstream.invalid/page-43a7ab6a7c27",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3040,
+              "name": "Audio/Lossless",
+              "subCategories": []
+            },
+            {
+              "id": 1102000,
+              "subCategories": []
+            },
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 1100000,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/8/download?apikey=<token>&link=link-d29803334e61",
+          "infoHash": "F4E14F1ABE29BC991575A318C4F29D7AC4187757",
+          "seeders": 4,
+          "leechers": 0,
+          "protocol": "torrent"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,1478 @@
+{
+  "upstream": "prowlarr",
+  "upstreamVersion": "10.0.0.22097",
+  "call": "music-ghosts",
+  "request": {
+    "method": "GET",
+    "path": "/api/v1/search",
+    "query": {
+      "categories": "3000",
+      "indexerIds": "5",
+      "query": "Nine Inch Nails Ghosts I-IV",
+      "type": "search"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": [
+        {
+          "guid": "http://upstream.invalid/page-0729cf00614d",
+          "age": 2419,
+          "ageHours": 58058.904347569194,
+          "ageMinutes": 3483534.2608541683,
+          "size": 264251637,
+          "indexerId": 1,
+          "indexer": "indexer-a",
+          "title": "Nine Inch Nails   Ghosts I IV (2008) (320) [DJ]",
+          "sortTitle": "nine inch nails ghosts i iv 2008 320 dj",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2020-03-26T22:00:00Z",
+          "downloadUrl": "http://upstream.invalid/1/download?apikey=<token>&link=link-c10af1640615",
+          "infoUrl": "http://upstream.invalid/page-0729cf00614d",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3010,
+              "name": "Audio/MP3",
+              "subCategories": []
+            },
+            {
+              "id": 100022,
+              "subCategories": []
+            }
+          ],
+          "seeders": 10,
+          "leechers": 6,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/page-531845fa8a32",
+          "age": 2420,
+          "ageHours": 58082.90434765995,
+          "ageMinutes": 3484974.260859608,
+          "size": 891736293,
+          "indexerId": 1,
+          "indexer": "indexer-a",
+          "title": "Nine Inch Nails   Ghosts I IV (2008) [FLAC] [DJ]",
+          "sortTitle": "nine inch nails ghosts i iv 2008 flac dj",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2020-03-25T22:00:00Z",
+          "downloadUrl": "http://upstream.invalid/1/download?apikey=<token>&link=link-745bc901e067",
+          "infoUrl": "http://upstream.invalid/page-531845fa8a32",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3040,
+              "name": "Audio/Lossless",
+              "subCategories": []
+            },
+            {
+              "id": 100023,
+              "subCategories": []
+            }
+          ],
+          "seeders": 26,
+          "leechers": 2,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/page-ee02a94d91cb",
+          "age": 134,
+          "ageHours": 3234.2537921478056,
+          "ageMinutes": 194055.22752889,
+          "size": 778816574,
+          "grabs": 317,
+          "indexerId": 4,
+          "indexer": "indexer-e",
+          "title": "Nine Inch Nails - Ghosts I-IV",
+          "sortTitle": "nine inch nails ghosts i iv",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2026-06-28T06:39:02Z",
+          "downloadUrl": "http://upstream.invalid/4/download?apikey=<token>&link=link-74ae5d4c7761",
+          "infoUrl": "http://upstream.invalid/page-bdaf4b15d9e0",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 127296,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/4/download?apikey=<token>&link=link-73363ea6b1ff",
+          "infoHash": "cc0e93da871f515024638c823866dd8db51a2b33",
+          "seeders": 1,
+          "leechers": 1,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/page-29e168613958",
+          "age": 1078,
+          "ageHours": 25881.677958940112,
+          "ageMinutes": 1552900.677536425,
+          "size": 806233625,
+          "grabs": 2460,
+          "indexerId": 4,
+          "indexer": "indexer-e",
+          "title": "Nine Inch Nails: Ghosts I-IV (2008) [FLAC; Source: Official Download]",
+          "sortTitle": "nine inch nails ghosts i iv 2008 flac source official download",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2023-11-27T15:13:35Z",
+          "downloadUrl": "http://upstream.invalid/4/download?apikey=<token>&link=link-723c0f17e972",
+          "infoUrl": "http://upstream.invalid/page-b6fbfc8bdccc",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 127296,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/4/download?apikey=<token>&link=link-ee58ad1f0961",
+          "infoHash": "802668fa8d65fca85b7fa3335e5723a3543d4778",
+          "seeders": 1,
+          "leechers": 1,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/page-de7545d8d951",
+          "age": 5986,
+          "ageHours": 143676.3301812746,
+          "ageMinutes": 8620579.810876492,
+          "size": 5600050793,
+          "grabs": 13531,
+          "indexerId": 4,
+          "indexer": "indexer-e",
+          "title": "Nine Inch Nails : Ghosts I-IV multi-track stems",
+          "sortTitle": "nine inch nails ghosts i iv multi track stems",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2010-06-20T12:34:27Z",
+          "downloadUrl": "http://upstream.invalid/4/download?apikey=<token>&link=link-8f248bd9dd37",
+          "infoUrl": "http://upstream.invalid/page-a155e742533f",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 127296,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/4/download?apikey=<token>&link=link-843033c67dad",
+          "infoHash": "9531ea1e134f71d8b5eb7911b413ae6b0a890185",
+          "seeders": 1,
+          "leechers": 1,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "magnet:?xt=urn:btih:ED8B1A750DC683DD64FC83C92D3352820695F89F",
+          "age": 6825,
+          "ageHours": 163820.77879247515,
+          "ageMinutes": 9829246.727548521,
+          "size": 298645417,
+          "files": 132,
+          "indexerId": 5,
+          "indexer": "indexer-i",
+          "title": "Nine Inch Nails - Ghosts I-IV 2008 320kbps And Extras",
+          "sortTitle": "nine inch nails ghosts i iv 2008 320kbps extras",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2008-03-03T04:07:32Z",
+          "infoUrl": "http://upstream.invalid/page-b19e46b55ace",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 100101,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/5/download?apikey=<token>&link=link-232819123dfe",
+          "infoHash": "ED8B1A750DC683DD64FC83C92D3352820695F89F",
+          "seeders": 31,
+          "leechers": 1,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "magnet:?xt=urn:btih:03ADE158AF751287330A41581C51EA34C14D5A18",
+          "age": 6823,
+          "ageHours": 163769.70129253768,
+          "ageMinutes": 9826182.077552272,
+          "size": 234221263,
+          "files": 38,
+          "indexerId": 5,
+          "indexer": "indexer-i",
+          "title": "Nine Inch Nails - Ghosts I-IV (256kbps AAC)",
+          "sortTitle": "nine inch nails ghosts i iv 256kbps aac",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2008-03-05T07:12:11Z",
+          "infoUrl": "http://upstream.invalid/page-3e9c6e1a2ac6",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 100101,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/5/download?apikey=<token>&link=link-5a71008b1c65",
+          "infoHash": "03ADE158AF751287330A41581C51EA34C14D5A18",
+          "seeders": 1,
+          "leechers": 0,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "magnet:?xt=urn:btih:5C524C9AD9A4ADFF8BAD00DD9AEEA0F3F1D2AFC6",
+          "age": 6809,
+          "ageHours": 163419.70990371585,
+          "ageMinutes": 9805182.594222974,
+          "size": 298639269,
+          "files": 131,
+          "indexerId": 5,
+          "indexer": "indexer-i",
+          "title": "Nine Inch Nails Ghosts I-IV [320kbps MP3] + Extras",
+          "sortTitle": "nine inch nails ghosts i iv 320kbps mp3 extras",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2008-03-19T21:11:40Z",
+          "infoUrl": "http://upstream.invalid/page-6a542869d50c",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 100101,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/5/download?apikey=<token>&link=link-adc87a19d1b8",
+          "infoHash": "5C524C9AD9A4ADFF8BAD00DD9AEEA0F3F1D2AFC6",
+          "seeders": 1,
+          "leechers": 0,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "magnet:?xt=urn:btih:93FFF27600E0A3D0759C57CF03D6EF64EE33A6B1",
+          "age": 6824,
+          "ageHours": 163795.4762927066,
+          "ageMinutes": 9827728.577562416,
+          "size": 633456294,
+          "files": 82,
+          "indexerId": 5,
+          "indexer": "indexer-i",
+          "title": "Nine Inch Nails - Ghosts I-IV (2008) (Apple Lossless)",
+          "sortTitle": "nine inch nails ghosts i iv 2008 apple lossless",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2008-03-04T05:25:41Z",
+          "infoUrl": "http://upstream.invalid/page-1c1c8878df83",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3040,
+              "name": "Audio/Lossless",
+              "subCategories": []
+            },
+            {
+              "id": 100104,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/5/download?apikey=<token>&link=link-2c888fd3c54d",
+          "infoHash": "93FFF27600E0A3D0759C57CF03D6EF64EE33A6B1",
+          "seeders": 0,
+          "leechers": 0,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "magnet:?xt=urn:btih:4C14719D16BC0B032D7CC278783F2C9178E91BE3",
+          "age": 6823,
+          "ageHours": 163771.57129279347,
+          "ageMinutes": 9826294.277567621,
+          "size": 274688226,
+          "files": 40,
+          "indexerId": 5,
+          "indexer": "indexer-i",
+          "title": "Nine_Inch_Nails-Ghosts_I-IV-WEB-2008-pLAN9x",
+          "sortTitle": "nine inch nails ghosts i iv web 2008 plan9x",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2008-03-05T05:19:59Z",
+          "infoUrl": "http://upstream.invalid/page-861a73ae3a15",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 100101,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/5/download?apikey=<token>&link=link-5d9bff6550f3",
+          "infoHash": "4C14719D16BC0B032D7CC278783F2C9178E91BE3",
+          "seeders": 0,
+          "leechers": 1,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "magnet:?xt=urn:btih:5084C47AF2595EBC3D1246640A4057086EE94604",
+          "age": 6823,
+          "ageHours": 163769.2285150801,
+          "ageMinutes": 9826153.710904812,
+          "size": 254744504,
+          "files": 1,
+          "indexerId": 5,
+          "indexer": "indexer-i",
+          "title": "Nine Inch Nails - Ghosts I-IV (2008) -Instrumental",
+          "sortTitle": "nine inch nails ghosts i iv 2008 instrumental",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2008-03-05T07:40:33Z",
+          "infoUrl": "http://upstream.invalid/page-74e0ca126937",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 100101,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/5/download?apikey=<token>&link=link-2d232595a5a1",
+          "infoHash": "5084C47AF2595EBC3D1246640A4057086EE94604",
+          "seeders": 0,
+          "leechers": 0,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "magnet:?xt=urn:btih:FBB55F7FAE0F5558588D56A0286708F95F2B356A",
+          "age": 6769,
+          "ageHours": 162477.37240402322,
+          "ageMinutes": 9748642.344241401,
+          "size": 93214864,
+          "files": 1,
+          "indexerId": 5,
+          "indexer": "indexer-i",
+          "title": "Nine Inch Nails Ghosts I-IV 5.1 Sampler",
+          "sortTitle": "nine inch nails ghosts i iv 5 1 sampler",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2008-04-28T03:31:55Z",
+          "infoUrl": "http://upstream.invalid/page-fb09f00a03fb",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 100101,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/5/download?apikey=<token>&link=link-ad0dbb4276cb",
+          "infoHash": "FBB55F7FAE0F5558588D56A0286708F95F2B356A",
+          "seeders": 0,
+          "leechers": 0,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "magnet:?xt=urn:btih:94B320F8C6ED0FBBFE836650978BFD05C2883327",
+          "age": 6715,
+          "ageHours": 161162.13962629187,
+          "ageMinutes": 9669728.377577519,
+          "size": 3300653073,
+          "files": 3,
+          "indexerId": 5,
+          "indexer": "indexer-i",
+          "title": "Nine Inch Nails - Ghosts III-IV 5.1 (pt.2) DVD",
+          "sortTitle": "nine inch nails ghosts iii iv 5 1 pt 2 dvd",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2008-06-21T22:45:53Z",
+          "infoUrl": "http://upstream.invalid/page-2152fc01beea",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 100101,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/5/download?apikey=<token>&link=link-b3dcb812e892",
+          "infoHash": "94B320F8C6ED0FBBFE836650978BFD05C2883327",
+          "seeders": 0,
+          "leechers": 0,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "magnet:?xt=urn:btih:CFA99D85D8102B8BCF603E169740F9274916FB01",
+          "age": 6551,
+          "ageHours": 157245.2768485689,
+          "ageMinutes": 9434716.610914141,
+          "size": 274278290,
+          "files": 36,
+          "indexerId": 5,
+          "indexer": "indexer-i",
+          "title": "Nine Inch Nails - 2008 - Ghosts I-IV [mp3]",
+          "sortTitle": "nine inch nails 2008 ghosts i iv mp3",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2008-12-02T03:37:39Z",
+          "infoUrl": "http://upstream.invalid/page-ec12bc507749",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 100101,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/5/download?apikey=<token>&link=link-3a723f6b137c",
+          "infoHash": "CFA99D85D8102B8BCF603E169740F9274916FB01",
+          "seeders": 0,
+          "leechers": 1,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "magnet:?xt=urn:btih:C9CBA95AE3269C3A21B1D74CB44CE242EDC3A6D7",
+          "age": 6498,
+          "ageHours": 155974.04351528385,
+          "ageMinutes": 9358442.61091704,
+          "size": 297476913,
+          "files": 1,
+          "indexerId": 5,
+          "indexer": "indexer-i",
+          "title": "Nine Inch Nails - Ghosts I-IV [ZIP] [2008][CD+Cov+PDF+Extras]320",
+          "sortTitle": "nine inch nails ghosts i iv zip 2008cdcovpdfextras320",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2009-01-24T02:51:39Z",
+          "infoUrl": "http://upstream.invalid/page-74059205840d",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3050,
+              "name": "Audio/Other",
+              "subCategories": []
+            },
+            {
+              "id": 100199,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/5/download?apikey=<token>&link=link-8915ab63100e",
+          "infoHash": "C9CBA95AE3269C3A21B1D74CB44CE242EDC3A6D7",
+          "seeders": 0,
+          "leechers": 0,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "magnet:?xt=urn:btih:B0849E778FD676D5017919C293F44B73D7E93FAC",
+          "age": 6498,
+          "ageHours": 155974.0210153315,
+          "ageMinutes": 9358441.260919897,
+          "size": 297458183,
+          "files": 82,
+          "indexerId": 5,
+          "indexer": "indexer-i",
+          "title": "Nine Inch Nails - Ghosts I-IV [2008][CD+Cov+PDF+Extras]320Kbps",
+          "sortTitle": "nine inch nails ghosts i iv 2008cdcovpdfextras320kbps",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2009-01-24T02:53:00Z",
+          "infoUrl": "http://upstream.invalid/page-d9e158fb467e",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 100101,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/5/download?apikey=<token>&link=link-7135dfa0e320",
+          "infoHash": "B0849E778FD676D5017919C293F44B73D7E93FAC",
+          "seeders": 0,
+          "leechers": 0,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "magnet:?xt=urn:btih:B76D41EF1AC8888C1FE42587591F8977061AD88E",
+          "age": 5424,
+          "ageHours": 130177.41045982916,
+          "ageMinutes": 7810644.627589763,
+          "size": 105730251,
+          "files": 36,
+          "indexerId": 5,
+          "indexer": "indexer-i",
+          "title": "Nine Inch Nails- Ghosts I-IV  (full album)",
+          "sortTitle": "nine inch nails ghosts i iv full album",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2012-01-03T23:29:38Z",
+          "infoUrl": "http://upstream.invalid/page-8ac6abeaf2df",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 100101,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/5/download?apikey=<token>&link=link-bda79488e1a6",
+          "infoHash": "B76D41EF1AC8888C1FE42587591F8977061AD88E",
+          "seeders": 0,
+          "leechers": 0,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "magnet:?xt=urn:btih:4267ECE40E5E3C18687E83A239F4C7E7C624A5E4",
+          "age": 5258,
+          "ageHours": 126207.92462656922,
+          "ageMinutes": 7572475.477594175,
+          "size": 278037618,
+          "files": 35,
+          "indexerId": 5,
+          "indexer": "indexer-i",
+          "title": "Nine Inch Nails - Ghosts I -IV",
+          "sortTitle": "nine inch nails ghosts i iv",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2012-06-17T08:58:47Z",
+          "infoUrl": "http://upstream.invalid/page-1044bcd9f3ac",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 100101,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/5/download?apikey=<token>&link=link-ac953db72c49",
+          "infoHash": "4267ECE40E5E3C18687E83A239F4C7E7C624A5E4",
+          "seeders": 0,
+          "leechers": 0,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/page-10216be73d34",
+          "age": 365,
+          "ageHours": 8760.000005027667,
+          "ageMinutes": 525600.0003016733,
+          "size": 264283095,
+          "indexerId": 6,
+          "indexer": "indexer-g",
+          "title": "Nine Inch Nails  Ghosts I IV (2008) (320)",
+          "sortTitle": "nine inch nails ghosts i iv 2008 320",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2025-11-10T00:54:15Z",
+          "downloadUrl": "http://upstream.invalid/6/download?apikey=<token>&link=link-b5b93d1f653e",
+          "infoUrl": "http://upstream.invalid/page-10216be73d34",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 104627,
+              "subCategories": []
+            }
+          ],
+          "seeders": 4,
+          "leechers": 1,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/page-a4eb22acaa99",
+          "age": 365,
+          "ageHours": 8760.000004809084,
+          "ageMinutes": 525600.00028856,
+          "size": 891667087,
+          "indexerId": 6,
+          "indexer": "indexer-g",
+          "title": "Nine Inch Nails  Ghosts I IV (2008) [FLAC]",
+          "sortTitle": "nine inch nails ghosts i iv 2008 flac",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2025-11-10T00:54:15Z",
+          "downloadUrl": "http://upstream.invalid/6/download?apikey=<token>&link=link-c34bc0e6d147",
+          "infoUrl": "http://upstream.invalid/page-a4eb22acaa99",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 104627,
+              "subCategories": []
+            }
+          ],
+          "seeders": 3,
+          "leechers": 1,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/page-afb007b41e9d",
+          "age": 365,
+          "ageHours": 8760.000004473695,
+          "ageMinutes": 525600.0002684284,
+          "size": 174493532,
+          "indexerId": 6,
+          "indexer": "indexer-g",
+          "title": "Nine Inch Nails  Ghosts I IV [Inc Track 37 38] (Mp3  192 320kbps) LittleFairyRG [Tinker]",
+          "sortTitle": "nine inch nails ghosts i iv inc track 37 38 mp3 192 320kbps littlefairyrg tinker",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2025-11-10T00:54:15Z",
+          "downloadUrl": "http://upstream.invalid/6/download?apikey=<token>&link=link-11e922fdbdcf",
+          "infoUrl": "http://upstream.invalid/page-afb007b41e9d",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 104627,
+              "subCategories": []
+            }
+          ],
+          "seeders": 0,
+          "leechers": 0,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/page-22384cc9a172",
+          "age": 6810,
+          "ageHours": 163441.90434895465,
+          "ageMinutes": 9806514.260937288,
+          "size": 298634444,
+          "indexerId": 8,
+          "indexer": "indexer-f",
+          "title": "Nine Inch Nails Ghosts I-IV [320kbps MP3] + Extras",
+          "sortTitle": "nine inch nails ghosts i iv 320kbps mp3 extras",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2008-03-18T23:00:00Z",
+          "infoUrl": "http://upstream.invalid/page-22384cc9a172",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 1100000,
+              "subCategories": []
+            },
+            {
+              "id": 3010,
+              "name": "Audio/MP3",
+              "subCategories": []
+            },
+            {
+              "id": 1101000,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/8/download?apikey=<token>&link=link-d999cde02fd6",
+          "infoHash": "5C524C9AD9A4ADFF8BAD00DD9AEEA0F3F1D2AFC6",
+          "seeders": 1,
+          "leechers": 0,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/page-328da75165cc",
+          "age": 6826,
+          "ageHours": 163825.90434900083,
+          "ageMinutes": 9829554.260940067,
+          "size": 298644930,
+          "indexerId": 8,
+          "indexer": "indexer-f",
+          "title": "Nine Inch Nails - Ghosts I-IV 2008 320kbps And Extras",
+          "sortTitle": "nine inch nails ghosts i iv 2008 320kbps extras",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2008-03-02T23:00:00Z",
+          "infoUrl": "http://upstream.invalid/page-328da75165cc",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 1100000,
+              "subCategories": []
+            },
+            {
+              "id": 3010,
+              "name": "Audio/MP3",
+              "subCategories": []
+            },
+            {
+              "id": 1101000,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/8/download?apikey=<token>&link=link-6f2154f6367d",
+          "infoHash": "ED8B1A750DC683DD64FC83C92D3352820695F89F",
+          "seeders": 30,
+          "leechers": 1,
+          "protocol": "torrent"
+        }
+      ]
+    }
+  }
+}

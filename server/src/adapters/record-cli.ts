@@ -64,6 +64,11 @@
  * trackers and indexers kept out, and the book's reads of the keyless Audible and Audnexus
  * (record-books.ts). It adds no download and needs only PROWLARR_API_KEY, from Prowlarr's own config.
  *
+ * `--only albums --prowlarr <url>` records M3.albums' reads of Prowlarr: the indexers cut to their
+ * categories, seven searches for freely licensed albums 30 s apart, and two links asked with no
+ * redirect followed, one answering a torrent kept as its info and web seeds (record-albums.ts). It
+ * adds no download and needs only PROWLARR_API_KEY.
+ *
  * `--only shelf --abs <url> --book-folder <relPath>` records how Audiobookshelf is asked about a
  * folder a request placed, on that one book and its author: the newest items cut to that book, the
  * book, the author, and a photo update sent with no address, which it refuses before it changes
@@ -114,6 +119,7 @@ import { RECORD_USER_ID, recordOidc, TEST_IDENTITY } from './record-oidc.js';
 import { UNDO_UNCONFIRMED } from './record-finished.js';
 import { recordLists } from './record-lists.js';
 import { recordLyrics } from './record-lyrics.js';
+import { recordAlbums } from './record-albums.js';
 import { recordBooks } from './record-books.js';
 import { recordQbit } from './record-qbit.js';
 import { recordExtractor } from './record-extractor.js';
@@ -150,11 +156,11 @@ Records Audiobookshelf's and Jellyfin's calls into server/src/adapters/*/recordi
                      --only sessions, the track Instant Mix is asked for; for --only played,
                      the track to mark if the test user has played nothing
   --only <name>      record only abs, jellyfin, index, play, episode, jfplay, progress,
-                     sessions, shell, lyrics, lists, played, books, shelf, qbit, ytmusic,
+                     sessions, shell, lyrics, lists, played, books, albums, shelf, qbit, ytmusic,
                      extractor, musicbrainz, coverart or keep; or
                      oidc, a sign-in and its links
   --lrclib <url>     LRCLIB's base URL, for --only lyrics
-  --prowlarr <url>   Prowlarr's base URL, for --only books
+  --prowlarr <url>   Prowlarr's base URL, for --only books and albums
   --book-folder <p>  for --only shelf, the book's folder under its library
   --qbittorrent <url> qBittorrent's base URL, for --only qbit
   --torrent <magnet> a public torrent with a healthy swarm, for --only qbit
@@ -727,6 +733,7 @@ export async function runRecord(io: RecordIo): Promise<number> {
       'played',
       'household',
       'books',
+      'albums',
       'shelf',
       'qbit',
       'ytmusic',
@@ -739,7 +746,7 @@ export async function runRecord(io: RecordIo): Promise<number> {
     ].includes(only)
   ) {
     io.err(
-      `--only is abs, jellyfin, index, play, episode, jfplay, progress, sessions, shell, lyrics, lists, played, household, books, shelf, qbit, ytmusic, extractor, github, musicbrainz, coverart, keep or oidc, not ${only}`,
+      `--only is abs, jellyfin, index, play, episode, jfplay, progress, sessions, shell, lyrics, lists, played, household, books, albums, shelf, qbit, ytmusic, extractor, github, musicbrainz, coverart, keep or oidc, not ${only}`,
     );
     return 2;
   }
@@ -761,6 +768,7 @@ export async function runRecord(io: RecordIo): Promise<number> {
   if (only === 'played') return runPlayed(io, values, parseKeys(io.stdin), root);
   if (only === 'household') return runHousehold(io, values, parseKeys(io.stdin), root);
   if (only === 'books') return runBooks(io, values, parseKeys(io.stdin), root);
+  if (only === 'albums') return runAlbums(io, values, parseKeys(io.stdin), root);
   if (only === 'shelf') return runShelf(io, values, parseKeys(io.stdin), root);
   if (only === 'qbit') return runQbit(io, values, parseKeys(io.stdin), root);
   if (only === 'ytmusic') return runYtMusic(io, root);
@@ -1266,6 +1274,33 @@ async function runBooks(
     return 2;
   }
   const { written } = await recordBooks({
+    fetch: io.fetch,
+    out: io.out,
+    root,
+    prowlarrUrl: values.prowlarr as string,
+    prowlarrKey: keys.PROWLARR_API_KEY as string,
+  });
+  return scanWritten(io, written, []);
+}
+
+async function runAlbums(
+  io: RecordIo,
+  values: Record<string, string | boolean | undefined>,
+  keys: Record<string, string>,
+  root: string,
+): Promise<number> {
+  const need = {
+    '--prowlarr': values.prowlarr,
+    'PROWLARR_API_KEY on stdin': keys.PROWLARR_API_KEY,
+  };
+  const missing = Object.entries(need)
+    .filter(([, v]) => typeof v !== 'string' || v === '')
+    .map(([k]) => k);
+  if (missing.length > 0) {
+    io.err(`missing ${missing.join(', ')}\n\n${USAGE}`);
+    return 2;
+  }
+  const { written } = await recordAlbums({
     fetch: io.fetch,
     out: io.out,
     root,

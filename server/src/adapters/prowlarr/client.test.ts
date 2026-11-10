@@ -100,7 +100,24 @@ describe('[M3.books] searching Prowlarr', () => {
     const rows = await client(answer, 'the-real-key').search('a book', AUDIOBOOKS);
     expect(JSON.stringify(rows)).not.toContain('the-real-key');
     expect(JSON.stringify(rows).toLowerCase()).not.toContain('apikey');
-    expect(rows[0]?.details.link).toBe('/2/download?link=abc');
+    expect(rows[0]?.details.link).toBe('/2/download?link=abc&file=A');
+  });
+
+  it("[M3.albums] a row with both links keeps the download's, as only a torrent lists its files", async () => {
+    const answer: FetchLike = async () =>
+      new Response(
+        JSON.stringify([
+          {
+            title: 'An Album [FLAC]',
+            protocol: 'torrent',
+            magnetUrl: 'http://localhost:9696/4/download?apikey=k&link=magnet-side',
+            downloadUrl: 'http://localhost:9696/4/download?apikey=k&link=torrent-side',
+          },
+        ]),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      );
+    const rows = await client(answer, 'k').search('an album', AUDIOBOOKS);
+    expect(rows[0]?.details.link).toBe('/4/download?link=torrent-side');
   });
 
   it('[M3.books] drops a row nothing could be fetched from, and a usenet one', async () => {

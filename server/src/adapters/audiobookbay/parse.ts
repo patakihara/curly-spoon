@@ -4,6 +4,7 @@
  * so anything not found is simply left out: a page that cannot be read costs a release its extras,
  * never the search. Only text is read from the page, never a link.
  */
+import { decodeEntities } from '../http/entities.js';
 
 export interface DetailExtras {
   narrators?: string[];
@@ -28,16 +29,6 @@ const INFO_HASH = /Info Hash:\s*<\/td>\s*<td[^<>]*>\s*([0-9a-f]{40})\s*</i;
 const FORMAT = /^[a-z0-9]+$/i;
 const BITRATE = /^(\d{1,4})\s*kbps$/i;
 
-function decodeEntities(text: string): string {
-  return text
-    .replace(/&#(\d{1,7});/g, (all, code: string) => {
-      const point = Number(code);
-      return point <= 0x10ffff ? String.fromCodePoint(point) : all;
-    })
-    .replace(/&amp;/g, '&')
-    .trim();
-}
-
 export function parseDetail(page: string): DetailExtras {
   const html = page.slice(0, MAX_CHARS);
   const spans = [...html.matchAll(SPAN)].map((match) => ({
@@ -46,7 +37,7 @@ export function parseDetail(page: string): DetailExtras {
   }));
   const texts = (name: string) => spans.filter((span) => span.name === name).map((s) => s.text);
   const narrators = texts('narrator')
-    .map(decodeEntities)
+    .map((name) => decodeEntities(name).trim())
     .filter((name) => name.length > 0 && !NO_NARRATOR.test(name));
   const format = texts('format').find((text) => FORMAT.test(text));
   const bitrate = texts('bitrate')

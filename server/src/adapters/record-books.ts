@@ -77,12 +77,12 @@ const PAGE_FIELDS = ['guid', 'infoUrl', 'commentUrl', 'posterUrl'];
 const LINK_FIELDS = ['downloadUrl', 'magnetUrl'];
 
 /**
- * The hook for Prowlarr's recorder, keeping one list of indexers for the whole run: see the file's
- * header for what it takes out.
+ * One run's stand-ins for indexers' names: `indexer-a`, `indexer-b` in the order first seen, and
+ * the one the plan names as it is.
  */
-export function anonymiseProwlarr(): (raw: RawExchange) => RawExchange {
+export function indexerStandIns(): (indexer: string) => string {
   const standIns = new Map<string, string>();
-  const standIn = (indexer: string) => {
+  return (indexer) => {
     if (indexer === NAMED_INDEXER) return indexer;
     const known = standIns.get(indexer);
     if (known !== undefined) return known;
@@ -90,6 +90,15 @@ export function anonymiseProwlarr(): (raw: RawExchange) => RawExchange {
     standIns.set(indexer, next);
     return next;
   };
+}
+
+/**
+ * The hook for Prowlarr's recorder, keeping one list of indexers for the whole run: see the file's
+ * header for what it takes out.
+ */
+export function anonymiseProwlarr(
+  standIn: (indexer: string) => string = indexerStandIns(),
+): (raw: RawExchange) => RawExchange {
   const cleanRow = (row: Record<string, unknown>) => {
     const out: Record<string, unknown> = { ...row };
     if (typeof row.indexer === 'string') out.indexer = standIn(row.indexer);
