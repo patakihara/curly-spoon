@@ -1,0 +1,166 @@
+{
+  "upstream": "prowlarr",
+  "upstreamVersion": "10.0.0.22097",
+  "call": "music-artificial-heart",
+  "request": {
+    "method": "GET",
+    "path": "/api/v1/search",
+    "query": {
+      "categories": "3000",
+      "indexerIds": "5",
+      "query": "Jonathan Coulton Artificial Heart",
+      "type": "search"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": [
+        {
+          "guid": "http://upstream.invalid/page-fe6cc1a9d8f3",
+          "age": 3015,
+          "ageHours": 72363.06953262209,
+          "ageMinutes": 4341784.171957353,
+          "size": 77475247,
+          "grabs": 81,
+          "indexerId": 4,
+          "indexer": "indexer-e",
+          "title": "The Hearing - Artificial Heart By Jonathan Coulton",
+          "sortTitle": "hearing artificial heart by jonathan coulton",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2018-08-08T21:51:24Z",
+          "downloadUrl": "http://upstream.invalid/4/download?apikey=<token>&link=link-7ba40d32f237",
+          "infoUrl": "http://upstream.invalid/page-b193e8f80301",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 127296,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/4/download?apikey=<token>&link=link-61b5ccbed08e",
+          "infoHash": "ec33bd7c199444bb42b638bf43538daf08b775b9",
+          "seeders": 1,
+          "leechers": 1,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "magnet:?xt=urn:btih:3AFC7416133386201EB9F10DC43424744B951A62",
+          "age": 4688,
+          "ageHours": 112513.17731057137,
+          "ageMinutes": 6750790.638634293,
+          "size": 121489523,
+          "files": 19,
+          "indexerId": 5,
+          "indexer": "indexer-i",
+          "title": "Jonathan Coulton - Artificial Heart [2011]",
+          "sortTitle": "jonathan coulton artificial heart 2011",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2014-01-08T23:44:56Z",
+          "infoUrl": "http://upstream.invalid/page-9c3a77d8a85e",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 100101,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/5/download?apikey=<token>&link=link-299c8c4741bc",
+          "infoHash": "3AFC7416133386201EB9F10DC43424744B951A62",
+          "seeders": 0,
+          "leechers": 1,
+          "protocol": "torrent"
+        }
+      ]
+    }
+  }
+}

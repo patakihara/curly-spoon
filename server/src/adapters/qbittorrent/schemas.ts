@@ -20,9 +20,13 @@ export type QbitTorrent = z.infer<typeof qbitTorrentSchema>;
 export const qbitTorrentsSchema = z.array(qbitTorrentSchema);
 
 export const qbitFileSchema = z.object({
+  /** What a priority names the file by. */
+  index: z.number().int().nonnegative(),
   /** Relative to the torrent's save path. */
   name: z.string(),
   size: z.number(),
+  /** 0 for a file set aside, which is never fetched. */
+  priority: z.number().int(),
 });
 export type QbitFile = z.infer<typeof qbitFileSchema>;
 

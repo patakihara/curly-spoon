@@ -22,7 +22,9 @@
  *
  * A download whose bytes stand still for the stall limit fails `downloadStalled`, and goes on by
  * itself to the next release the search found, up to `MAX_AUTO_STARTS`; a person's own choices don't
- * count. Past that, or with none left, the request stays failed and offers what remains. Listed
+ * count. A download whose files are not the release asked for (`wrongRelease`), found by its poll
+ * or by its import, gives way the same, under the same count. Past that, or with none left, the request stays failed and offers what
+ * remains. Listed
  * seeders can be false, so only bytes count. A look after an outage of any length, or a full limit
  * after the last one, has seen nothing stand still, so it restarts the clock: an outage can never
  * pass for a stall.
@@ -144,6 +146,7 @@ function keyed(deps: RequestJobDeps, request: StoredRequest): StoredRequest | nu
 
 async function search(deps: RequestJobDeps, steps: MediumSteps, request: StoredRequest) {
   const found = await limited(deps, 'search', () => steps.search(request));
+  if (found.kind === 'waiting') return;
   if (found.kind === 'none') {
     apply(deps, request, { type: 'failed', reason: found.reason });
   } else if (found.kind === 'picked') {
@@ -200,9 +203,12 @@ function stallClock(deps: RequestJobDeps, request: StoredRequest, progress: numb
   return request.progressAt;
 }
 
-/** Fails a download that stopped moving, then drops it and starts the next release, if it may. */
-async function stalled(deps: RequestJobDeps, request: StoredRequest) {
-  if (!apply(deps, request, { type: 'failed', reason: 'downloadStalled' })) return;
+/** The failures of a download that make way for the next release the search found. */
+const GIVES_WAY: ReadonlySet<RequestFailure> = new Set(['downloadStalled', 'wrongRelease']);
+
+/** Fails a download that gives way, then drops it and starts the next release, if it may. */
+async function givesWay(deps: RequestJobDeps, request: StoredRequest, reason: RequestFailure) {
+  if (!apply(deps, request, { type: 'failed', reason })) return;
   const failed = getRequest(deps.db, request.id);
   if (failed === null || failed.autoStarts >= MAX_AUTO_STARTS) return;
   const following = otherReleases(failed)[0];
@@ -244,7 +250,7 @@ async function download(deps: RequestJobDeps, steps: DownloadSteps, request: Sto
     case 'downloading': {
       const progressAt = stallClock(deps, request, polled.progress);
       if (!waiting && now() - progressAt >= deps.stallAfterMs) {
-        await stalled(deps, request);
+        await givesWay(deps, request, 'downloadStalled');
         return;
       }
       const moved = { type: 'moved', to: 'downloading', progress: polled.progress } as const;
@@ -261,7 +267,8 @@ async function download(deps: RequestJobDeps, steps: DownloadSteps, request: Sto
       );
       return;
     case 'failed':
-      apply(deps, request, { type: 'failed', reason: polled.reason });
+      if (GIVES_WAY.has(polled.reason)) await givesWay(deps, request, polled.reason);
+      else apply(deps, request, { type: 'failed', reason: polled.reason });
   }
 }
 
@@ -299,6 +306,9 @@ async function importing(deps: RequestJobDeps, steps: MediumSteps, request: Stor
     if (imported.kind === 'arrived') {
       const change = { state: ready.state, result: imported.ref, stepKey: null };
       saveRequest(deps.db, ready.id, change, deps.now(), ready.version);
+    } else if (imported.kind === 'failed') {
+      if (GIVES_WAY.has(imported.reason)) await givesWay(deps, ready, imported.reason);
+      else apply(deps, ready, { type: 'failed', reason: imported.reason });
     } else if (deps.now() - ready.updatedAt >= deps.notIndexedAfterMs) {
       apply(deps, ready, { type: 'failed', reason: 'notIndexed' });
     }

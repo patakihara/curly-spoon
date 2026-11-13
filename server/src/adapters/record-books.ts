@@ -35,6 +35,8 @@ import { ProwlarrClient, type ProwlarrRelease } from './prowlarr/client.js';
 export const JEKYLL_QUERY = 'The Strange Case of Dr Jekyll and Mr Hyde Robert Louis Stevenson';
 const OTHERS_QUERY = 'Jekyll and Hyde Stevenson';
 const SPANISH_QUERY = 'El extraño caso del Dr. Jekyll y Mr. Hyde';
+/** Where a book is searched: Newznab's audiobook category. */
+const AUDIOBOOKS = { categories: [3030] };
 
 /** The one indexer the plan names. Every other stays out of the public repo. */
 const NAMED_INDEXER = 'AudioBook Bay';
@@ -75,12 +77,12 @@ const PAGE_FIELDS = ['guid', 'infoUrl', 'commentUrl', 'posterUrl'];
 const LINK_FIELDS = ['downloadUrl', 'magnetUrl'];
 
 /**
- * The hook for Prowlarr's recorder, keeping one list of indexers for the whole run: see the file's
- * header for what it takes out.
+ * One run's stand-ins for indexers' names: `indexer-a`, `indexer-b` in the order first seen, and
+ * the one the plan names as it is.
  */
-export function anonymiseProwlarr(): (raw: RawExchange) => RawExchange {
+export function indexerStandIns(): (indexer: string) => string {
   const standIns = new Map<string, string>();
-  const standIn = (indexer: string) => {
+  return (indexer) => {
     if (indexer === NAMED_INDEXER) return indexer;
     const known = standIns.get(indexer);
     if (known !== undefined) return known;
@@ -88,6 +90,15 @@ export function anonymiseProwlarr(): (raw: RawExchange) => RawExchange {
     standIns.set(indexer, next);
     return next;
   };
+}
+
+/**
+ * The hook for Prowlarr's recorder, keeping one list of indexers for the whole run: see the file's
+ * header for what it takes out.
+ */
+export function anonymiseProwlarr(
+  standIn: (indexer: string) => string = indexerStandIns(),
+): (raw: RawExchange) => RawExchange {
   const cleanRow = (row: Record<string, unknown>) => {
     const out: Record<string, unknown> = { ...row };
     if (typeof row.indexer === 'string') out.indexer = standIn(row.indexer);
@@ -337,7 +348,7 @@ export async function recordBooks(input: BooksRecordInput): Promise<{ written: s
   ] as const;
   const found = new Map<string, ProwlarrRelease[]>();
   for (const [call, query] of searches) {
-    const rows = await rec.capture(call, () => prowlarr.search(query), {
+    const rows = await rec.capture(call, () => prowlarr.search(query, AUDIOBOOKS), {
       verify: (answer, recording) => {
         if (answer.length === 0) throw new Error(`${call}: no rows`);
         scanned(recording);
@@ -368,7 +379,7 @@ export async function recordBooks(input: BooksRecordInput): Promise<{ written: s
   await rec.capture(
     'unauthorized',
     () =>
-      wrong.search(SPANISH_QUERY).then(
+      wrong.search(SPANISH_QUERY, AUDIOBOOKS).then(
         () => {
           throw new Error('a wrong key was let in');
         },

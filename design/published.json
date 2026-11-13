@@ -21,13 +21,13 @@
       "scripts/canvas/build.mjs",
       "scripts/canvas/install.mjs"
     ],
-    "commit": "cbf34c978806b2df4c212334fe1e42aaaf42adc2",
-    "tree": "7d39a9217d557c618d59acb857e3fb63d6612c59",
-    "version": "1794188712-e033",
+    "commit": "98a8a8bf60e37c1281508335d2bf9d1bda00693e",
+    "tree": "da9104e5fe098a46061405f794747fdfca33ca76",
+    "version": "1794288356-7fcd",
     "installs": {
       "sonora": "1794187739-3e0f"
     },
-    "publishedAt": "2026-11-09T01:45:18.244Z"
+    "publishedAt": "2026-11-10T05:26:02.525Z"
   },
   "plan": {
     "url": "https://claude.ai/artifact/81FfkqDpQSEe2VwYcT1sjq",
@@ -40,10 +40,10 @@
       "scripts/plan/render.mjs",
       "scripts/plan/results.mjs"
     ],
-    "commit": "1eeba56e738e1fe3c14dcaf8eaca945452b16cfd",
-    "tree": "eed91955b8116e8ba294d41911fd47ac535ea013",
-    "version": "1794105476-c8c0",
-    "publishedAt": "2026-11-08T02:38:04.401Z"
+    "commit": "92c2186d93eeddc93f8282ab10808ec3cb32a6e6",
+    "tree": "49b1119a131adb5b4984107af1ed2693963b5bcc",
+    "version": "1794269984-89e5",
+    "publishedAt": "2026-11-10T00:20:09.640Z"
   },
   "sonora": {
     "url": "https://claude.ai/artifact/CUW4CN7KpxgvjeWnbhTQBB",

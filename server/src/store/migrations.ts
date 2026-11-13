@@ -962,6 +962,100 @@ export const migrations: readonly Migration[] = [
       `);
     },
   },
+  {
+    id: 29,
+    name: 'request_wrong_release',
+    up: (db) => {
+      // A request may fail wrongRelease. A CHECK cannot be altered, so requests is built again from
+      // its own definition with the new reason, as request_stall did: dropping it empties what refers
+      // to it, so those rows are carried across, and the trigger naming it comes off until it is back.
+      const { sql } = db
+        .prepare<[], { sql: string }>(
+          "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'requests'",
+        )
+        .get()!;
+      const reasons = "'cancelledUpstream')";
+      if (sql.split(reasons).length !== 2)
+        throw new Error('requests: its reasons are not as known');
+      const rebuilt = sql
+        .replace(/^CREATE TABLE "?requests"?\s*\(/, 'CREATE TABLE requests_rebuilt (')
+        .replace(reasons, "'cancelledUpstream', 'wrongRelease')");
+      if (!rebuilt.startsWith('CREATE TABLE requests_rebuilt (')) {
+        throw new Error('requests: its definition is not as known');
+      }
+      const children = ['request_keys', 'arrived_keys', 'request_people'];
+      const attached = db
+        .prepare<[], { type: string; name: string; sql: string }>(
+          `SELECT type, name, sql FROM sqlite_master
+           WHERE type IN ('index', 'trigger') AND sql IS NOT NULL
+             AND (tbl_name = 'requests' OR name = 'request_people_last_left')`,
+        )
+        .all();
+      for (const child of children)
+        db.exec(`CREATE TEMP TABLE keep_${child} AS SELECT * FROM ${child}`);
+      db.exec('DROP TRIGGER request_people_last_left');
+      db.exec(rebuilt);
+      db.exec('INSERT INTO requests_rebuilt SELECT * FROM requests');
+      db.exec('DROP TABLE requests');
+      db.exec('ALTER TABLE requests_rebuilt RENAME TO requests');
+      for (const child of children) {
+        db.exec(`DELETE FROM ${child}`);
+        db.exec(`INSERT INTO ${child} SELECT * FROM keep_${child}`);
+        db.exec(`DROP TABLE keep_${child}`);
+      }
+      for (const one of attached) db.exec(one.sql);
+    },
+  },
+  {
+    id: 30,
+    name: 'prowlarr_searches',
+    up: (db) => {
+      // What Prowlarr answered a search, for a day: a retry, another person's request or a search
+      // after a restart asks no indexer again. indexer_ids is the sorted ids, comma-separated; rows
+      // is the parsed releases as JSON, with no key and no address.
+      db.exec(`
+        CREATE TABLE prowlarr_searches (
+          query       TEXT NOT NULL,
+          indexer_ids TEXT NOT NULL,
+          at          INTEGER NOT NULL,
+          rows        TEXT NOT NULL,
+          PRIMARY KEY (query, indexer_ids)
+        );
+      `);
+    },
+  },
+  {
+    id: 31,
+    name: 'album_editions',
+    up: (db) => {
+      // An album's release group and its editions, as MusicBrainz gave them, for a week: the
+      // search, the gate and the import read them through. release_group and editions are JSON.
+      db.exec(`
+        CREATE TABLE album_editions (
+          release_group_id TEXT PRIMARY KEY,
+          at               INTEGER NOT NULL,
+          release_group    TEXT NOT NULL,
+          editions         TEXT NOT NULL
+        );
+      `);
+    },
+  },
+  {
+    id: 32,
+    name: 'prowlarr_links',
+    up: (db) => {
+      // What a release's link answered when asked before any download, for a day, beside the
+      // searches: link is its path and query with no key; answer is JSON, the info hash, the
+      // torrent's files and whether it names a web seed, or null for a link that gave nothing.
+      db.exec(`
+        CREATE TABLE prowlarr_links (
+          link   TEXT PRIMARY KEY,
+          at     INTEGER NOT NULL,
+          answer TEXT NOT NULL
+        );
+      `);
+    },
+  },
 ];
 
 export function runMigrations(

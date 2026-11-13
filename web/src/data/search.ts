@@ -1,6 +1,8 @@
 import {
   mediaRefKey,
   parseMediaRefKey,
+  type AlbumType,
+  type SearchAlbum,
   type SearchBook,
   type SearchKind,
   type SearchResult,
@@ -29,7 +31,8 @@ import { type Answer, SignedOut } from './store';
  * lacks is a row of its own there, asked for with a tap, its string ref carrying its request. Once
  * anyone has asked, its row draws only where that request stands and leads to Requests; once the
  * request brought it, its row opens and plays the item it became. A tap that did not go through
- * leaves its button, as no request stands yet. A song from YouTube Music plays from its art and
+ * leaves its button, as no request stands yet. An album the library lacks, from MusicBrainz, is such
+ * a row too, its button keeping its lossless copy in the library. A song from YouTube Music plays from its art and
  * opens nothing; while music plays its own button puts it next, as a song of the household's does,
  * and why it would not play, or was stepped over, takes the page's one banner, as does streaming
  * being unavailable. Its menu keeps it in the household's library (`POST /api/keep`) while it only
@@ -45,6 +48,7 @@ import { type Answer, SignedOut } from './store';
 type Row = SearchData['top'][number];
 type SuggestionRow = SearchData['suggestions'][number];
 type BookRow = SearchData['outside']['books'][number];
+type AlbumRow = SearchData['outside']['albums'][number];
 type SongRow = SearchData['outside']['music'][number];
 
 /** What each kind of result or suggestion is called. */
@@ -137,20 +141,82 @@ export function bookRowOf(book: SearchBook): BookRow {
   ) as BookRow;
 }
 
+/** What each kind of album is called; an album of no known kind is an album. */
+const ALBUM_TYPES: Record<AlbumType, string> = {
+  album: 'Album',
+  ep: 'EP',
+  single: 'Single',
+  broadcast: 'Broadcast',
+  other: 'Release',
+};
+
+/** How many of an album's songs the person kept, when any: `2 songs kept`. */
+const keptOf = (kept: number) =>
+  kept === 0 ? null : `${kept} ${kept === 1 ? 'song' : 'songs'} kept`;
+
 /**
- * Search's data saying what a tap asking for a book left: on the row `failure` names, that it did
- * not go through; a failure naming no row, in the page's banner.
+ * One album the library lacks as its row, in the list of the three that says what the row does, as
+ * a book's: asked for with Add to library, standing while its request is on its way, and opening and
+ * playing the album it became once it arrived. Its kind, artist and year tell it from the others,
+ * and how many of its songs the person kept says why an album they hear in the library is offered.
+ */
+export function albumRowOf(album: SearchAlbum): AlbumRow {
+  const row = {
+    title: album.title,
+    meta: [
+      ALBUM_TYPES[album.type ?? 'album'],
+      album.artist,
+      album.year === null ? null : String(album.year),
+      keptOf(album.kept),
+    ]
+      .filter((part) => part !== null)
+      .join(' · '),
+    image: artAt(album.art, 'small'),
+  };
+  const none = { asking: [], standing: [], arrived: [] };
+  if (album.status === null) {
+    const asking = {
+      ...row,
+      ref: requestKey(album.ref),
+      status: null,
+      tone: null,
+      action: 'Add to library',
+    };
+    return { ...none, asking: [asking] } as AlbumRow;
+  }
+  const { status, tone } = statusOf({
+    kind: 'requested',
+    status: album.status,
+    ...(album.status === 'downloading' ? { progress: album.progress ?? 0 } : {}),
+  });
+  const stands = { ...row, status, tone };
+  return (
+    album.status === 'inLibrary' && album.item !== null
+      ? { ...none, arrived: [{ ...stands, ref: mediaRefKey(album.item) }] }
+      : { ...none, standing: [stands] }
+  ) as AlbumRow;
+}
+
+/**
+ * Search's data saying what a tap asking for a book or an album left: on the row `failure` names,
+ * that it did not go through; a failure naming no row, in the page's banner.
  */
 export function searchRequestFailed(data: SearchData, failure: string): SearchData {
   if (requestOf(failure) === null) return { ...data, errors: [{ message: failure }] };
-  const said = (book: BookRow) =>
-    ({
-      ...book,
-      asking: book.asking.map((row) =>
-        row.ref === failure ? { ...row, status: 'Request failed', tone: 'error' } : row,
-      ),
-    }) as BookRow;
-  return { ...data, outside: { ...data.outside, books: data.outside.books.map(said) } };
+  const said = <R extends BookRow | AlbumRow>(asked: R): R => ({
+    ...asked,
+    asking: asked.asking.map((row) =>
+      row.ref === failure ? { ...row, status: 'Request failed', tone: 'error' } : row,
+    ),
+  });
+  return {
+    ...data,
+    outside: {
+      ...data.outside,
+      books: data.outside.books.map(said),
+      albums: data.outside.albums.map(said),
+    },
+  };
 }
 
 /** What Search says while no song from outside the library can play. */
@@ -300,6 +366,7 @@ export function searchData(answer: SearchResults, page: SearchData): SearchData 
       ...page.outside,
       household: rows(false),
       books: answer.books.map(bookRowOf),
+      albums: answer.albums.map(albumRowOf),
       music: answer.songs.map(songRowOf),
     },
     errors: answer.streaming === 'unavailable' ? [{ message: STREAMING_UNAVAILABLE }] : [],
@@ -340,8 +407,8 @@ export function searchView(q: string, draft: Draft | null): SearchView {
 }
 
 /**
- * What Search loaded: the page's data, whether a search found anything, and whether a book it lists
- * is on its way, or a song it lists is being kept, so the page should look again.
+ * What Search loaded: the page's data, whether a search found anything, and whether a book or an
+ * album it lists is on its way, or a song it lists is being kept, so the page should look again.
  */
 export interface SearchLoaded {
   data: SearchData;
@@ -349,7 +416,7 @@ export interface SearchLoaded {
   moving: boolean;
 }
 
-const movingBook = ({ status }: SearchBook) =>
+const moves = ({ status }: SearchBook | SearchAlbum) =>
   status !== null && status !== 'failed' && status !== 'inLibrary';
 
 /** Loads what Search asks for, over `page`: suggestions alone, or a search's results. */
@@ -365,8 +432,9 @@ export async function loadSearchPage(
   const answer = await loadSearch(api, asks.q ?? '');
   return {
     data: searchData(answer, page),
-    found: answer.results.length + answer.books.length + answer.songs.length > 0,
-    moving: answer.books.some(movingBook) || answer.songs.some(keeping),
+    found:
+      answer.results.length + answer.books.length + answer.albums.length + answer.songs.length > 0,
+    moving: answer.books.some(moves) || answer.albums.some(moves) || answer.songs.some(keeping),
   };
 }
 

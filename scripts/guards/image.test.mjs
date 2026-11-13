@@ -62,11 +62,12 @@ test('the image holds no test, recording, test key, recorder or recorded-upstrea
   assert.deepEqual(imageFiles(REPO_ROOT).filter(testOnly), []);
 });
 
-test('a test, a recording, the test key, the recorder and the harness are each test-only', () => {
+test('a test, a recording, a fixture, the test key, the recorder and the harness are each test-only', () => {
   for (const file of [
     'server/src/app.test.ts',
     'server/src/adapters/jellyfin/recordings/users-list.json',
     'server/src/adapters/audiobookshelf/recordings/item-file.m4a',
+    'server/src/requests/albums/fixtures/the-slip/01 - 999,999.flac',
     'server/src/adapters/http/test-signing-key.json',
     'server/src/adapters/http/testSigningKey.ts',
     'server/src/adapters/http/replay.ts',
@@ -78,6 +79,7 @@ test('a test, a recording, the test key, the recorder and the harness are each t
   }
   for (const file of [
     'server/src/main.ts',
+    'server/src/adapters/http/entities.ts',
     'server/src/adapters/http/fetch.ts',
     'server/src/adapters/http/publicFetch.ts',
     'server/src/adapters/http/unavailable.ts',

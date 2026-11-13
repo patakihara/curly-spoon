@@ -121,6 +121,142 @@ describe('the migration that lets a request fail stalled', () => {
   });
 });
 
+describe('[M3.albums] the migration that lets a request fail with the wrong release', () => {
+  const at = 1_000;
+  const everything = 'SELECT * FROM requests ORDER BY id';
+  function withRequestsBefore() {
+    const db = new Database(':memory:');
+    db.pragma('foreign_keys = ON');
+    runMigrations(
+      db,
+      migrations.filter((m) => m.id < 29),
+    );
+    db.prepare(
+      `INSERT INTO users (id, username, role, created_at, updated_at)
+       VALUES ('ana', 'ana', 'member', ?, ?)`,
+    ).run(at, at);
+    const add = db.prepare(
+      `INSERT INTO requests (id, medium, target, status, failed_step, reason, progress, release,
+         candidates, handle, step_key, version, result_source, result_id, progress_at, held_since,
+         auto_starts, created_at, updated_at)
+       VALUES (?, 'album', '{"title":"t"}', ?, ?, ?, ?, '{"id":"r"}', '[{"id":"o"}]', ?, ?, 3,
+         ?, ?, ?, ?, ?, ?, ?)`,
+    );
+    add.run(
+      'r1',
+      'downloading',
+      null,
+      null,
+      0.5,
+      '{"hash":"h"}',
+      null,
+      null,
+      null,
+      at,
+      at,
+      2,
+      at,
+      at,
+    );
+    add.run(
+      'r2',
+      'inLibrary',
+      null,
+      null,
+      null,
+      null,
+      null,
+      'jellyfin',
+      'j',
+      null,
+      null,
+      0,
+      at,
+      at,
+    );
+    add.run(
+      'r3',
+      'failed',
+      'downloading',
+      'downloadStalled',
+      null,
+      null,
+      'k',
+      null,
+      null,
+      at,
+      null,
+      1,
+      at,
+      at,
+    );
+    const person = db.prepare(
+      'INSERT INTO request_people (request_id, user_id, joined_at) VALUES (?, ?, ?)',
+    );
+    const key = db.prepare(
+      "INSERT INTO request_keys (medium, key, request_id) VALUES ('album', ?, ?)",
+    );
+    for (const id of ['r1', 'r2', 'r3']) {
+      person.run(id, 'ana', at);
+      key.run(`mbid:${id}`, id);
+    }
+    db.prepare(`UPDATE requests SET status = 'inLibrary' WHERE id = 'r2'`).run();
+    const before = db.prepare(everything).all();
+    runMigrations(db);
+    return { db, before };
+  }
+
+  it('[M3.albums] keeps every request as it was, who is on it, and its keys', () => {
+    const { db, before } = withRequestsBefore();
+    const rows = (sql: string) => db.prepare(sql).all();
+    expect(rows(everything)).toEqual(before);
+    expect(rows('SELECT request_id, user_id FROM request_people ORDER BY request_id')).toEqual([
+      { request_id: 'r1', user_id: 'ana' },
+      { request_id: 'r2', user_id: 'ana' },
+      { request_id: 'r3', user_id: 'ana' },
+    ]);
+    expect(rows('SELECT request_id, key FROM request_keys ORDER BY request_id')).toEqual([
+      { request_id: 'r1', key: 'mbid:r1' },
+      { request_id: 'r3', key: 'mbid:r3' },
+    ]);
+    expect(rows('SELECT request_id, key FROM arrived_keys')).toEqual([
+      { request_id: 'r2', key: 'mbid:r2' },
+    ]);
+    expect(db.pragma('foreign_key_check')).toEqual([]);
+    db.close();
+  });
+
+  it('[M3.albums] takes wrongRelease, and still refuses a reason nobody knows', () => {
+    const { db } = withRequestsBefore();
+    const fail = db.prepare(
+      `UPDATE requests SET status = 'failed', failed_step = 'downloading', reason = ?, progress = NULL
+       WHERE id = 'r1'`,
+    );
+    expect(fail.run('wrongRelease').changes).toBe(1);
+    expect(() => fail.run('tracker down')).toThrow();
+    db.close();
+  });
+
+  it('[M3.albums] keeps the working index and what the table’s triggers and references do', () => {
+    const { db } = withRequestsBefore();
+    const indexes = db
+      .prepare(`SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = 'requests'`)
+      .all();
+    expect(indexes).toContainEqual({ name: 'idx_requests_working' });
+    db.prepare(
+      `UPDATE requests SET status = 'inLibrary', progress = NULL, result_source = 'jellyfin',
+         result_id = 'k' WHERE id = 'r1'`,
+    ).run();
+    expect(db.prepare(`SELECT key FROM arrived_keys WHERE request_id = 'r1'`).all()).toEqual([
+      { key: 'mbid:r1' },
+    ]);
+    db.prepare(`DELETE FROM request_people WHERE request_id = 'r2'`).run();
+    expect(db.prepare(`SELECT id FROM requests WHERE id = 'r2'`).get()).toBeUndefined();
+    expect(db.prepare(`SELECT 1 FROM arrived_keys WHERE request_id = 'r2'`).get()).toBeUndefined();
+    db.close();
+  });
+});
+
 describe('the episode order migration', () => {
   it('has every indexed show read again on the next run, and nothing else', () => {
     const db = new Database(':memory:');

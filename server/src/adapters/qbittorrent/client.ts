@@ -19,6 +19,7 @@ import {
 } from './schemas.js';
 
 const CONFLICT = 409;
+const NOT_FOUND = 404;
 const ignored = z.unknown();
 
 export interface QbittorrentClientOptions {
@@ -31,6 +32,11 @@ export interface AddTorrent {
   torrent: ResolvedRelease;
   category: string;
   tag: string;
+  /**
+   * Stop the torrent once its metadata is in, before any file's bytes: its file list can then be
+   * read, files set aside and the torrent started, or dropped having fetched nothing.
+   */
+  stopAtMetadata?: boolean;
 }
 
 /** Whether a torrent's row carries exactly this tag; a tag that merely holds it is another tag. */
@@ -84,8 +90,9 @@ export class QbittorrentClient {
    * already has answers 409 and stays as it was, which is no failure. Answers whether this call
    * added it.
    */
-  async add({ torrent, category, tag }: AddTorrent): Promise<boolean> {
-    const fields = { category, tags: tag };
+  async add({ torrent, category, tag, stopAtMetadata = false }: AddTorrent): Promise<boolean> {
+    const fields: Record<string, string> = { category, tags: tag };
+    if (stopAtMetadata) fields.stopCondition = 'MetadataReceived';
     const init: RequestInitJson =
       torrent.kind === 'magnet'
         ? { method: 'POST', form: { urls: torrent.magnet, ...fields } }
@@ -113,6 +120,44 @@ export class QbittorrentClient {
 
   async files(hash: string): Promise<QbitFile[]> {
     return this.ask('torrents/files', {}, qbitFilesSchema, { hash });
+  }
+
+  /** Starts torrents, a stopped one or one stopped at its metadata. A running one, or a hash it does
+   * not have, is no failure. */
+  async start(hashes: readonly string[]): Promise<void> {
+    await this.ask(
+      'torrents/start',
+      { method: 'POST', form: { hashes: hashes.join('|') } },
+      ignored,
+    );
+  }
+
+  /**
+   * Sets the priority of a torrent's files by their index; 0 fetches none of a file's own bytes.
+   * Answers false for a hash it does not have.
+   */
+  async setFilePriority(
+    hash: string,
+    indexes: readonly number[],
+    priority: number,
+  ): Promise<boolean> {
+    const form = { hash, id: indexes.join('|'), priority: String(priority) };
+    try {
+      await this.ask('torrents/filePrio', { method: 'POST', form }, ignored);
+      return true;
+    } catch (error) {
+      if (!(error instanceof AdapterError) || error.status !== NOT_FOUND) throw error;
+      return false;
+    }
+  }
+
+  /** Adds a tag to torrents. One already carried, or a hash it does not have, is no failure. */
+  async addTag(hashes: readonly string[], tag: string): Promise<void> {
+    await this.ask(
+      'torrents/addTags',
+      { method: 'POST', form: { hashes: hashes.join('|'), tags: tag } },
+      ignored,
+    );
   }
 
   /** Deletes torrents and their files. A hash it does not have is no failure. */

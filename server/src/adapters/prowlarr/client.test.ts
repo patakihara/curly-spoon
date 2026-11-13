@@ -18,6 +18,8 @@ const others = recorded('search-jekyll-others');
 const redirect = recorded('download-redirect');
 const unauthorized = recorded('unauthorized');
 
+/** Where a book is searched: Newznab's audiobook category. */
+const AUDIOBOOKS = { categories: [3030] };
 const queryOf = (r: Recording) => r.request.query.query as string;
 const KEY = '<token>';
 const client = (fetch: FetchLike, apiKey = KEY) =>
@@ -38,7 +40,7 @@ describe('[M3.books] searching Prowlarr', () => {
       apiKey: KEY,
       fetch: () => Promise.resolve(Response.json([bad, good, 'not a row'])),
       log: { error: (details) => logged.push(details) },
-    }).search('a book');
+    }).search('a book', AUDIOBOOKS);
     expect(rows.map((row) => row.title)).toEqual(['A Book']);
     expect(rows[0]?.details.magnet).toBe(good.guid);
     expect(logged).toEqual([
@@ -49,7 +51,7 @@ describe('[M3.books] searching Prowlarr', () => {
   });
 
   it('[M3.books] reads a row that has no info hash and no magnet, by its link alone', async () => {
-    const rows = await replayed(search).search(queryOf(search));
+    const rows = await replayed(search).search(queryOf(search), AUDIOBOOKS);
     expect(rows.length).toBeGreaterThan(1);
     for (const row of rows) {
       expect(row.source).toBe('AudioBook Bay');
@@ -61,7 +63,7 @@ describe('[M3.books] searching Prowlarr', () => {
   });
 
   it('[M3.books] reads a magnet from a guid and a hash where the indexer gives them', async () => {
-    const rows = await replayed(others).search(queryOf(others));
+    const rows = await replayed(others).search(queryOf(others), AUDIOBOOKS);
     const magnet = rows.find((row) => row.details.magnet !== undefined);
     expect(magnet?.details.magnet).toMatch(/^magnet:\?xt=urn:btih:/);
     expect(magnet?.details.infoHash).toMatch(/^[0-9a-f]{40}$/);
@@ -73,7 +75,7 @@ describe('[M3.books] searching Prowlarr', () => {
     await client(async (url, init) => {
       asked.push({ url: new URL(url), init });
       return replay(url, init);
-    }).search(queryOf(search));
+    }).search(queryOf(search), AUDIOBOOKS);
     expect(asked[0]?.url.searchParams.get('categories')).toBe('3030');
     expect(asked[0]?.url.searchParams.get('type')).toBe('search');
     expect(asked[0]?.url.searchParams.has('apikey')).toBe(false);
@@ -95,10 +97,27 @@ describe('[M3.books] searching Prowlarr', () => {
         ]),
         { status: 200, headers: { 'content-type': 'application/json' } },
       );
-    const rows = await client(answer, 'the-real-key').search('a book');
+    const rows = await client(answer, 'the-real-key').search('a book', AUDIOBOOKS);
     expect(JSON.stringify(rows)).not.toContain('the-real-key');
     expect(JSON.stringify(rows).toLowerCase()).not.toContain('apikey');
-    expect(rows[0]?.details.link).toBe('/2/download?link=abc');
+    expect(rows[0]?.details.link).toBe('/2/download?link=abc&file=A');
+  });
+
+  it("[M3.albums] a row with both links keeps the download's, as only a torrent lists its files", async () => {
+    const answer: FetchLike = async () =>
+      new Response(
+        JSON.stringify([
+          {
+            title: 'An Album [FLAC]',
+            protocol: 'torrent',
+            magnetUrl: 'http://localhost:9696/4/download?apikey=k&link=magnet-side',
+            downloadUrl: 'http://localhost:9696/4/download?apikey=k&link=torrent-side',
+          },
+        ]),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      );
+    const rows = await client(answer, 'k').search('an album', AUDIOBOOKS);
+    expect(rows[0]?.details.link).toBe('/4/download?link=torrent-side');
   });
 
   it('[M3.books] drops a row nothing could be fetched from, and a usenet one', async () => {
@@ -110,11 +129,35 @@ describe('[M3.books] searching Prowlarr', () => {
         ]),
         { status: 200, headers: { 'content-type': 'application/json' } },
       );
-    expect(await client(answer).search('a book')).toEqual([]);
+    expect(await client(answer).search('a book', AUDIOBOOKS)).toEqual([]);
   });
 
   it('[M3.books] waits for slow indexers for less than a step may take', () => {
     expect(PROWLARR_SEARCH_LIMIT_MS).toBeLessThan(120_000);
+  });
+});
+
+describe('[M3.albums] searching where a medium asks', () => {
+  const asking = async (within: Parameters<ProwlarrClient['search']>[1]) => {
+    const asked: URL[] = [];
+    await client(async (url) => {
+      asked.push(new URL(url));
+      return Response.json([]);
+    }).search('an album', within);
+    return asked[0]!.searchParams;
+  };
+
+  it('[M3.albums] asks in each category given, and only the indexers named', async () => {
+    const sent = await asking({ categories: [3000], indexerIds: [2, 7] });
+    expect(sent.getAll('categories')).toEqual(['3000']);
+    expect(sent.getAll('indexerIds')).toEqual(['2', '7']);
+    expect(sent.get('query')).toBe('an album');
+  });
+
+  it('[M3.albums] asks every indexer when none are named', async () => {
+    const sent = await asking({ categories: [3030, 3040] });
+    expect(sent.getAll('categories')).toEqual(['3030', '3040']);
+    expect(sent.has('indexerIds')).toBe(false);
   });
 });
 
@@ -179,7 +222,7 @@ describe('[M3.books] an unreachable Prowlarr holds the request; a refusal does n
   const refused: FetchLike = () => Promise.reject(new Error('connect ECONNREFUSED'));
   const broken: FetchLike = async () => new Response('down', { status: 503 });
   const calls = {
-    search: (c: ProwlarrClient) => c.search('a book'),
+    search: (c: ProwlarrClient) => c.search('a book', AUDIOBOOKS),
     resolve: (c: ProwlarrClient) => c.resolve({ link: '/2/download?link=abc' }),
   };
 
@@ -202,12 +245,12 @@ describe('[M3.books] an unreachable Prowlarr holds the request; a refusal does n
       fetch: hung,
       timeoutMs: 5,
     });
-    await expect(short.search('a book')).rejects.toBeInstanceOf(StepUnavailable);
+    await expect(short.search('a book', AUDIOBOOKS)).rejects.toBeInstanceOf(StepUnavailable);
   });
 
   it('[M3.books] a recorded 401 fails as it is, not held', async () => {
     const failure = await client(replayFetch([unauthorized]))
-      .search(queryOf(unauthorized))
+      .search(queryOf(unauthorized), AUDIOBOOKS)
       .catch((err: unknown) => err);
     expect(failure).toBeInstanceOf(AdapterError);
     expect(failure).not.toBeInstanceOf(StepUnavailable);

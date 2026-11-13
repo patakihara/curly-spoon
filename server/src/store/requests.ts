@@ -355,6 +355,19 @@ export function workingRequests(db: Db, log?: JobLog): StoredRequest[] {
   );
 }
 
+/** Every request of one medium that has reached the library, oldest first. */
+export function requestsInLibrary(db: Db, medium: RequestMedium, log?: JobLog): StoredRequest[] {
+  return readableRows(
+    db
+      .prepare(
+        `SELECT ${COLUMNS} FROM requests r WHERE r.medium = ? AND r.status = 'inLibrary'
+         ORDER BY r.created_at, r.id`,
+      )
+      .all(medium) as unknown[],
+    log,
+  );
+}
+
 /** Every live request of one medium: not yet in the library, failed ones too, oldest first. */
 export function liveRequestsOf(db: Db, medium: RequestMedium, log?: JobLog): StoredRequest[] {
   return readableRows(

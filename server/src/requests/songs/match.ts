@@ -121,8 +121,8 @@ export function orderReleases(
     .sort((a, b) => kept(a) - kept(b) || byDate(a.date, b.date));
 }
 
-type Medium = Release['media'][number];
-type Track = Medium['tracks'][number];
+export type Medium = Release['media'][number];
+export type Track = Medium['tracks'][number];
 
 /**
  * The release's track that is the song: of its title, and within 4 s of its length; with
@@ -145,7 +145,8 @@ export function trackOn(
   return null;
 }
 
-function matched(
+/** The match of a track on a release: its names, place, dates and ids, as its tags are written. */
+export function matchedOn(
   by: MusicBrainzMatch['by'],
   release: Release,
   { medium, track }: { medium: Medium; track: Track },
@@ -214,7 +215,7 @@ export async function matchSong(deps: MatchDeps, song: SongToMatch): Promise<Son
     for (const hit of order.slice(0, RELEASES_LOOKED_UP)) {
       const release = await lookUp(hit.id);
       const on = release ? trackOn(release, song) : null;
-      if (release && on) return matched('release', release, on);
+      if (release && on) return matchedOn('release', release, on);
     }
   }
 
@@ -236,7 +237,7 @@ export async function matchSong(deps: MatchDeps, song: SongToMatch): Promise<Son
   if (best) {
     const release = await lookUp(best.id);
     const on = release ? trackOn(release, song, ids) : null;
-    if (release && on) return matched('recording', release, on);
+    if (release && on) return matchedOn('recording', release, on);
   }
   return fromYouTubeMusic(song);
 }

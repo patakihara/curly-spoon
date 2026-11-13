@@ -430,6 +430,58 @@ fun SearchPage(navController: NavController, actions: PageActions) {
                                         )
                                         ResultRow(
                                             ResultRowProps(
+                                                title = "Salt Flats",
+                                                meta = "Album · Deep Inertia · 2022",
+                                                status = null,
+                                                tone = null,
+                                                image = "/art/tears-of-ice.jpg",
+                                                platform = Platform.MOBILE,
+                                                divider = true,
+                                                trailing = {
+                                                    Button(
+                                                        ButtonProps(
+                                                            variant = ButtonVariant.SECONDARY,
+                                                            size = SizeSmMdLg.SM,
+                                                            platform = Platform.MOBILE,
+                                                            children = {
+                                                                BasicText("Add to library")
+                                                            },
+                                                        ),
+                                                    )
+                                                },
+                                            ),
+                                        )
+                                        ResultRow(
+                                            ResultRowProps(
+                                                title = "Salt Lines",
+                                                meta = "Album · Soul Vertex · 2020",
+                                                status = "Downloading · 40%",
+                                                tone = ResultRowTone.PROGRESS,
+                                                image = "/art/salt-and-static.jpg",
+                                                platform = Platform.MOBILE,
+                                                onClick = { navController.navigate(Route.Requests) },
+                                                divider = true,
+                                            ),
+                                        )
+                                        ResultRow(
+                                            ResultRowProps(
+                                                title = "Salt Year",
+                                                meta = "Album · Fleeting Verses · 2019",
+                                                status = "In library",
+                                                tone = ResultRowTone.LIBRARY,
+                                                image = "/art/fragments-of-the-wind.jpg",
+                                                platform = Platform.MOBILE,
+                                                onClick = {
+                                                    navController.navigate(Route.Album(ref = "salt-year"))
+                                                },
+                                                onAction = {
+                                                    actions.onPlay("salt-year", PlayQueue.MUSIC, PlayMode.NOW)
+                                                },
+                                                divider = true,
+                                            ),
+                                        )
+                                        ResultRow(
+                                            ResultRowProps(
                                                 title = "Salt and Stone",
                                                 meta = "Book · Maya Lind · 2021",
                                                 status = "Downloading · 42%",

@@ -1,0 +1,925 @@
+{
+  "upstream": "prowlarr",
+  "upstreamVersion": "10.0.0.22097",
+  "call": "music-artificial-heart-album",
+  "request": {
+    "method": "GET",
+    "path": "/api/v1/search",
+    "query": {
+      "categories": "3000",
+      "indexerIds": "5",
+      "query": "Artificial Heart",
+      "type": "search"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": [
+        {
+          "guid": "http://upstream.invalid/page-7497c4697694",
+          "age": 52,
+          "ageHours": 1260.3196874779721,
+          "ageMinutes": 75619.18124868667,
+          "size": 24567467,
+          "grabs": 8,
+          "indexerId": 4,
+          "indexer": "indexer-e",
+          "title": "God's Desire for the Human Heart in an Age of Artificial Intelligence",
+          "sortTitle": "god s desire for human heart in age artificial intelligence",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2026-09-18T12:37:35Z",
+          "downloadUrl": "http://upstream.invalid/4/download?apikey=<token>&link=link-f8bd91f56ad6",
+          "infoUrl": "http://upstream.invalid/page-e5c833d6beea",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 127296,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/4/download?apikey=<token>&link=link-0ddeb6e62495",
+          "infoHash": "ebfdb06f35ba7cdb1c768cc2c4bac2b34be6c47a",
+          "seeders": 1,
+          "leechers": 1,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/page-6c5469d36360",
+          "age": 1067,
+          "ageHours": 25631.75107645722,
+          "ageMinutes": 1537905.06458744,
+          "size": 180772681,
+          "grabs": 133,
+          "indexerId": 4,
+          "indexer": "indexer-e",
+          "title": "NHK ラジオドラマ 人工心臓 NHK Radio Drama Artificial Heart",
+          "sortTitle": "nhk ラジオドラマ 人工心臓 nhk radio drama artificial heart",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2023-12-08T01:11:42Z",
+          "downloadUrl": "http://upstream.invalid/4/download?apikey=<token>&link=link-112935d27536",
+          "infoUrl": "http://upstream.invalid/page-d2a43148781f",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 127296,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/4/download?apikey=<token>&link=link-836a461a4b36",
+          "infoHash": "3faa026b21844f3c97b13280f493ace4fc47e465",
+          "seeders": 1,
+          "leechers": 1,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/page-bedb03424af0",
+          "age": 1870,
+          "ageHours": 44888.19218764133,
+          "ageMinutes": 2693291.5312584885,
+          "size": 2913532,
+          "grabs": 48,
+          "indexerId": 4,
+          "indexer": "indexer-e",
+          "title": "AU Profiles - The Artificial Heart Project Combatting Crib Deaths, Part 2 - Greg Boring",
+          "sortTitle": "au profiles artificial heart project combatting crib deaths part 2 greg boring",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2021-09-26T16:45:14Z",
+          "downloadUrl": "http://upstream.invalid/4/download?apikey=<token>&link=link-c5991be4679a",
+          "infoUrl": "http://upstream.invalid/page-a13bbf8fa9bc",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 127296,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/4/download?apikey=<token>&link=link-453cdf298c97",
+          "infoHash": "5a36f173f6c803abfee8a7e169b737400d7483f0",
+          "seeders": 1,
+          "leechers": 1,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/page-fe6cc1a9d8f3",
+          "age": 3015,
+          "ageHours": 72363.08940992603,
+          "ageMinutes": 4341785.36459557,
+          "size": 77475247,
+          "grabs": 81,
+          "indexerId": 4,
+          "indexer": "indexer-e",
+          "title": "The Hearing - Artificial Heart By Jonathan Coulton",
+          "sortTitle": "hearing artificial heart by jonathan coulton",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2018-08-08T21:51:24Z",
+          "downloadUrl": "http://upstream.invalid/4/download?apikey=<token>&link=link-fe2f49af5563",
+          "infoUrl": "http://upstream.invalid/page-b193e8f80301",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 127296,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/4/download?apikey=<token>&link=link-6e3f0092854d",
+          "infoHash": "ec33bd7c199444bb42b638bf43538daf08b775b9",
+          "seeders": 1,
+          "leechers": 1,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/page-22cd68a23a76",
+          "age": 3603,
+          "ageHours": 86475.6207988728,
+          "ageMinutes": 5188537.247932376,
+          "size": 9371841,
+          "grabs": 52,
+          "indexerId": 4,
+          "indexer": "indexer-e",
+          "title": "my violent heart (artificial heart)",
+          "sortTitle": "my violent heart artificial heart",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2016-12-28T21:19:31Z",
+          "downloadUrl": "http://upstream.invalid/4/download?apikey=<token>&link=link-b9dbaa8f2971",
+          "infoUrl": "http://upstream.invalid/page-24912fe22c14",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 127296,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/4/download?apikey=<token>&link=link-e509a9321ea1",
+          "infoHash": "bc98046568ca9dfba4b1ef94786f6db6fcd13889",
+          "seeders": 1,
+          "leechers": 1,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/page-4dfb9608859c",
+          "age": 3603,
+          "ageHours": 86475.66913225903,
+          "ageMinutes": 5188540.14793555,
+          "size": 9373263,
+          "grabs": 44,
+          "indexerId": 4,
+          "indexer": "indexer-e",
+          "title": "my violent heart (artificial)",
+          "sortTitle": "my violent heart artificial",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2016-12-28T21:16:37Z",
+          "downloadUrl": "http://upstream.invalid/4/download?apikey=<token>&link=link-4a15cc003203",
+          "infoUrl": "http://upstream.invalid/page-0585c952e94f",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 127296,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/4/download?apikey=<token>&link=link-c9dd45679836",
+          "infoHash": "749a7587994cf43c0e2f9cb2ca8fe5c487f522f9",
+          "seeders": 1,
+          "leechers": 1,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/page-ed7986cf41fd",
+          "age": 4299,
+          "ageHours": 103196.49079897898,
+          "ageMinutes": 6191789.447938745,
+          "size": 89653036,
+          "grabs": 8,
+          "indexerId": 4,
+          "indexer": "indexer-e",
+          "title": "NPR Talk of the Nation - 07/13/2001 : Artificial Heart Engineering / Insect Robotics",
+          "sortTitle": "npr talk nation 07132001 artificial heart engineering insect robotics",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2015-02-01T04:27:19Z",
+          "downloadUrl": "http://upstream.invalid/4/download?apikey=<token>&link=link-f9e0b700bebd",
+          "infoUrl": "http://upstream.invalid/page-1e96c897ab15",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 127296,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/4/download?apikey=<token>&link=link-f0141192d87b",
+          "infoHash": "46f147c26e03ffcaccad751cb098250a59a3cc4e",
+          "seeders": 1,
+          "leechers": 1,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/page-cb5d6b72871f",
+          "age": 5353,
+          "ageHours": 128476.22357681261,
+          "ageMinutes": 7708573.4146087635,
+          "size": 69426152,
+          "grabs": 407,
+          "indexerId": 4,
+          "indexer": "indexer-e",
+          "title": "Artificial Heart - Smoldering [EP]",
+          "sortTitle": "artificial heart smoldering ep",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2012-03-14T20:43:21Z",
+          "downloadUrl": "http://upstream.invalid/4/download?apikey=<token>&link=link-3655f583677b",
+          "infoUrl": "http://upstream.invalid/page-e20afaa9484c",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 127296,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/4/download?apikey=<token>&link=link-20bef82ae3db",
+          "infoHash": "6f21ca3818363a3cdefaed5b18ee91e3d1bb4eeb",
+          "seeders": 1,
+          "leechers": 1,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/page-a25e236b2553",
+          "age": 5353,
+          "ageHours": 128479.81857686448,
+          "ageMinutes": 7708789.114611873,
+          "size": 44261767,
+          "grabs": 380,
+          "indexerId": 4,
+          "indexer": "indexer-e",
+          "title": "Artificial Heart - Anguish (EP)",
+          "sortTitle": "artificial heart anguish ep",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2012-03-14T17:07:39Z",
+          "downloadUrl": "http://upstream.invalid/4/download?apikey=<token>&link=link-27604ca6e1b5",
+          "infoUrl": "http://upstream.invalid/page-5cc4a733a3ba",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 127296,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/4/download?apikey=<token>&link=link-46a9ea3c997c",
+          "infoHash": "64bf64a98c696d2083118586faca16b5bc10111a",
+          "seeders": 1,
+          "leechers": 1,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/page-b0b226710030",
+          "age": 5353,
+          "ageHours": 128481.82441024976,
+          "ageMinutes": 7708909.464614988,
+          "size": 42856367,
+          "grabs": 273,
+          "indexerId": 4,
+          "indexer": "indexer-e",
+          "title": "Artificial Heart - Something",
+          "sortTitle": "artificial heart something",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2012-03-14T15:07:18Z",
+          "downloadUrl": "http://upstream.invalid/4/download?apikey=<token>&link=link-9cde02218e8b",
+          "infoUrl": "http://upstream.invalid/page-438506f7bd9c",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 127296,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/4/download?apikey=<token>&link=link-c641e012ffdc",
+          "infoHash": "825cfb1acd9d04015fe4fd4801c8ff6bcc32a67d",
+          "seeders": 1,
+          "leechers": 1,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/page-bc1af9ffc35d",
+          "age": 5438,
+          "ageHours": 130512.76413250645,
+          "ageMinutes": 7830765.84795039,
+          "size": 130740540,
+          "grabs": 15446,
+          "indexerId": 4,
+          "indexer": "indexer-e",
+          "title": "Artificial Heart",
+          "sortTitle": "artificial heart",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2011-12-21T00:10:55Z",
+          "downloadUrl": "http://upstream.invalid/4/download?apikey=<token>&link=link-16ae40db5f81",
+          "infoUrl": "http://upstream.invalid/page-0f9bb482a406",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 127296,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/4/download?apikey=<token>&link=link-881193bbe55f",
+          "infoHash": "83d34683c3b4ab70b8d4cb93bc7dd7859de0a83c",
+          "seeders": 1,
+          "leechers": 1,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/page-2e067e1dffd4",
+          "age": 7248,
+          "ageHours": 173967.75913253883,
+          "ageMinutes": 10438065.547952335,
+          "size": 100087077,
+          "grabs": 715,
+          "indexerId": 4,
+          "indexer": "indexer-e",
+          "title": "lanza plunkett \"artificial. heart. music\"",
+          "sortTitle": "lanza plunkett artificial heart music",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2007-01-05T09:11:13Z",
+          "downloadUrl": "http://upstream.invalid/4/download?apikey=<token>&link=link-604708911eed",
+          "infoUrl": "http://upstream.invalid/page-8ae5943de152",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 127296,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/4/download?apikey=<token>&link=link-938238dfc1cb",
+          "infoHash": "d671ca741fea043006e5443ac3fce9285f786be9",
+          "seeders": 1,
+          "leechers": 1,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "magnet:?xt=urn:btih:3AFC7416133386201EB9F10DC43424744B951A62",
+          "age": 4688,
+          "ageHours": 112513.19718850995,
+          "ageMinutes": 6750791.831310607,
+          "size": 121489523,
+          "files": 19,
+          "indexerId": 5,
+          "indexer": "indexer-i",
+          "title": "Jonathan Coulton - Artificial Heart [2011]",
+          "sortTitle": "jonathan coulton artificial heart 2011",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2014-01-08T23:44:56Z",
+          "infoUrl": "http://upstream.invalid/page-9c3a77d8a85e",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 100101,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/5/download?apikey=<token>&link=link-b63d836ad64c",
+          "infoHash": "3AFC7416133386201EB9F10DC43424744B951A62",
+          "seeders": 0,
+          "leechers": 1,
+          "protocol": "torrent"
+        }
+      ]
+    }
+  }
+}

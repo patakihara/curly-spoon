@@ -62,7 +62,7 @@ import { type Toggle, ToggleContext, type ToggleSetting } from '../toggle';
 import { useAccessOf } from './access';
 import { useDeps } from './deps';
 import { emptied } from './format';
-import { albumData, bookData, episodeData, showAwaited, showData } from './items';
+import { albumData, albumVerb, bookData, episodeData, showAwaited, showData } from './items';
 import {
   booksData,
   browseData,
@@ -400,6 +400,7 @@ const screens: Screen<never>[] = [
     frame: albumFrame,
     empty: fixed(emptied(albumFrame.placeholder)),
     load: async (api, params) => albumData(await loadItem(api, params.ref), albumFrame.placeholder),
+    verbs: albumVerb,
   } satisfies Screen<typeof albumFrame.placeholder>,
   {
     name: 'queue',

@@ -59,6 +59,7 @@ const facts: BookFacts = {
 const recordedRows = async (recording: Recording): Promise<PickRow[]> => {
   const rows = await prowlarrWith(replayFetch([recording])).search(
     recording.request.query.query as string,
+    { categories: [3030] },
   );
   return rows.map((release) => ({ release, extras: {} }));
 };
@@ -262,6 +263,7 @@ describe('[M3.books/a] the pick starts only what is plainly this book', () => {
     source: 'an indexer',
     size: null,
     seeders: 1,
+    files: null,
     infoUrl: null,
     details: {},
   };
@@ -328,6 +330,7 @@ describe('[M3.books/a] what the pick weighs', () => {
     source: 'an indexer',
     size: null,
     seeders: 1,
+    files: null,
     infoUrl: null,
     details: {},
   };
@@ -452,6 +455,7 @@ describe('[M3.books/a] how far the search goes', () => {
     source,
     size: null,
     seeders: 1,
+    files: null,
     infoUrl: `http://upstream.invalid/${at}`,
     details: { link: `/${at}` },
   });
@@ -494,7 +498,9 @@ describe('[M3.books] a rate limit says nothing about the request', () => {
 
   it('[M3.books] a 429 from Audible, Prowlarr or Audnexus holds the request', async () => {
     await expect(audibleWith(limited).product(ASIN)).rejects.toBeInstanceOf(StepUnavailable);
-    await expect(prowlarrWith(limited).search(QUERY)).rejects.toBeInstanceOf(StepUnavailable);
+    await expect(
+      prowlarrWith(limited).search(QUERY, { categories: [3030] }),
+    ).rejects.toBeInstanceOf(StepUnavailable);
     const audnexus = new AudnexusClient({ baseUrl: BASE, fetch: limited });
     await expect(audnexus.author('an-asin')).rejects.toBeInstanceOf(StepUnavailable);
     await expect(audnexus.authorsNamed('a name')).rejects.toBeInstanceOf(StepUnavailable);

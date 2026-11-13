@@ -1,0 +1,51 @@
+{
+  "upstream": "musicbrainz",
+  "upstreamVersion": "MusicBrainz web service 2",
+  "call": "rg-slip",
+  "request": {
+    "method": "GET",
+    "path": "/ws/2/release-group/5990b23f-6412-3eaf-989c-a4831f4f95f7",
+    "query": {
+      "fmt": "json",
+      "inc": "artist-credits"
+    },
+    "headers": {
+      "accept": "application/json",
+      "user-agent": "Auralis/0.0.0 ( https://github.com/patakihara/curly-spoon )"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "title": "The Slip",
+        "id": "5990b23f-6412-3eaf-989c-a4831f4f95f7",
+        "primary-type": "Album",
+        "disambiguation": "",
+        "secondary-types": [],
+        "secondary-type-ids": [],
+        "primary-type-id": "f529b476-6e62-324f-b0aa-1f3e33d313fc",
+        "artist-credit": [
+          {
+            "joinphrase": "",
+            "artist": {
+              "type": "Group",
+              "disambiguation": "",
+              "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+              "country": "US",
+              "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+              "sort-name": "Nine Inch Nails",
+              "name": "Nine Inch Nails"
+            },
+            "name": "Nine Inch Nails"
+          }
+        ],
+        "first-release-date": "2008-05-05"
+      }
+    }
+  }
+}

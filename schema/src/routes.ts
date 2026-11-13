@@ -66,6 +66,7 @@ import {
   RequestView,
 } from './requests.js';
 import {
+  SearchAlbumParams,
   SearchBookParams,
   SearchQuery,
   SearchResults,
@@ -623,6 +624,20 @@ export const searchBookArt = {
   stream: 'image',
 } as const satisfies Route;
 
+export const searchAlbumArt = {
+  method: 'GET',
+  path: '/api/search/albums/{mbid}/art',
+  operationId: 'getSearchAlbumArt',
+  summary:
+    'The front cover of an album a search found, one the library lacks, from the Cover Art Archive',
+  responseDescription: 'The image, as the archive holds it.',
+  response: ImageBytes,
+  access: 'member',
+  params: SearchAlbumParams,
+  query: ArtQuery,
+  stream: 'image',
+} as const satisfies Route;
+
 export const getLyrics = {
   method: 'GET',
   path: '/api/lyrics/{ref}',
@@ -779,6 +794,7 @@ export const routes: readonly Route[] = [
   getSearchSuggest,
   getSearch,
   searchBookArt,
+  searchAlbumArt,
   getLyrics,
   listLists,
   createList,

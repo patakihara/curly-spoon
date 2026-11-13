@@ -1,0 +1,25 @@
+{
+  "upstream": "prowlarr",
+  "upstreamVersion": "10.0.0.22097",
+  "call": "torrent-ghosts-ia",
+  "request": {
+    "method": "GET",
+    "path": "/4/download",
+    "query": {
+      "apikey": "<token>",
+      "link": "link-723c0f17e972"
+    },
+    "headers": {},
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/x-bittorrent"
+    },
+    "body": {
+      "bytes": "torrent-ghosts-ia.torrent",
+      "synthesized": "the torrent's info dictionary verbatim, so its hash holds, and its url-list at the placeholder host; nothing else of it"
+    }
+  }
+}

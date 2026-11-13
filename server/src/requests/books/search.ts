@@ -13,6 +13,8 @@ import type { JobLog } from '../../jobs/schedule.js';
 import type { MediumSteps, Release, SearchOutcome } from '../steps.js';
 import { type BookFacts, pickRelease, type PickRow, rankRows } from './pick.js';
 
+/** Newznab's audiobook category, the one a book is searched in. */
+const AUDIOBOOKS = 3030;
 /** The one indexer whose pages are read. */
 const AUDIOBOOKBAY = 'AudioBook Bay';
 const PAGES_READ = 3;
@@ -73,7 +75,11 @@ export function bookSearch(deps: BookSearchDeps): MediumSteps['search'] {
     if (product === null) return { kind: 'none', reason: 'noRelease' };
     const facts = factsOf(product);
     const query = [facts.title, facts.authors[0]].filter(Boolean).join(' ');
-    const rows = await withExtras(deps, await deps.prowlarr.search(query), facts);
+    const rows = await withExtras(
+      deps,
+      await deps.prowlarr.search(query, { categories: [AUDIOBOOKS] }),
+      facts,
+    );
     const picked = pickRelease(rows, facts);
     if (picked.kind === 'none') return { kind: 'none', reason: 'noRelease' };
     if (picked.kind === 'choose') {

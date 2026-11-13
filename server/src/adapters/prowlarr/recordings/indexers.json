@@ -1,0 +1,2968 @@
+{
+  "upstream": "prowlarr",
+  "upstreamVersion": "10.0.0.22097",
+  "call": "indexers",
+  "request": {
+    "method": "GET",
+    "path": "/api/v1/indexer",
+    "query": {},
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": [
+        {
+          "id": 1,
+          "name": "indexer-a",
+          "enable": true,
+          "protocol": "torrent",
+          "capabilities": {
+            "categories": [
+              {
+                "id": 5000,
+                "name": "TV",
+                "subCategories": [
+                  {
+                    "id": 5070,
+                    "name": "TV/Anime"
+                  },
+                  {
+                    "id": 5040,
+                    "name": "TV/HD"
+                  },
+                  {
+                    "id": 5030,
+                    "name": "TV/SD"
+                  },
+                  {
+                    "id": 5080,
+                    "name": "TV/Documentary"
+                  }
+                ]
+              },
+              {
+                "id": 100028,
+                "name": "Anime/Anime",
+                "subCategories": []
+              },
+              {
+                "id": 100078,
+                "name": "Anime/Dual Audio",
+                "subCategories": []
+              },
+              {
+                "id": 100079,
+                "name": "Anime/Dubbed",
+                "subCategories": []
+              },
+              {
+                "id": 100080,
+                "name": "Anime/Subbed",
+                "subCategories": []
+              },
+              {
+                "id": 100081,
+                "name": "Anime/Raw",
+                "subCategories": []
+              },
+              {
+                "id": 3000,
+                "name": "Audio",
+                "subCategories": [
+                  {
+                    "id": 3010,
+                    "name": "Audio/MP3"
+                  },
+                  {
+                    "id": 3040,
+                    "name": "Audio/Lossless"
+                  },
+                  {
+                    "id": 3020,
+                    "name": "Audio/Video"
+                  },
+                  {
+                    "id": 3050,
+                    "name": "Audio/Other"
+                  },
+                  {
+                    "id": 3030,
+                    "name": "Audio/Audiobook"
+                  }
+                ]
+              },
+              {
+                "id": 100022,
+                "name": "Music/MP3",
+                "subCategories": []
+              },
+              {
+                "id": 100023,
+                "name": "Music/Lossless",
+                "subCategories": []
+              },
+              {
+                "id": 100024,
+                "name": "Music/DVD",
+                "subCategories": []
+              },
+              {
+                "id": 100025,
+                "name": "Music/Video",
+                "subCategories": []
+              },
+              {
+                "id": 100026,
+                "name": "Music/Radio",
+                "subCategories": []
+              },
+              {
+                "id": 100027,
+                "name": "Music/Other",
+                "subCategories": []
+              },
+              {
+                "id": 100053,
+                "name": "Music/Album",
+                "subCategories": []
+              },
+              {
+                "id": 100058,
+                "name": "Music/Box set",
+                "subCategories": []
+              },
+              {
+                "id": 100059,
+                "name": "Music/Discography",
+                "subCategories": []
+              },
+              {
+                "id": 100060,
+                "name": "Music/Single",
+                "subCategories": []
+              },
+              {
+                "id": 100068,
+                "name": "Music/Concerts",
+                "subCategories": []
+              },
+              {
+                "id": 100069,
+                "name": "Music/AAC",
+                "subCategories": []
+              },
+              {
+                "id": 2000,
+                "name": "Movies",
+                "subCategories": [
+                  {
+                    "id": 2070,
+                    "name": "Movies/DVD"
+                  },
+                  {
+                    "id": 2030,
+                    "name": "Movies/SD"
+                  },
+                  {
+                    "id": 2010,
+                    "name": "Movies/Foreign"
+                  },
+                  {
+                    "id": 2040,
+                    "name": "Movies/HD"
+                  },
+                  {
+                    "id": 2060,
+                    "name": "Movies/3D"
+                  },
+                  {
+                    "id": 2045,
+                    "name": "Movies/UHD"
+                  }
+                ]
+              },
+              {
+                "id": 100001,
+                "name": "Movies/DVD",
+                "subCategories": []
+              },
+              {
+                "id": 100002,
+                "name": "Movies/Divx/Xvid",
+                "subCategories": []
+              },
+              {
+                "id": 100003,
+                "name": "Movies/SVCD/VCD",
+                "subCategories": []
+              },
+              {
+                "id": 100004,
+                "name": "Movies/Dubs/Dual Audio",
+                "subCategories": []
+              },
+              {
+                "id": 100042,
+                "name": "Movies/HD",
+                "subCategories": []
+              },
+              {
+                "id": 100054,
+                "name": "Movies/h.264/x264",
+                "subCategories": []
+              },
+              {
+                "id": 100055,
+                "name": "Movies/Mp4",
+                "subCategories": []
+              },
+              {
+                "id": 100066,
+                "name": "Movies/3D",
+                "subCategories": []
+              },
+              {
+                "id": 100070,
+                "name": "Movies/HEVC/x265",
+                "subCategories": []
+              },
+              {
+                "id": 100073,
+                "name": "Movies/Bollywood",
+                "subCategories": []
+              },
+              {
+                "id": 100076,
+                "name": "Movies/UHD",
+                "subCategories": []
+              },
+              {
+                "id": 100005,
+                "name": "TV/DVD",
+                "subCategories": []
+              },
+              {
+                "id": 100006,
+                "name": "TV/Divx/Xvid",
+                "subCategories": []
+              },
+              {
+                "id": 100007,
+                "name": "TV/SVCD/VCD",
+                "subCategories": []
+              },
+              {
+                "id": 100041,
+                "name": "TV/HD",
+                "subCategories": []
+              },
+              {
+                "id": 100071,
+                "name": "TV/HEVC/x265",
+                "subCategories": []
+              },
+              {
+                "id": 100074,
+                "name": "TV/Cartoons",
+                "subCategories": []
+              },
+              {
+                "id": 100075,
+                "name": "TV/SD",
+                "subCategories": []
+              },
+              {
+                "id": 100009,
+                "name": "TV/Documentary",
+                "subCategories": []
+              },
+              {
+                "id": 4000,
+                "name": "PC",
+                "subCategories": [
+                  {
+                    "id": 4030,
+                    "name": "PC/Mac"
+                  },
+                  {
+                    "id": 4070,
+                    "name": "PC/Mobile-Android"
+                  },
+                  {
+                    "id": 4060,
+                    "name": "PC/Mobile-iOS"
+                  },
+                  {
+                    "id": 4050,
+                    "name": "PC/Games"
+                  },
+                  {
+                    "id": 4040,
+                    "name": "PC/Mobile-Other"
+                  }
+                ]
+              },
+              {
+                "id": 100018,
+                "name": "Apps/PC Software",
+                "subCategories": []
+              },
+              {
+                "id": 100019,
+                "name": "Apps/Mac",
+                "subCategories": []
+              },
+              {
+                "id": 100020,
+                "name": "Apps/Linux",
+                "subCategories": []
+              },
+              {
+                "id": 100021,
+                "name": "Apps/Other",
+                "subCategories": []
+              },
+              {
+                "id": 100056,
+                "name": "Apps/Android",
+                "subCategories": []
+              },
+              {
+                "id": 100057,
+                "name": "Apps/iOS",
+                "subCategories": []
+              },
+              {
+                "id": 100010,
+                "name": "Games/PC Game",
+                "subCategories": []
+              },
+              {
+                "id": 1000,
+                "name": "Console",
+                "subCategories": [
+                  {
+                    "id": 1080,
+                    "name": "Console/PS3"
+                  },
+                  {
+                    "id": 1020,
+                    "name": "Console/PSP"
+                  },
+                  {
+                    "id": 1040,
+                    "name": "Console/XBox"
+                  },
+                  {
+                    "id": 1050,
+                    "name": "Console/XBox 360"
+                  },
+                  {
+                    "id": 1090,
+                    "name": "Console/Other"
+                  },
+                  {
+                    "id": 1030,
+                    "name": "Console/Wii"
+                  },
+                  {
+                    "id": 1010,
+                    "name": "Console/NDS"
+                  },
+                  {
+                    "id": 1110,
+                    "name": "Console/3DS"
+                  },
+                  {
+                    "id": 1180,
+                    "name": "Console/PS4"
+                  }
+                ]
+              },
+              {
+                "id": 100011,
+                "name": "Games/PS2",
+                "subCategories": []
+              },
+              {
+                "id": 100012,
+                "name": "Games/PSP",
+                "subCategories": []
+              },
+              {
+                "id": 100013,
+                "name": "Games/Xbox",
+                "subCategories": []
+              },
+              {
+                "id": 100014,
+                "name": "Games/Xbox360",
+                "subCategories": []
+              },
+              {
+                "id": 100015,
+                "name": "Games/PS1",
+                "subCategories": []
+              },
+              {
+                "id": 100016,
+                "name": "Games/Dreamcast",
+                "subCategories": []
+              },
+              {
+                "id": 100017,
+                "name": "Games/Other",
+                "subCategories": []
+              },
+              {
+                "id": 100043,
+                "name": "Games/PS3",
+                "subCategories": []
+              },
+              {
+                "id": 100044,
+                "name": "Games/Wii",
+                "subCategories": []
+              },
+              {
+                "id": 100045,
+                "name": "Games/DS",
+                "subCategories": []
+              },
+              {
+                "id": 100046,
+                "name": "Games/GameCube",
+                "subCategories": []
+              },
+              {
+                "id": 100072,
+                "name": "Games/3DS",
+                "subCategories": []
+              },
+              {
+                "id": 100077,
+                "name": "Games/PS4",
+                "subCategories": []
+              },
+              {
+                "id": 100082,
+                "name": "Games/Switch",
+                "subCategories": []
+              },
+              {
+                "id": 6000,
+                "name": "XXX",
+                "subCategories": [
+                  {
+                    "id": 6010,
+                    "name": "XXX/DVD"
+                  },
+                  {
+                    "id": 6060,
+                    "name": "XXX/ImageSet"
+                  }
+                ]
+              },
+              {
+                "id": 100048,
+                "name": "XXX/Video",
+                "subCategories": []
+              },
+              {
+                "id": 100049,
+                "name": "XXX/Picture",
+                "subCategories": []
+              },
+              {
+                "id": 100050,
+                "name": "XXX/Magazine",
+                "subCategories": []
+              },
+              {
+                "id": 100051,
+                "name": "XXX/Hentai",
+                "subCategories": []
+              },
+              {
+                "id": 100067,
+                "name": "XXX/Games",
+                "subCategories": []
+              },
+              {
+                "id": 8000,
+                "name": "Other",
+                "subCategories": [
+                  {
+                    "id": 8010,
+                    "name": "Other/Misc"
+                  }
+                ]
+              },
+              {
+                "id": 100033,
+                "name": "Other/Emulation",
+                "subCategories": []
+              },
+              {
+                "id": 7000,
+                "name": "Books",
+                "subCategories": [
+                  {
+                    "id": 7020,
+                    "name": "Books/EBook"
+                  },
+                  {
+                    "id": 7030,
+                    "name": "Books/Comics"
+                  }
+                ]
+              },
+              {
+                "id": 100034,
+                "name": "Other/Tutorial",
+                "subCategories": []
+              },
+              {
+                "id": 100035,
+                "name": "Other/Sounds",
+                "subCategories": []
+              },
+              {
+                "id": 100036,
+                "name": "Other/E-books",
+                "subCategories": []
+              },
+              {
+                "id": 100037,
+                "name": "Other/Images",
+                "subCategories": []
+              },
+              {
+                "id": 100038,
+                "name": "Other/Mobile Phone",
+                "subCategories": []
+              },
+              {
+                "id": 100039,
+                "name": "Other/Comics",
+                "subCategories": []
+              },
+              {
+                "id": 100040,
+                "name": "Other/Other",
+                "subCategories": []
+              },
+              {
+                "id": 100047,
+                "name": "Other/Nulled Script",
+                "subCategories": []
+              },
+              {
+                "id": 100052,
+                "name": "Other/Audiobook",
+                "subCategories": []
+              }
+            ]
+          }
+        },
+        {
+          "id": 11,
+          "name": "AudioBook Bay",
+          "enable": true,
+          "protocol": "torrent",
+          "capabilities": {
+            "categories": [
+              {
+                "id": 3000,
+                "name": "Audio",
+                "subCategories": [
+                  {
+                    "id": 3030,
+                    "name": "Audio/Audiobook"
+                  }
+                ]
+              },
+              {
+                "id": 126690,
+                "name": "Children",
+                "subCategories": []
+              },
+              {
+                "id": 131405,
+                "name": "Teen & Young Adult",
+                "subCategories": []
+              },
+              {
+                "id": 101983,
+                "name": "Adults",
+                "subCategories": []
+              },
+              {
+                "id": 133635,
+                "name": "(Post)apocalyptic",
+                "subCategories": []
+              },
+              {
+                "id": 160212,
+                "name": "Action",
+                "subCategories": []
+              },
+              {
+                "id": 130894,
+                "name": "Adventure",
+                "subCategories": []
+              },
+              {
+                "id": 117999,
+                "name": "Art",
+                "subCategories": []
+              },
+              {
+                "id": 125785,
+                "name": "Autobiography & Biographies",
+                "subCategories": []
+              },
+              {
+                "id": 122378,
+                "name": "Business",
+                "subCategories": []
+              },
+              {
+                "id": 100710,
+                "name": "Computer",
+                "subCategories": []
+              },
+              {
+                "id": 159977,
+                "name": "Contemporary",
+                "subCategories": []
+              },
+              {
+                "id": 157037,
+                "name": "Crime",
+                "subCategories": []
+              },
+              {
+                "id": 102543,
+                "name": "Detective",
+                "subCategories": []
+              },
+              {
+                "id": 113215,
+                "name": "Doctor Who",
+                "subCategories": []
+              },
+              {
+                "id": 159172,
+                "name": "Education",
+                "subCategories": []
+              },
+              {
+                "id": 107916,
+                "name": "Fantasy",
+                "subCategories": []
+              },
+              {
+                "id": 158895,
+                "name": "General Fiction",
+                "subCategories": []
+              },
+              {
+                "id": 147705,
+                "name": "Historical Fiction",
+                "subCategories": []
+              },
+              {
+                "id": 163334,
+                "name": "History",
+                "subCategories": []
+              },
+              {
+                "id": 131679,
+                "name": "Horror",
+                "subCategories": []
+              },
+              {
+                "id": 162454,
+                "name": "Humor",
+                "subCategories": []
+              },
+              {
+                "id": 102479,
+                "name": "Lecture",
+                "subCategories": []
+              },
+              {
+                "id": 161625,
+                "name": "LGBT",
+                "subCategories": []
+              },
+              {
+                "id": 141199,
+                "name": "Literature",
+                "subCategories": []
+              },
+              {
+                "id": 138286,
+                "name": "LitRPG",
+                "subCategories": []
+              },
+              {
+                "id": 152337,
+                "name": "Misc. Non-fiction",
+                "subCategories": []
+              },
+              {
+                "id": 149741,
+                "name": "Mystery",
+                "subCategories": []
+              },
+              {
+                "id": 109040,
+                "name": "Paranormal",
+                "subCategories": []
+              },
+              {
+                "id": 146199,
+                "name": "Plays & Theater",
+                "subCategories": []
+              },
+              {
+                "id": 108974,
+                "name": "Poetry",
+                "subCategories": []
+              },
+              {
+                "id": 129701,
+                "name": "Political",
+                "subCategories": []
+              },
+              {
+                "id": 134064,
+                "name": "Radio Productions",
+                "subCategories": []
+              },
+              {
+                "id": 164251,
+                "name": "Romance",
+                "subCategories": []
+              },
+              {
+                "id": 153698,
+                "name": "Sci-Fi",
+                "subCategories": []
+              },
+              {
+                "id": 109145,
+                "name": "Science",
+                "subCategories": []
+              },
+              {
+                "id": 119564,
+                "name": "Self-help",
+                "subCategories": []
+              },
+              {
+                "id": 129787,
+                "name": "Spiritual & Religious",
+                "subCategories": []
+              },
+              {
+                "id": 102581,
+                "name": "Sport & Recreation",
+                "subCategories": []
+              },
+              {
+                "id": 113483,
+                "name": "Suspense",
+                "subCategories": []
+              },
+              {
+                "id": 110901,
+                "name": "Thriller",
+                "subCategories": []
+              },
+              {
+                "id": 153678,
+                "name": "True Crime",
+                "subCategories": []
+              },
+              {
+                "id": 123880,
+                "name": "Tutorial",
+                "subCategories": []
+              },
+              {
+                "id": 111371,
+                "name": "Westerns",
+                "subCategories": []
+              },
+              {
+                "id": 131203,
+                "name": "Zombies",
+                "subCategories": []
+              },
+              {
+                "id": 122830,
+                "name": "Anthology",
+                "subCategories": []
+              },
+              {
+                "id": 110415,
+                "name": "Bestsellers",
+                "subCategories": []
+              },
+              {
+                "id": 102857,
+                "name": "Classic",
+                "subCategories": []
+              },
+              {
+                "id": 159501,
+                "name": "Documentary",
+                "subCategories": []
+              },
+              {
+                "id": 140342,
+                "name": "Full Cast",
+                "subCategories": []
+              },
+              {
+                "id": 158734,
+                "name": "Libertarian",
+                "subCategories": []
+              },
+              {
+                "id": 113805,
+                "name": "Military",
+                "subCategories": []
+              },
+              {
+                "id": 161130,
+                "name": "Novel",
+                "subCategories": []
+              },
+              {
+                "id": 157876,
+                "name": "Short Story",
+                "subCategories": []
+              }
+            ]
+          }
+        },
+        {
+          "id": 9,
+          "name": "indexer-b",
+          "enable": true,
+          "protocol": "torrent",
+          "capabilities": {
+            "categories": [
+              {
+                "id": 3000,
+                "name": "Audio",
+                "subCategories": [
+                  {
+                    "id": 3040,
+                    "name": "Audio/Lossless"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "id": 2,
+          "name": "indexer-c",
+          "enable": true,
+          "protocol": "torrent",
+          "capabilities": {
+            "categories": [
+              {
+                "id": 7000,
+                "name": "Books",
+                "subCategories": [
+                  {
+                    "id": 7020,
+                    "name": "Books/EBook"
+                  },
+                  {
+                    "id": 7030,
+                    "name": "Books/Comics"
+                  }
+                ]
+              },
+              {
+                "id": 122671,
+                "name": "Action/Adventure",
+                "subCategories": []
+              },
+              {
+                "id": 132791,
+                "name": "Animals",
+                "subCategories": []
+              },
+              {
+                "id": 155246,
+                "name": "Arts",
+                "subCategories": []
+              },
+              {
+                "id": 3000,
+                "name": "Audio",
+                "subCategories": [
+                  {
+                    "id": 3030,
+                    "name": "Audio/Audiobook"
+                  }
+                ]
+              },
+              {
+                "id": 164755,
+                "name": "Audio Books",
+                "subCategories": []
+              },
+              {
+                "id": 137729,
+                "name": "Beauty",
+                "subCategories": []
+              },
+              {
+                "id": 126326,
+                "name": "Business",
+                "subCategories": []
+              },
+              {
+                "id": 158825,
+                "name": "Certification",
+                "subCategories": []
+              },
+              {
+                "id": 128513,
+                "name": "Children/Kids",
+                "subCategories": []
+              },
+              {
+                "id": 120408,
+                "name": "Classic/Literary",
+                "subCategories": []
+              },
+              {
+                "id": 155311,
+                "name": "Comics",
+                "subCategories": []
+              },
+              {
+                "id": 118066,
+                "name": "Computer",
+                "subCategories": []
+              },
+              {
+                "id": 119875,
+                "name": "Contemporary",
+                "subCategories": []
+              },
+              {
+                "id": 149325,
+                "name": "Cooking",
+                "subCategories": []
+              },
+              {
+                "id": 138836,
+                "name": "Crafts & Hobbies",
+                "subCategories": []
+              },
+              {
+                "id": 163658,
+                "name": "Education",
+                "subCategories": []
+              },
+              {
+                "id": 121132,
+                "name": "Entertainment",
+                "subCategories": []
+              },
+              {
+                "id": 161877,
+                "name": "Fantasy",
+                "subCategories": []
+              },
+              {
+                "id": 105580,
+                "name": "Gardening",
+                "subCategories": []
+              },
+              {
+                "id": 100823,
+                "name": "Health",
+                "subCategories": []
+              },
+              {
+                "id": 104055,
+                "name": "Historical Fiction",
+                "subCategories": []
+              },
+              {
+                "id": 152368,
+                "name": "History",
+                "subCategories": []
+              },
+              {
+                "id": 132975,
+                "name": "Horror",
+                "subCategories": []
+              },
+              {
+                "id": 165412,
+                "name": "Humorous",
+                "subCategories": []
+              },
+              {
+                "id": 149254,
+                "name": "Internet",
+                "subCategories": []
+              },
+              {
+                "id": 135277,
+                "name": "Magazine",
+                "subCategories": []
+              },
+              {
+                "id": 150656,
+                "name": "Marketing",
+                "subCategories": []
+              },
+              {
+                "id": 141641,
+                "name": "Medical",
+                "subCategories": []
+              },
+              {
+                "id": 118707,
+                "name": "Mystery/Suspense",
+                "subCategories": []
+              },
+              {
+                "id": 129695,
+                "name": "Nonfiction",
+                "subCategories": []
+              },
+              {
+                "id": 140730,
+                "name": "Novel",
+                "subCategories": []
+              },
+              {
+                "id": 127246,
+                "name": "Other",
+                "subCategories": []
+              },
+              {
+                "id": 105374,
+                "name": "Paranormal",
+                "subCategories": []
+              },
+              {
+                "id": 152633,
+                "name": "Political",
+                "subCategories": []
+              },
+              {
+                "id": 161627,
+                "name": "Real Estate",
+                "subCategories": []
+              },
+              {
+                "id": 107387,
+                "name": "Reference",
+                "subCategories": []
+              },
+              {
+                "id": 119888,
+                "name": "Religion",
+                "subCategories": []
+              },
+              {
+                "id": 149350,
+                "name": "Romance",
+                "subCategories": []
+              },
+              {
+                "id": 111424,
+                "name": "Sci-Fi",
+                "subCategories": []
+              },
+              {
+                "id": 153458,
+                "name": "Science",
+                "subCategories": []
+              },
+              {
+                "id": 144979,
+                "name": "Self-Help",
+                "subCategories": []
+              },
+              {
+                "id": 150987,
+                "name": "Society",
+                "subCategories": []
+              },
+              {
+                "id": 153402,
+                "name": "Software",
+                "subCategories": []
+              },
+              {
+                "id": 160463,
+                "name": "Sports",
+                "subCategories": []
+              },
+              {
+                "id": 164577,
+                "name": "Technical",
+                "subCategories": []
+              },
+              {
+                "id": 101965,
+                "name": "Teen/Young Adult",
+                "subCategories": []
+              },
+              {
+                "id": 127982,
+                "name": "Textbook",
+                "subCategories": []
+              },
+              {
+                "id": 157166,
+                "name": "Thriller",
+                "subCategories": []
+              },
+              {
+                "id": 164290,
+                "name": "Travel",
+                "subCategories": []
+              },
+              {
+                "id": 100295,
+                "name": "Tutorial",
+                "subCategories": []
+              },
+              {
+                "id": 145432,
+                "name": "Western",
+                "subCategories": []
+              }
+            ]
+          }
+        },
+        {
+          "id": 3,
+          "name": "indexer-d",
+          "enable": true,
+          "protocol": "torrent",
+          "capabilities": {
+            "categories": [
+              {
+                "id": 5000,
+                "name": "TV",
+                "subCategories": []
+              }
+            ]
+          }
+        },
+        {
+          "id": 4,
+          "name": "indexer-e",
+          "enable": true,
+          "protocol": "torrent",
+          "capabilities": {
+            "categories": [
+              {
+                "id": 3000,
+                "name": "Audio",
+                "subCategories": []
+              },
+              {
+                "id": 127296,
+                "name": "audio",
+                "subCategories": []
+              },
+              {
+                "id": 154563,
+                "name": "etree",
+                "subCategories": []
+              },
+              {
+                "id": 2000,
+                "name": "Movies",
+                "subCategories": []
+              },
+              {
+                "id": 112696,
+                "name": "movies",
+                "subCategories": []
+              },
+              {
+                "id": 5000,
+                "name": "TV",
+                "subCategories": []
+              },
+              {
+                "id": 112696,
+                "name": "movies",
+                "subCategories": []
+              },
+              {
+                "id": 8000,
+                "name": "Other",
+                "subCategories": [
+                  {
+                    "id": 8010,
+                    "name": "Other/Misc"
+                  }
+                ]
+              },
+              {
+                "id": 130222,
+                "name": "image",
+                "subCategories": []
+              },
+              {
+                "id": 7000,
+                "name": "Books",
+                "subCategories": []
+              },
+              {
+                "id": 130440,
+                "name": "texts",
+                "subCategories": []
+              },
+              {
+                "id": 4000,
+                "name": "PC",
+                "subCategories": []
+              },
+              {
+                "id": 133225,
+                "name": "software",
+                "subCategories": []
+              },
+              {
+                "id": 133994,
+                "name": "web",
+                "subCategories": []
+              },
+              {
+                "id": 114112,
+                "name": "collection",
+                "subCategories": []
+              },
+              {
+                "id": 108394,
+                "name": "account",
+                "subCategories": []
+              },
+              {
+                "id": 131905,
+                "name": "data",
+                "subCategories": []
+              },
+              {
+                "id": 138096,
+                "name": "other",
+                "subCategories": []
+              }
+            ]
+          }
+        },
+        {
+          "id": 8,
+          "name": "indexer-f",
+          "enable": true,
+          "protocol": "torrent",
+          "capabilities": {
+            "categories": [
+              {
+                "id": 3000,
+                "name": "Audio",
+                "subCategories": [
+                  {
+                    "id": 3010,
+                    "name": "Audio/MP3"
+                  },
+                  {
+                    "id": 3040,
+                    "name": "Audio/Lossless"
+                  },
+                  {
+                    "id": 3030,
+                    "name": "Audio/Audiobook"
+                  },
+                  {
+                    "id": 3020,
+                    "name": "Audio/Video"
+                  },
+                  {
+                    "id": 3050,
+                    "name": "Audio/Other"
+                  }
+                ]
+              },
+              {
+                "id": 1100000,
+                "name": "Audio",
+                "subCategories": []
+              },
+              {
+                "id": 1101000,
+                "name": "MP3",
+                "subCategories": []
+              },
+              {
+                "id": 1102000,
+                "name": "Lossless",
+                "subCategories": []
+              },
+              {
+                "id": 1103000,
+                "name": "Audiobook",
+                "subCategories": []
+              },
+              {
+                "id": 1104000,
+                "name": "Audio Video",
+                "subCategories": []
+              },
+              {
+                "id": 1105000,
+                "name": "Radio",
+                "subCategories": []
+              },
+              {
+                "id": 1106000,
+                "name": "Audio Other",
+                "subCategories": []
+              },
+              {
+                "id": 5000,
+                "name": "TV",
+                "subCategories": [
+                  {
+                    "id": 5040,
+                    "name": "TV/HD"
+                  },
+                  {
+                    "id": 5030,
+                    "name": "TV/SD"
+                  },
+                  {
+                    "id": 5045,
+                    "name": "TV/UHD"
+                  },
+                  {
+                    "id": 5080,
+                    "name": "TV/Documentary"
+                  },
+                  {
+                    "id": 5020,
+                    "name": "TV/Foreign"
+                  },
+                  {
+                    "id": 5060,
+                    "name": "TV/Sport"
+                  },
+                  {
+                    "id": 5050,
+                    "name": "TV/Other"
+                  },
+                  {
+                    "id": 5070,
+                    "name": "TV/Anime"
+                  }
+                ]
+              },
+              {
+                "id": 2100000,
+                "name": "TV",
+                "subCategories": []
+              },
+              {
+                "id": 2101000,
+                "name": "TV HD",
+                "subCategories": []
+              },
+              {
+                "id": 2102000,
+                "name": "TV SD",
+                "subCategories": []
+              },
+              {
+                "id": 2103000,
+                "name": "TV UHD",
+                "subCategories": []
+              },
+              {
+                "id": 2104000,
+                "name": "Documentary",
+                "subCategories": []
+              },
+              {
+                "id": 2105000,
+                "name": "TV Foreign",
+                "subCategories": []
+              },
+              {
+                "id": 2106000,
+                "name": "Sport",
+                "subCategories": []
+              },
+              {
+                "id": 2107000,
+                "name": "Cartoon",
+                "subCategories": []
+              },
+              {
+                "id": 2108000,
+                "name": "TV Other",
+                "subCategories": []
+              },
+              {
+                "id": 2000,
+                "name": "Movies",
+                "subCategories": [
+                  {
+                    "id": 2040,
+                    "name": "Movies/HD"
+                  },
+                  {
+                    "id": 2030,
+                    "name": "Movies/SD"
+                  },
+                  {
+                    "id": 2045,
+                    "name": "Movies/UHD"
+                  },
+                  {
+                    "id": 2070,
+                    "name": "Movies/DVD"
+                  },
+                  {
+                    "id": 2010,
+                    "name": "Movies/Foreign"
+                  },
+                  {
+                    "id": 2060,
+                    "name": "Movies/3D"
+                  },
+                  {
+                    "id": 2020,
+                    "name": "Movies/Other"
+                  }
+                ]
+              },
+              {
+                "id": 3100000,
+                "name": "Movies",
+                "subCategories": []
+              },
+              {
+                "id": 3101000,
+                "name": "Movies HD",
+                "subCategories": []
+              },
+              {
+                "id": 3102000,
+                "name": "Movies SD",
+                "subCategories": []
+              },
+              {
+                "id": 3103000,
+                "name": "Movies UHD",
+                "subCategories": []
+              },
+              {
+                "id": 3104000,
+                "name": "Movies DVD",
+                "subCategories": []
+              },
+              {
+                "id": 3105000,
+                "name": "Movies Foreign",
+                "subCategories": []
+              },
+              {
+                "id": 3106000,
+                "name": "Movies Bollywood",
+                "subCategories": []
+              },
+              {
+                "id": 3107000,
+                "name": "Movies 3D",
+                "subCategories": []
+              },
+              {
+                "id": 3108000,
+                "name": "Movies Other",
+                "subCategories": []
+              },
+              {
+                "id": 4000,
+                "name": "PC",
+                "subCategories": [
+                  {
+                    "id": 4050,
+                    "name": "PC/Games"
+                  },
+                  {
+                    "id": 4010,
+                    "name": "PC/0day"
+                  },
+                  {
+                    "id": 4030,
+                    "name": "PC/Mac"
+                  },
+                  {
+                    "id": 4020,
+                    "name": "PC/ISO"
+                  },
+                  {
+                    "id": 4040,
+                    "name": "PC/Mobile-Other"
+                  },
+                  {
+                    "id": 4070,
+                    "name": "PC/Mobile-Android"
+                  },
+                  {
+                    "id": 4060,
+                    "name": "PC/Mobile-iOS"
+                  }
+                ]
+              },
+              {
+                "id": 4100000,
+                "name": "PC",
+                "subCategories": []
+              },
+              {
+                "id": 4101000,
+                "name": "Games",
+                "subCategories": []
+              },
+              {
+                "id": 4102000,
+                "name": "Software",
+                "subCategories": []
+              },
+              {
+                "id": 4103000,
+                "name": "Mac",
+                "subCategories": []
+              },
+              {
+                "id": 4104000,
+                "name": "Unix",
+                "subCategories": []
+              },
+              {
+                "id": 6000,
+                "name": "XXX",
+                "subCategories": [
+                  {
+                    "id": 6040,
+                    "name": "XXX/x264"
+                  },
+                  {
+                    "id": 6060,
+                    "name": "XXX/ImageSet"
+                  },
+                  {
+                    "id": 6070,
+                    "name": "XXX/Other"
+                  }
+                ]
+              },
+              {
+                "id": 5100000,
+                "name": "XXX",
+                "subCategories": []
+              },
+              {
+                "id": 5101000,
+                "name": "XXX Video",
+                "subCategories": []
+              },
+              {
+                "id": 5102000,
+                "name": "XXX ImageSet",
+                "subCategories": []
+              },
+              {
+                "id": 5103000,
+                "name": "XXX Games",
+                "subCategories": []
+              },
+              {
+                "id": 5104000,
+                "name": "XXX Hentai",
+                "subCategories": []
+              },
+              {
+                "id": 5105000,
+                "name": "XXX Other",
+                "subCategories": []
+              },
+              {
+                "id": 6100000,
+                "name": "Anime",
+                "subCategories": []
+              },
+              {
+                "id": 6101000,
+                "name": "Anime Subbed",
+                "subCategories": []
+              },
+              {
+                "id": 6102000,
+                "name": "Anime Dubbed",
+                "subCategories": []
+              },
+              {
+                "id": 6103000,
+                "name": "Anime Dual audio",
+                "subCategories": []
+              },
+              {
+                "id": 6104000,
+                "name": "Anime Raw",
+                "subCategories": []
+              },
+              {
+                "id": 6105000,
+                "name": "Music Video",
+                "subCategories": []
+              },
+              {
+                "id": 7000,
+                "name": "Books",
+                "subCategories": [
+                  {
+                    "id": 7050,
+                    "name": "Books/Other"
+                  },
+                  {
+                    "id": 7020,
+                    "name": "Books/EBook"
+                  },
+                  {
+                    "id": 7030,
+                    "name": "Books/Comics"
+                  },
+                  {
+                    "id": 7010,
+                    "name": "Books/Mags"
+                  },
+                  {
+                    "id": 7040,
+                    "name": "Books/Technical"
+                  }
+                ]
+              },
+              {
+                "id": 6106000,
+                "name": "Literature",
+                "subCategories": []
+              },
+              {
+                "id": 6107000,
+                "name": "Music",
+                "subCategories": []
+              },
+              {
+                "id": 6108000,
+                "name": "Anime non-english translated",
+                "subCategories": []
+              },
+              {
+                "id": 1000,
+                "name": "Console",
+                "subCategories": [
+                  {
+                    "id": 1180,
+                    "name": "Console/PS4"
+                  },
+                  {
+                    "id": 1080,
+                    "name": "Console/PS3"
+                  },
+                  {
+                    "id": 1120,
+                    "name": "Console/PS Vita"
+                  },
+                  {
+                    "id": 1020,
+                    "name": "Console/PSP"
+                  },
+                  {
+                    "id": 1050,
+                    "name": "Console/XBox 360"
+                  },
+                  {
+                    "id": 1040,
+                    "name": "Console/XBox"
+                  },
+                  {
+                    "id": 1010,
+                    "name": "Console/NDS"
+                  },
+                  {
+                    "id": 1030,
+                    "name": "Console/Wii"
+                  },
+                  {
+                    "id": 1130,
+                    "name": "Console/WiiU"
+                  },
+                  {
+                    "id": 1110,
+                    "name": "Console/3DS"
+                  },
+                  {
+                    "id": 1090,
+                    "name": "Console/Other"
+                  }
+                ]
+              },
+              {
+                "id": 7100000,
+                "name": "Console",
+                "subCategories": []
+              },
+              {
+                "id": 7101000,
+                "name": "PS4",
+                "subCategories": []
+              },
+              {
+                "id": 7102000,
+                "name": "PS3",
+                "subCategories": []
+              },
+              {
+                "id": 7103000,
+                "name": "PS2",
+                "subCategories": []
+              },
+              {
+                "id": 7104000,
+                "name": "PS1",
+                "subCategories": []
+              },
+              {
+                "id": 7105000,
+                "name": "PS Vita",
+                "subCategories": []
+              },
+              {
+                "id": 7106000,
+                "name": "PSP",
+                "subCategories": []
+              },
+              {
+                "id": 7107000,
+                "name": "Xbox 360",
+                "subCategories": []
+              },
+              {
+                "id": 7108000,
+                "name": "Xbox",
+                "subCategories": []
+              },
+              {
+                "id": 7109000,
+                "name": "Switch",
+                "subCategories": []
+              },
+              {
+                "id": 7110000,
+                "name": "NDS",
+                "subCategories": []
+              },
+              {
+                "id": 7111000,
+                "name": "Wii",
+                "subCategories": []
+              },
+              {
+                "id": 7112000,
+                "name": "WiiU",
+                "subCategories": []
+              },
+              {
+                "id": 7113000,
+                "name": "3DS",
+                "subCategories": []
+              },
+              {
+                "id": 7114000,
+                "name": "GameCube",
+                "subCategories": []
+              },
+              {
+                "id": 7115000,
+                "name": "Other",
+                "subCategories": []
+              },
+              {
+                "id": 8100000,
+                "name": "Mobile",
+                "subCategories": []
+              },
+              {
+                "id": 8101000,
+                "name": "Android",
+                "subCategories": []
+              },
+              {
+                "id": 8102000,
+                "name": "IOS",
+                "subCategories": []
+              },
+              {
+                "id": 8103000,
+                "name": "PC Other",
+                "subCategories": []
+              },
+              {
+                "id": 9100000,
+                "name": "Books",
+                "subCategories": []
+              },
+              {
+                "id": 9101000,
+                "name": "EBooks",
+                "subCategories": []
+              },
+              {
+                "id": 9102000,
+                "name": "Comics",
+                "subCategories": []
+              },
+              {
+                "id": 9103000,
+                "name": "Magazines",
+                "subCategories": []
+              },
+              {
+                "id": 9104000,
+                "name": "Technical",
+                "subCategories": []
+              },
+              {
+                "id": 9105000,
+                "name": "Books Other",
+                "subCategories": []
+              },
+              {
+                "id": 8000,
+                "name": "Other",
+                "subCategories": [
+                  {
+                    "id": 8010,
+                    "name": "Other/Misc"
+                  }
+                ]
+              },
+              {
+                "id": 10100000,
+                "name": "Other",
+                "subCategories": []
+              },
+              {
+                "id": 10101000,
+                "name": "Other Misc",
+                "subCategories": []
+              }
+            ]
+          }
+        },
+        {
+          "id": 6,
+          "name": "indexer-g",
+          "enable": true,
+          "protocol": "torrent",
+          "capabilities": {
+            "categories": [
+              {
+                "id": 5000,
+                "name": "TV",
+                "subCategories": [
+                  {
+                    "id": 5070,
+                    "name": "TV/Anime"
+                  }
+                ]
+              },
+              {
+                "id": 112972,
+                "name": "TV shows",
+                "subCategories": []
+              },
+              {
+                "id": 2000,
+                "name": "Movies",
+                "subCategories": []
+              },
+              {
+                "id": 100467,
+                "name": "Movies",
+                "subCategories": []
+              },
+              {
+                "id": 3000,
+                "name": "Audio",
+                "subCategories": []
+              },
+              {
+                "id": 104627,
+                "name": "Music",
+                "subCategories": []
+              },
+              {
+                "id": 1000,
+                "name": "Console",
+                "subCategories": []
+              },
+              {
+                "id": 136409,
+                "name": "Games",
+                "subCategories": []
+              },
+              {
+                "id": 4000,
+                "name": "PC",
+                "subCategories": [
+                  {
+                    "id": 4010,
+                    "name": "PC/0day"
+                  }
+                ]
+              },
+              {
+                "id": 151062,
+                "name": "Applications",
+                "subCategories": []
+              },
+              {
+                "id": 8000,
+                "name": "Other",
+                "subCategories": []
+              },
+              {
+                "id": 127246,
+                "name": "Other",
+                "subCategories": []
+              },
+              {
+                "id": 146065,
+                "name": "Anime",
+                "subCategories": []
+              },
+              {
+                "id": 7000,
+                "name": "Books",
+                "subCategories": [
+                  {
+                    "id": 7020,
+                    "name": "Books/EBook"
+                  }
+                ]
+              },
+              {
+                "id": 121527,
+                "name": "E-books",
+                "subCategories": []
+              }
+            ]
+          }
+        },
+        {
+          "id": 10,
+          "name": "indexer-h",
+          "enable": false,
+          "protocol": "torrent",
+          "capabilities": {
+            "categories": [
+              {
+                "id": 3000,
+                "name": "Audio",
+                "subCategories": [
+                  {
+                    "id": 3030,
+                    "name": "Audio/Audiobook"
+                  }
+                ]
+              },
+              {
+                "id": 100013,
+                "name": "AudioBooks",
+                "subCategories": []
+              },
+              {
+                "id": 7000,
+                "name": "Books",
+                "subCategories": [
+                  {
+                    "id": 7020,
+                    "name": "Books/EBook"
+                  },
+                  {
+                    "id": 7030,
+                    "name": "Books/Comics"
+                  },
+                  {
+                    "id": 7010,
+                    "name": "Books/Mags"
+                  },
+                  {
+                    "id": 7040,
+                    "name": "Books/Technical"
+                  }
+                ]
+              },
+              {
+                "id": 100014,
+                "name": "E-Books",
+                "subCategories": []
+              },
+              {
+                "id": 100015,
+                "name": "Musicology",
+                "subCategories": []
+              },
+              {
+                "id": 100016,
+                "name": "Radio",
+                "subCategories": []
+              },
+              {
+                "id": 100039,
+                "name": "Audiobooks - Action/Adventure",
+                "subCategories": []
+              },
+              {
+                "id": 100049,
+                "name": "Audiobooks - Art",
+                "subCategories": []
+              },
+              {
+                "id": 100050,
+                "name": "Audiobooks - Biographical",
+                "subCategories": []
+              },
+              {
+                "id": 100083,
+                "name": "Audiobooks - Business",
+                "subCategories": []
+              },
+              {
+                "id": 100051,
+                "name": "Audiobooks - Computer/Internet",
+                "subCategories": []
+              },
+              {
+                "id": 100097,
+                "name": "Audiobooks - Crafts",
+                "subCategories": []
+              },
+              {
+                "id": 100040,
+                "name": "Audiobooks - Crime/Thriller",
+                "subCategories": []
+              },
+              {
+                "id": 100041,
+                "name": "Audiobooks - Fantasy",
+                "subCategories": []
+              },
+              {
+                "id": 100106,
+                "name": "Audiobooks - Food",
+                "subCategories": []
+              },
+              {
+                "id": 100042,
+                "name": "Audiobooks - General Fiction",
+                "subCategories": []
+              },
+              {
+                "id": 100052,
+                "name": "Audiobooks - General Non-Fic",
+                "subCategories": []
+              },
+              {
+                "id": 100098,
+                "name": "Audiobooks - Historical Fiction",
+                "subCategories": []
+              },
+              {
+                "id": 100054,
+                "name": "Audiobooks - History",
+                "subCategories": []
+              },
+              {
+                "id": 100055,
+                "name": "Audiobooks - Home/Garden",
+                "subCategories": []
+              },
+              {
+                "id": 100043,
+                "name": "Audiobooks - Horror",
+                "subCategories": []
+              },
+              {
+                "id": 100099,
+                "name": "Audiobooks - Humor",
+                "subCategories": []
+              },
+              {
+                "id": 100084,
+                "name": "Audiobooks - Instructional",
+                "subCategories": []
+              },
+              {
+                "id": 100044,
+                "name": "Audiobooks - Juvenile",
+                "subCategories": []
+              },
+              {
+                "id": 100056,
+                "name": "Audiobooks - Language",
+                "subCategories": []
+              },
+              {
+                "id": 100045,
+                "name": "Audiobooks - Literary Classics",
+                "subCategories": []
+              },
+              {
+                "id": 100057,
+                "name": "Audiobooks - Math/Science/Tech",
+                "subCategories": []
+              },
+              {
+                "id": 100085,
+                "name": "Audiobooks - Medical",
+                "subCategories": []
+              },
+              {
+                "id": 100087,
+                "name": "Audiobooks - Mystery",
+                "subCategories": []
+              },
+              {
+                "id": 100119,
+                "name": "Audiobooks - Nature",
+                "subCategories": []
+              },
+              {
+                "id": 100088,
+                "name": "Audiobooks - Philosophy",
+                "subCategories": []
+              },
+              {
+                "id": 100058,
+                "name": "Audiobooks - Pol/Soc/Relig",
+                "subCategories": []
+              },
+              {
+                "id": 100059,
+                "name": "Audiobooks - Recreation",
+                "subCategories": []
+              },
+              {
+                "id": 100046,
+                "name": "Audiobooks - Romance",
+                "subCategories": []
+              },
+              {
+                "id": 100047,
+                "name": "Audiobooks - Science Fiction",
+                "subCategories": []
+              },
+              {
+                "id": 100053,
+                "name": "Audiobooks - Self-Help",
+                "subCategories": []
+              },
+              {
+                "id": 100089,
+                "name": "Audiobooks - Travel/Adventure",
+                "subCategories": []
+              },
+              {
+                "id": 100100,
+                "name": "Audiobooks - True Crime",
+                "subCategories": []
+              },
+              {
+                "id": 100108,
+                "name": "Audiobooks - Urban Fantasy",
+                "subCategories": []
+              },
+              {
+                "id": 100048,
+                "name": "Audiobooks - Western",
+                "subCategories": []
+              },
+              {
+                "id": 100111,
+                "name": "Audiobooks - Young Adult",
+                "subCategories": []
+              },
+              {
+                "id": 100060,
+                "name": "Ebooks - Action/Adventure",
+                "subCategories": []
+              },
+              {
+                "id": 100071,
+                "name": "Ebooks - Art",
+                "subCategories": []
+              },
+              {
+                "id": 100072,
+                "name": "Ebooks - Biographical",
+                "subCategories": []
+              },
+              {
+                "id": 100090,
+                "name": "Ebooks - Business",
+                "subCategories": []
+              },
+              {
+                "id": 100061,
+                "name": "Ebooks - Comics/Graphic novels",
+                "subCategories": []
+              },
+              {
+                "id": 100073,
+                "name": "Ebooks - Computer/Internet",
+                "subCategories": []
+              },
+              {
+                "id": 100101,
+                "name": "Ebooks - Crafts",
+                "subCategories": []
+              },
+              {
+                "id": 100062,
+                "name": "Ebooks - Crime/Thriller",
+                "subCategories": []
+              },
+              {
+                "id": 100063,
+                "name": "Ebooks - Fantasy",
+                "subCategories": []
+              },
+              {
+                "id": 100107,
+                "name": "Ebooks - Food",
+                "subCategories": []
+              },
+              {
+                "id": 100064,
+                "name": "Ebooks - General Fiction",
+                "subCategories": []
+              },
+              {
+                "id": 100074,
+                "name": "Ebooks - General Non-Fiction",
+                "subCategories": []
+              },
+              {
+                "id": 100102,
+                "name": "Ebooks - Historical Fiction",
+                "subCategories": []
+              },
+              {
+                "id": 100076,
+                "name": "Ebooks - History",
+                "subCategories": []
+              },
+              {
+                "id": 100077,
+                "name": "Ebooks - Home/Garden",
+                "subCategories": []
+              },
+              {
+                "id": 100065,
+                "name": "Ebooks - Horror",
+                "subCategories": []
+              },
+              {
+                "id": 100103,
+                "name": "Ebooks - Humor",
+                "subCategories": []
+              },
+              {
+                "id": 100115,
+                "name": "Ebooks - Illusion/Magic",
+                "subCategories": []
+              },
+              {
+                "id": 100091,
+                "name": "Ebooks - Instructional",
+                "subCategories": []
+              },
+              {
+                "id": 100066,
+                "name": "Ebooks - Juvenile",
+                "subCategories": []
+              },
+              {
+                "id": 100078,
+                "name": "Ebooks - Language",
+                "subCategories": []
+              },
+              {
+                "id": 100067,
+                "name": "Ebooks - Literary Classics",
+                "subCategories": []
+              },
+              {
+                "id": 100079,
+                "name": "Ebooks - Magazines/Newspapers",
+                "subCategories": []
+              },
+              {
+                "id": 100080,
+                "name": "Ebooks - Math/Science/Tech",
+                "subCategories": []
+              },
+              {
+                "id": 100092,
+                "name": "Ebooks - Medical",
+                "subCategories": []
+              },
+              {
+                "id": 100118,
+                "name": "Ebooks - Mixed Collections",
+                "subCategories": []
+              },
+              {
+                "id": 100094,
+                "name": "Ebooks - Mystery",
+                "subCategories": []
+              },
+              {
+                "id": 100120,
+                "name": "Ebooks - Nature",
+                "subCategories": []
+              },
+              {
+                "id": 100095,
+                "name": "Ebooks - Philosophy",
+                "subCategories": []
+              },
+              {
+                "id": 100081,
+                "name": "Ebooks - Pol/Soc/Relig",
+                "subCategories": []
+              },
+              {
+                "id": 100082,
+                "name": "Ebooks - Recreation",
+                "subCategories": []
+              },
+              {
+                "id": 100068,
+                "name": "Ebooks - Romance",
+                "subCategories": []
+              },
+              {
+                "id": 100069,
+                "name": "Ebooks - Science Fiction",
+                "subCategories": []
+              },
+              {
+                "id": 100075,
+                "name": "Ebooks - Self-Help",
+                "subCategories": []
+              },
+              {
+                "id": 100096,
+                "name": "Ebooks - Travel/Adventure",
+                "subCategories": []
+              },
+              {
+                "id": 100104,
+                "name": "Ebooks - True Crime",
+                "subCategories": []
+              },
+              {
+                "id": 100109,
+                "name": "Ebooks - Urban Fantasy",
+                "subCategories": []
+              },
+              {
+                "id": 100070,
+                "name": "Ebooks - Western",
+                "subCategories": []
+              },
+              {
+                "id": 100112,
+                "name": "Ebooks - Young Adult",
+                "subCategories": []
+              },
+              {
+                "id": 100019,
+                "name": "Guitar/Bass Tabs",
+                "subCategories": []
+              },
+              {
+                "id": 100020,
+                "name": "Individual Sheet",
+                "subCategories": []
+              },
+              {
+                "id": 100024,
+                "name": "Individual Sheet MP3",
+                "subCategories": []
+              },
+              {
+                "id": 100126,
+                "name": "Instructional Book with Video",
+                "subCategories": []
+              },
+              {
+                "id": 100022,
+                "name": "Instructional Media - Music",
+                "subCategories": []
+              },
+              {
+                "id": 100113,
+                "name": "Lick Library - LTP/Jam With",
+                "subCategories": []
+              },
+              {
+                "id": 100114,
+                "name": "Lick Library - Techniques/QL",
+                "subCategories": []
+              },
+              {
+                "id": 100017,
+                "name": "Music - Complete Editions",
+                "subCategories": []
+              },
+              {
+                "id": 100026,
+                "name": "Music Book",
+                "subCategories": []
+              },
+              {
+                "id": 100027,
+                "name": "Music Book MP3",
+                "subCategories": []
+              },
+              {
+                "id": 100030,
+                "name": "Sheet Collection",
+                "subCategories": []
+              },
+              {
+                "id": 100031,
+                "name": "Sheet Collection MP3",
+                "subCategories": []
+              },
+              {
+                "id": 100127,
+                "name": "Radio -  Comedy",
+                "subCategories": []
+              },
+              {
+                "id": 100130,
+                "name": "Radio - Drama",
+                "subCategories": []
+              },
+              {
+                "id": 100128,
+                "name": "Radio - Factual/Documentary",
+                "subCategories": []
+              },
+              {
+                "id": 100132,
+                "name": "Radio - Reading",
+                "subCategories": []
+              }
+            ]
+          }
+        },
+        {
+          "id": 5,
+          "name": "indexer-i",
+          "enable": true,
+          "protocol": "torrent",
+          "capabilities": {
+            "categories": [
+              {
+                "id": 3000,
+                "name": "Audio",
+                "subCategories": [
+                  {
+                    "id": 3030,
+                    "name": "Audio/Audiobook"
+                  },
+                  {
+                    "id": 3040,
+                    "name": "Audio/Lossless"
+                  },
+                  {
+                    "id": 3050,
+                    "name": "Audio/Other"
+                  },
+                  {
+                    "id": 3020,
+                    "name": "Audio/Video"
+                  }
+                ]
+              },
+              {
+                "id": 100100,
+                "name": "Audio",
+                "subCategories": []
+              },
+              {
+                "id": 100101,
+                "name": "Music",
+                "subCategories": []
+              },
+              {
+                "id": 100102,
+                "name": "Audio Books",
+                "subCategories": []
+              },
+              {
+                "id": 100103,
+                "name": "Sound Clips",
+                "subCategories": []
+              },
+              {
+                "id": 100104,
+                "name": "FLAC",
+                "subCategories": []
+              },
+              {
+                "id": 100199,
+                "name": "Audio Other",
+                "subCategories": []
+              },
+              {
+                "id": 2000,
+                "name": "Movies",
+                "subCategories": [
+                  {
+                    "id": 2020,
+                    "name": "Movies/Other"
+                  },
+                  {
+                    "id": 2040,
+                    "name": "Movies/HD"
+                  },
+                  {
+                    "id": 2060,
+                    "name": "Movies/3D"
+                  },
+                  {
+                    "id": 2030,
+                    "name": "Movies/SD"
+                  },
+                  {
+                    "id": 2045,
+                    "name": "Movies/UHD"
+                  }
+                ]
+              },
+              {
+                "id": 100200,
+                "name": "Video",
+                "subCategories": []
+              },
+              {
+                "id": 100201,
+                "name": "Movies",
+                "subCategories": []
+              },
+              {
+                "id": 100202,
+                "name": "Movies DVDR",
+                "subCategories": []
+              },
+              {
+                "id": 100203,
+                "name": "Music Videos",
+                "subCategories": []
+              },
+              {
+                "id": 100204,
+                "name": "Movie Clips",
+                "subCategories": []
+              },
+              {
+                "id": 5000,
+                "name": "TV",
+                "subCategories": [
+                  {
+                    "id": 5050,
+                    "name": "TV/Other"
+                  },
+                  {
+                    "id": 5040,
+                    "name": "TV/HD"
+                  },
+                  {
+                    "id": 5045,
+                    "name": "TV/UHD"
+                  }
+                ]
+              },
+              {
+                "id": 100205,
+                "name": "TV Shows",
+                "subCategories": []
+              },
+              {
+                "id": 100206,
+                "name": "Handheld",
+                "subCategories": []
+              },
+              {
+                "id": 100207,
+                "name": "HD - Movies",
+                "subCategories": []
+              },
+              {
+                "id": 100208,
+                "name": "HD - TV shows",
+                "subCategories": []
+              },
+              {
+                "id": 100209,
+                "name": "3D",
+                "subCategories": []
+              },
+              {
+                "id": 100210,
+                "name": "CAM/TS",
+                "subCategories": []
+              },
+              {
+                "id": 100211,
+                "name": "UHD/4k - Movies",
+                "subCategories": []
+              },
+              {
+                "id": 100212,
+                "name": "UHD/4k - TV shows",
+                "subCategories": []
+              },
+              {
+                "id": 100299,
+                "name": "Video Other",
+                "subCategories": []
+              },
+              {
+                "id": 4000,
+                "name": "PC",
+                "subCategories": [
+                  {
+                    "id": 4030,
+                    "name": "PC/Mac"
+                  },
+                  {
+                    "id": 4040,
+                    "name": "PC/Mobile-Other"
+                  },
+                  {
+                    "id": 4060,
+                    "name": "PC/Mobile-iOS"
+                  },
+                  {
+                    "id": 4070,
+                    "name": "PC/Mobile-Android"
+                  },
+                  {
+                    "id": 4050,
+                    "name": "PC/Games"
+                  }
+                ]
+              },
+              {
+                "id": 100300,
+                "name": "Applications",
+                "subCategories": []
+              },
+              {
+                "id": 100301,
+                "name": "Windows",
+                "subCategories": []
+              },
+              {
+                "id": 100302,
+                "name": "Mac",
+                "subCategories": []
+              },
+              {
+                "id": 100303,
+                "name": "UNIX",
+                "subCategories": []
+              },
+              {
+                "id": 100304,
+                "name": "Handheld",
+                "subCategories": []
+              },
+              {
+                "id": 100305,
+                "name": "IOS (iPad/iPhone)",
+                "subCategories": []
+              },
+              {
+                "id": 100306,
+                "name": "Android",
+                "subCategories": []
+              },
+              {
+                "id": 100399,
+                "name": "Other OS",
+                "subCategories": []
+              },
+              {
+                "id": 1000,
+                "name": "Console",
+                "subCategories": [
+                  {
+                    "id": 1180,
+                    "name": "Console/PS4"
+                  },
+                  {
+                    "id": 1040,
+                    "name": "Console/XBox"
+                  },
+                  {
+                    "id": 1030,
+                    "name": "Console/Wii"
+                  },
+                  {
+                    "id": 1090,
+                    "name": "Console/Other"
+                  }
+                ]
+              },
+              {
+                "id": 100400,
+                "name": "Games",
+                "subCategories": []
+              },
+              {
+                "id": 100401,
+                "name": "PC",
+                "subCategories": []
+              },
+              {
+                "id": 100402,
+                "name": "Mac",
+                "subCategories": []
+              },
+              {
+                "id": 100403,
+                "name": "PSx",
+                "subCategories": []
+              },
+              {
+                "id": 100404,
+                "name": "XBOX360",
+                "subCategories": []
+              },
+              {
+                "id": 100405,
+                "name": "Wii",
+                "subCategories": []
+              },
+              {
+                "id": 100406,
+                "name": "Handheld",
+                "subCategories": []
+              },
+              {
+                "id": 100407,
+                "name": "IOS (iPad/iPhone)",
+                "subCategories": []
+              },
+              {
+                "id": 100408,
+                "name": "Android",
+                "subCategories": []
+              },
+              {
+                "id": 100499,
+                "name": "Games Other",
+                "subCategories": []
+              },
+              {
+                "id": 6000,
+                "name": "XXX",
+                "subCategories": [
+                  {
+                    "id": 6010,
+                    "name": "XXX/DVD"
+                  },
+                  {
+                    "id": 6060,
+                    "name": "XXX/ImageSet"
+                  },
+                  {
+                    "id": 6040,
+                    "name": "XXX/x264"
+                  },
+                  {
+                    "id": 6045,
+                    "name": "XXX/UHD"
+                  },
+                  {
+                    "id": 6070,
+                    "name": "XXX/Other"
+                  }
+                ]
+              },
+              {
+                "id": 100500,
+                "name": "Porn",
+                "subCategories": []
+              },
+              {
+                "id": 100501,
+                "name": "Movies",
+                "subCategories": []
+              },
+              {
+                "id": 100502,
+                "name": "Movies DVDR",
+                "subCategories": []
+              },
+              {
+                "id": 100503,
+                "name": "Pictures",
+                "subCategories": []
+              },
+              {
+                "id": 100504,
+                "name": "Games",
+                "subCategories": []
+              },
+              {
+                "id": 100505,
+                "name": "HD - Movies",
+                "subCategories": []
+              },
+              {
+                "id": 100506,
+                "name": "Movie Clips",
+                "subCategories": []
+              },
+              {
+                "id": 100507,
+                "name": "UHD/4k - Movies",
+                "subCategories": []
+              },
+              {
+                "id": 100599,
+                "name": "Porn other",
+                "subCategories": []
+              },
+              {
+                "id": 8000,
+                "name": "Other",
+                "subCategories": []
+              },
+              {
+                "id": 100600,
+                "name": "Other",
+                "subCategories": []
+              },
+              {
+                "id": 7000,
+                "name": "Books",
+                "subCategories": [
+                  {
+                    "id": 7020,
+                    "name": "Books/EBook"
+                  },
+                  {
+                    "id": 7030,
+                    "name": "Books/Comics"
+                  },
+                  {
+                    "id": 7050,
+                    "name": "Books/Other"
+                  }
+                ]
+              },
+              {
+                "id": 100601,
+                "name": "E-books",
+                "subCategories": []
+              },
+              {
+                "id": 100602,
+                "name": "Comics",
+                "subCategories": []
+              },
+              {
+                "id": 100603,
+                "name": "Pictures",
+                "subCategories": []
+              },
+              {
+                "id": 100604,
+                "name": "Covers",
+                "subCategories": []
+              },
+              {
+                "id": 100605,
+                "name": "Physibles",
+                "subCategories": []
+              },
+              {
+                "id": 100699,
+                "name": "Other Other",
+                "subCategories": []
+              }
+            ]
+          }
+        },
+        {
+          "id": 7,
+          "name": "indexer-j",
+          "enable": true,
+          "protocol": "torrent",
+          "capabilities": {
+            "categories": [
+              {
+                "id": 8000,
+                "name": "Other",
+                "subCategories": []
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

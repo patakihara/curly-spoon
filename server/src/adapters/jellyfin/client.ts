@@ -42,6 +42,12 @@ export interface MusicLibrary {
   locations: string[];
 }
 
+/** What `setUserData` writes of a person's state on an item. */
+export type UserDataChange = Pick<
+  UserItemData,
+  'PlaybackPositionTicks' | 'PlayCount' | 'Played' | 'IsFavorite' | 'LastPlayedDate'
+>;
+
 /** How many tracks autoplay's radio asks Instant Mix for, and the recording records. */
 export const INSTANT_MIX_LIMIT = 20;
 
@@ -244,12 +250,25 @@ export class JellyfinClient {
   }
 
   /**
-   * Tells Jellyfin a file was made at `path`, as its host sees it: `POST /Library/Media/Updated`,
-   * the report a path's watcher makes. Jellyfin refreshes what holds that path after its monitor's
-   * delay, and never scans the whole library for it.
+   * Tells Jellyfin files were made at `paths`, as its host sees them, in one
+   * `POST /Library/Media/Updated`: the report a path's watcher makes. Jellyfin refreshes what holds
+   * each path after its monitor's delay, and never scans the whole library for it.
    */
-  async reportCreated(path: string): Promise<void> {
-    const json = { Updates: [{ Path: path, UpdateType: 'Created' }] };
+  reportCreated(paths: readonly string[]): Promise<void> {
+    return this.reportUpdated(paths, 'Created');
+  }
+
+  /**
+   * Tells Jellyfin files and folders at `paths` were deleted, in one `POST /Library/Media/Updated`,
+   * the route `reportCreated` takes (recorded for `Created`): Jellyfin drops what each path held
+   * after its monitor's delay, never scanning the whole library for it.
+   */
+  reportDeleted(paths: readonly string[]): Promise<void> {
+    return this.reportUpdated(paths, 'Deleted');
+  }
+
+  private async reportUpdated(paths: readonly string[], type: 'Created' | 'Deleted') {
+    const json = { Updates: paths.map((path) => ({ Path: path, UpdateType: type })) };
     await this.post('Library/Media/Updated', json, noContentSchema);
   }
 
@@ -268,6 +287,11 @@ export class JellyfinClient {
   async findAdministratorId(): Promise<string | undefined> {
     const users = await this.get('Users', userListSchema);
     return users.find((u) => u.Policy.IsAdministrator)?.Id;
+  }
+
+  /** Every user's id: `GET /Users`, which only an admin token may call. */
+  async userIds(): Promise<string[]> {
+    return (await this.get('Users', userListSchema)).map((user) => user.Id);
   }
 
   /**
@@ -355,6 +379,21 @@ export class JellyfinClient {
   /** The token's own user's state on one item: `GET /UserItems/{id}/UserData`. */
   getUserData(itemId: string): Promise<UserItemData> {
     return this.get(`UserItems/${encodeURIComponent(itemId)}/UserData`, userItemDataSchema);
+  }
+
+  /**
+   * Sets the token's own user's state on one item: `POST /UserItems/{id}/UserData`, which answers
+   * the state as saved. The progress recorder's revert sends this body live and reads that answer.
+   */
+  setUserData(itemId: string, data: UserDataChange): Promise<UserItemData> {
+    const json = {
+      PlaybackPositionTicks: data.PlaybackPositionTicks,
+      PlayCount: data.PlayCount,
+      Played: data.Played,
+      IsFavorite: data.IsFavorite,
+      ...(data.LastPlayedDate == null ? {} : { LastPlayedDate: data.LastPlayedDate }),
+    };
+    return this.post(`UserItems/${encodeURIComponent(itemId)}/UserData`, json, userItemDataSchema);
   }
 
   /**

@@ -155,8 +155,16 @@ async function assembled(tracks: number) {
   return { server, lyricsOf, answer, lrclibAsked, logs, viewsAsked: () => viewsAsked };
 }
 
-const ticks = async (until: () => boolean = () => false, most = 200) => {
-  for (let i = 0; i < most && !until(); i += 1) {
+/**
+ * Waits, by the clock, until `holds` is true. The backfill starts on a timer, so how many turns of
+ * the event loop it takes to ask LRCLIB depends on the machine; counting turns fails on a busy one.
+ */
+const until = (holds: () => boolean) =>
+  vi.waitFor(() => expect(holds()).toBe(true), { timeout: 3_000, interval: 1 });
+
+/** Lets the event loop turn `turns` times, for what is already under way to run on. */
+const ticks = async (turns = 200) => {
+  for (let i = 0; i < turns; i += 1) {
     await new Promise((resolve) => setImmediate(resolve));
   }
 };
@@ -165,11 +173,11 @@ describe('the server as main.ts assembles it', () => {
   it('gives the lyrics route and the backfill one lyrics service, asking LRCLIB once for a track both want', async () => {
     const s = await assembled(1);
     // The backfill starts at once and asks LRCLIB for the one track.
-    await ticks(() => s.lrclibAsked.length > 0);
+    await until(() => s.lrclibAsked.length > 0);
     expect(s.lrclibAsked).toEqual(['Get Lucky']);
 
     const asking = s.lyricsOf(GET_LUCKY);
-    await ticks(s.viewsAsked);
+    await until(s.viewsAsked);
     await ticks();
     s.answer();
     const res = await asking;
@@ -181,7 +189,7 @@ describe('the server as main.ts assembles it', () => {
 
   it('stops the backfill on close: a run going ends before its next track', async () => {
     const s = await assembled(2);
-    await ticks(() => s.lrclibAsked.length > 0);
+    await until(() => s.lrclibAsked.length > 0);
     expect(s.lrclibAsked).toHaveLength(1);
 
     await s.server.close();

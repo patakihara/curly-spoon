@@ -142,6 +142,7 @@ export {
   logout,
   mediaArt,
   searchBookArt,
+  searchAlbumArt,
   mediaHls,
   mediaTrack,
   play,
@@ -177,7 +178,10 @@ export {
   RequestView,
 } from './requests.js';
 export {
+  AlbumType,
   QUERY_MAX,
+  SearchAlbum,
+  SearchAlbumParams,
   SearchBook,
   SearchBookParams,
   SearchSong,

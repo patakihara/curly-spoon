@@ -77,11 +77,13 @@ handed, `useChoose()` in `web/src/choose`, which give none on the canvas or whil
 no item, so the menu's button draws disabled; Android leaves it unbound until it has lists to act
 on, and its menu draws disabled too. Search's song rows hold one key, `keep`, "Add to library":
 it keeps the song its ref names in the household's library (`POST /keep`), and the row then shows
-its keep's status, its menu empty.
+its keep's status, its menu empty. An album page's menu holds `addToLibrary`, "Add to library",
+while the album is only songs the household kept: it requests the album's lossless copy, by its
+ref.
 
 `onRequest={<Request ref={book.ref} />}`, or `onClick` on a `Button`, asks for an item the library
-lacks: a card's Request, or Search's outside book row. Books are registered behind the endpoint,
-and every other medium still answers 409 until its item registers its steps. On the web its ref is a
+lacks: a card's Request, or Search's outside book or album row. Books and albums are registered
+behind the endpoint, and every other medium still answers 409 until its item registers its steps. On the web its ref is a
 string carrying the request (`web/src/request.ts`), and one that carries none asks for nothing. Where
 nothing can take it, and on Android until M5, the control draws disabled. The same request made twice
 joins the first.

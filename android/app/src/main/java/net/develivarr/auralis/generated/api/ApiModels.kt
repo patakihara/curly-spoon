@@ -31,6 +31,20 @@ data class AddToQueueBody(
 )
 
 @Serializable
+enum class AlbumType {
+    @SerialName("album")
+    ALBUM,
+    @SerialName("ep")
+    EP,
+    @SerialName("single")
+    SINGLE,
+    @SerialName("broadcast")
+    BROADCAST,
+    @SerialName("other")
+    OTHER,
+}
+
+@Serializable
 data class AppToken(
     val token: String,
     val deviceId: String,
@@ -211,6 +225,7 @@ data class ItemDetail(
     val tracks: List<ItemTrack>,
     val episode: ItemEpisodeAbout? = null,
     val sort: EpisodeOrder? = null,
+    val request: RequestRef?,
 )
 
 @Serializable
@@ -793,6 +808,8 @@ enum class RequestFailure {
     NOT_INDEXED,
     @SerialName("cancelledUpstream")
     CANCELLED_UPSTREAM,
+    @SerialName("wrongRelease")
+    WRONG_RELEASE,
 }
 
 @Serializable
@@ -902,6 +919,20 @@ enum class Role {
 }
 
 @Serializable
+data class SearchAlbum(
+    val ref: RequestRef,
+    val title: String,
+    val artist: String?,
+    val year: Long?,
+    val type: AlbumType?,
+    val art: String?,
+    val status: RequestStatus?,
+    val progress: Double?,
+    val item: MediaRef?,
+    val kept: Long,
+)
+
+@Serializable
 data class SearchBook(
     val ref: RequestRef,
     val title: String,
@@ -960,6 +991,7 @@ data class SearchResults(
     val query: String,
     val results: List<SearchResult>,
     val books: List<SearchBook>,
+    val albums: List<SearchAlbum>,
     val songs: List<SearchSong>,
     val streaming: StreamingState,
     val hasRequests: Boolean,

@@ -66,7 +66,7 @@ export interface PlaceBookInput {
   /** The torrent's save path, as seen from here. */
   savePath: string;
   /** The torrent's files, relative to it, as qBittorrent lists them. */
-  files: QbitFile[];
+  files: Pick<QbitFile, 'name' | 'size'>[];
   key: string;
   book: BookToPlace;
   log?: JobLog;
@@ -147,7 +147,7 @@ function checkOneBook(audio: readonly string[][]): void {
 }
 
 /** What links where: audio, and the covers and cue sheets beside it. Everything else stays behind. */
-function planLinks(files: readonly QbitFile[]): PlannedLink[] {
+function planLinks(files: readonly Pick<QbitFile, 'name' | 'size'>[]): PlannedLink[] {
   const parsed = files.map(({ name, size }) => ({ name, size, parts: pathParts(name) }));
   const visible = parsed.filter(({ parts }) => !parts.some((part) => part.startsWith('.')));
   const audio = visible.filter(({ name }) => AUDIO.has(extensionOf(name)));

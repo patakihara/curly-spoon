@@ -1,0 +1,51 @@
+{
+  "upstream": "musicbrainz",
+  "upstreamVersion": "MusicBrainz web service 2",
+  "call": "rg-ghosts",
+  "request": {
+    "method": "GET",
+    "path": "/ws/2/release-group/550bf4b9-92ca-30ba-9ea2-8b45f9d081f1",
+    "query": {
+      "fmt": "json",
+      "inc": "artist-credits"
+    },
+    "headers": {
+      "accept": "application/json",
+      "user-agent": "Auralis/0.0.0 ( https://github.com/patakihara/curly-spoon )"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "artist-credit": [
+          {
+            "joinphrase": "",
+            "name": "Nine Inch Nails",
+            "artist": {
+              "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+              "sort-name": "Nine Inch Nails",
+              "name": "Nine Inch Nails",
+              "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+              "type": "Group",
+              "disambiguation": "",
+              "country": "US"
+            }
+          }
+        ],
+        "primary-type-id": "f529b476-6e62-324f-b0aa-1f3e33d313fc",
+        "first-release-date": "2008-03-02",
+        "secondary-types": [],
+        "disambiguation": "",
+        "title": "Ghosts I–IV",
+        "primary-type": "Album",
+        "secondary-type-ids": [],
+        "id": "550bf4b9-92ca-30ba-9ea2-8b45f9d081f1"
+      }
+    }
+  }
+}

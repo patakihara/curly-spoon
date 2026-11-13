@@ -1,5 +1,6 @@
 /**
- * Record mode's `musicbrainz`, `coverart` and `keep` parts, for M3.keep.
+ * Record mode's `musicbrainz`, `coverart` and `keep` parts, for M3.keep, and its
+ * `albums-musicbrainz` part, for M3.albums (`recordAlbumGroups`).
  *
  * `musicbrainz` (no key, from this machine): MusicBrainz's answers for the songs the matcher is
  * tested on, through the client's own queue, 1.1 s apart. `coverart` (no key): the cover's calls.
@@ -141,6 +142,41 @@ const realClock: Clock = {
   sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
 };
 
+type Recorder = ReturnType<typeof createRecorder>;
+
+/**
+ * Captures one call at a time. A busy answer the client asks again makes two requests in one
+ * capture, which writes nothing: the call is captured again after a wait, so only a call answered
+ * at once is recorded. Each file written is added to `written`.
+ */
+function politely(
+  rec: Recorder,
+  dir: string,
+  clock: Clock,
+  out: (line: string) => void,
+  written: string[],
+) {
+  return async <T>(call: string, ask: () => Promise<T>, expect: (found: T) => void) => {
+    for (let tries = 1; ; tries += 1) {
+      try {
+        const found = await rec.capture(call, ask, {
+          verify: (answer, recording) => {
+            expect(answer);
+            scanned(recording);
+          },
+        });
+        written.push(join(dir, `${call}.json`));
+        return found;
+      } catch (error) {
+        const twice = error instanceof Error && /exactly one request/.test(error.message);
+        if (!twice || tries >= RECORD_TRIES) throw error;
+        out(`${call}: MusicBrainz was busy; asking again in ${BUSY_WAIT_MS / 1000} s`);
+        await clock.sleep(BUSY_WAIT_MS);
+      }
+    }
+  };
+}
+
 export interface MusicBrainzRecordInput {
   fetch: FetchLike;
   out: (line: string) => void;
@@ -170,27 +206,7 @@ export async function recordMusicBrainz(
     userAgent: MUSICBRAINZ_USER_AGENT,
     clock,
   });
-  // A busy answer the client asks again makes two requests in one capture, which writes nothing:
-  // the call is captured again after a wait, so only a call answered at once is recorded.
-  const record = async <T>(call: string, ask: () => Promise<T>, expect: (found: T) => void) => {
-    for (let tries = 1; ; tries += 1) {
-      try {
-        const found = await rec.capture(call, ask, {
-          verify: (answer, recording) => {
-            expect(answer);
-            scanned(recording);
-          },
-        });
-        written.push(join(dir, `${call}.json`));
-        return found;
-      } catch (error) {
-        const twice = error instanceof Error && /exactly one request/.test(error.message);
-        if (!twice || tries >= RECORD_TRIES) throw error;
-        out(`${call}: MusicBrainz was busy; asking again in ${BUSY_WAIT_MS / 1000} s`);
-        await clock.sleep(BUSY_WAIT_MS);
-      }
-    }
-  };
+  const record = politely(rec, dir, clock, out, written);
 
   const { mamaAfrica, dameTuCosita, stayingAlive, none } = MUSICBRAINZ_SONGS;
   for (const [name, song] of [
@@ -286,6 +302,165 @@ export async function recordMusicBrainz(
     }
   }
   out(`search-503: MusicBrainz was never busy in ${BUSY_TRIES} tries; the committed file is kept`);
+  return { written };
+}
+
+/**
+ * The release groups M3.albums is tested on: freely licensed albums only, as the repo is public
+ * (Nine Inch Nails' The Slip and Ghosts I–IV, CC BY-NC-SA; Jonathan Coulton's Artificial Heart,
+ * CC BY-NC), and the releases an import tags from.
+ */
+export const ALBUM_GROUPS = {
+  slip: {
+    group: '5990b23f-6412-3eaf-989c-a4831f4f95f7',
+    title: 'The Slip',
+    /** The US CD (2008-07-22), whose DVD holds the videos. */
+    cd: '6842b8f3-b108-3c13-8998-6886e3b84300',
+  },
+  ghosts: {
+    group: '550bf4b9-92ca-30ba-9ea2-8b45f9d081f1',
+    title: 'Ghosts I–IV',
+    /** The digital release of all 36 tracks on one medium (2008-03-02). */
+    digital: '3af7ec8c-3bf4-4e6d-9bb3-1885d22b2b6a',
+  },
+  artificialHeart: {
+    group: 'c99bcaea-d214-4cb9-b15d-3f1558b1c1b3',
+    title: 'Artificial Heart',
+  },
+  /** An id MusicBrainz has never given out. */
+  gone: { group: '00000000-0000-4000-8000-000000000000' },
+} as const;
+
+/** The release-group searches recorded, as a person might type them into Search. */
+export const ALBUM_GROUP_SEARCHES = [
+  ['rg-search-slip', 'nine inch nails the slip'],
+  ['rg-search-nin', 'nine inch nails'],
+] as const;
+
+/** What a release-group search row keeps: the fields the schema reads. Tags name sites. */
+const GROUP_ROW_FIELDS = [
+  'id',
+  'score',
+  'title',
+  'primary-type',
+  'secondary-types',
+  'first-release-date',
+  'artist-credit',
+];
+
+/** The `rg-search-*` hook: each row cut to `GROUP_ROW_FIELDS`; its tags name review sites. */
+export function groupRowsCut(raw: RawExchange): RawExchange {
+  const body = raw.response.body;
+  if (body === null || !('json' in body)) return raw;
+  const answer = body.json as { 'release-groups'?: unknown[] } | null;
+  if (answer === null || !Array.isArray(answer['release-groups'])) return raw;
+  const rows = answer['release-groups'].map((row) =>
+    Object.fromEntries(
+      Object.entries(row as Record<string, unknown>).filter(([key]) =>
+        GROUP_ROW_FIELDS.includes(key),
+      ),
+    ),
+  );
+  const json = { ...answer, 'release-groups': rows };
+  return { ...raw, response: { ...raw.response, body: { json } } };
+}
+
+/** The pause before each call of the albums part, on top of the client's own 1.1 s. */
+export const ALBUM_GROUP_GAP_MS = 3_000;
+
+/**
+ * Record mode's `albums-musicbrainz` part, for M3.albums (no key): each group's lookup
+ * (`rg-slip`, `rg-ghosts`, `rg-artificial-heart`, `rg-gone`, which answers 404), its official
+ * releases with their media and recordings (`releases-slip`, `releases-ghosts`,
+ * `releases-artificial-heart`), the two releases an import tags from (`release-slip-cd`,
+ * `release-ghosts-digital`) and two release-group searches. One call at a time through the
+ * client's queue, with a further pause before each: MusicBrainz is a free service.
+ */
+export async function recordAlbumGroups(
+  input: MusicBrainzRecordInput,
+): Promise<{ written: string[] }> {
+  const { out } = input;
+  const clock = input.clock ?? realClock;
+  const written: string[] = [];
+  const dir = join(input.root, 'musicbrainz', 'recordings');
+  const rec = createRecorder({
+    fetch: input.fetch,
+    dir,
+    upstream: 'musicbrainz',
+    upstreamVersion: MUSICBRAINZ_VERSION,
+    secrets: [],
+    baseUrl: input.musicBrainzUrl,
+  });
+  const mb = new MusicBrainzClient({
+    baseUrl: input.musicBrainzUrl,
+    fetch: rec.fetch,
+    userAgent: MUSICBRAINZ_USER_AGENT,
+    clock,
+  });
+  const searches = createRecorder({
+    fetch: input.fetch,
+    dir,
+    upstream: 'musicbrainz',
+    upstreamVersion: MUSICBRAINZ_VERSION,
+    secrets: [],
+    baseUrl: input.musicBrainzUrl,
+    prepare: groupRowsCut,
+  });
+  const captured = politely(rec, dir, clock, out, written);
+  const record: typeof captured = async (call, ask, expect) => {
+    await clock.sleep(ALBUM_GROUP_GAP_MS);
+    return captured(call, ask, expect);
+  };
+
+  const { slip, ghosts, artificialHeart, gone } = ALBUM_GROUPS;
+  for (const [name, album] of [
+    ['slip', slip],
+    ['ghosts', ghosts],
+    ['artificial-heart', artificialHeart],
+  ] as const) {
+    await record(
+      `rg-${name}`,
+      () => mb.releaseGroup(album.group),
+      (found) => check(found?.title === album.title, `rg-${name}: not ${album.title}`),
+    );
+    const releases = await record(
+      `releases-${name}`,
+      () => mb.releasesOfGroup(album.group),
+      (found) => check(found.length > 0, `releases-${name}: none`),
+    );
+    out(`releases-${name}: ${releases.length} official releases`);
+  }
+  await record(
+    'rg-gone',
+    () => mb.releaseGroup(gone.group),
+    (found) => check(found === null, 'rg-gone: found'),
+  );
+  for (const [call, id] of [
+    ['release-slip-cd', slip.cd],
+    ['release-ghosts-digital', ghosts.digital],
+  ] as const) {
+    await record(
+      call,
+      () => mb.release(id),
+      (found) => check(found?.id === id, `${call}: not the release`),
+    );
+  }
+  const searchMb = new MusicBrainzClient({
+    baseUrl: input.musicBrainzUrl,
+    fetch: searches.fetch,
+    userAgent: MUSICBRAINZ_USER_AGENT,
+    clock,
+  });
+  const searched = politely(searches, dir, clock, out, written);
+  for (const [call, words] of ALBUM_GROUP_SEARCHES) {
+    await clock.sleep(ALBUM_GROUP_GAP_MS);
+    const found = await searched(
+      call,
+      () => searchMb.searchReleaseGroups(words),
+      (answer) => check(answer.releaseGroups.length > 0, `${call}: nothing found`),
+    );
+    out(`${call}: ${found.count} groups`);
+  }
   return { written };
 }
 
@@ -457,7 +632,7 @@ export async function recordKeep(input: KeepRecordInput): Promise<{ written: str
     const rec = recorder();
     const jf = new JellyfinClient({ baseUrl, token, fetch: rec.fetch });
     const probe = `${library!.locations[0]!.replace(/\/$/, '')}/${UNINDEXED_PROBE}`;
-    await rec.capture('media-updated', () => jf.reportCreated(probe), scanOnly);
+    await rec.capture('media-updated', () => jf.reportCreated([probe]), scanOnly);
     out('media-updated: reported a path Jellyfin ignores');
     calls.push('media-updated');
   }

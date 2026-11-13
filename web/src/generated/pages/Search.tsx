@@ -205,6 +205,50 @@ const placeholder = {
       }
     ],
     "moreReleases": "More releases of Salt",
+    "albums": [
+      {
+        "asking": [
+          {
+            "title": "Salt Flats",
+            "ref": "salt-flats",
+            "meta": "Album · Deep Inertia · 2022",
+            "image": "/art/tears-of-ice.jpg",
+            "status": null,
+            "tone": null,
+            "action": "Add to library"
+          }
+        ],
+        "standing": [],
+        "arrived": []
+      },
+      {
+        "asking": [],
+        "standing": [
+          {
+            "title": "Salt Lines",
+            "meta": "Album · Soul Vertex · 2020",
+            "image": "/art/salt-and-static.jpg",
+            "status": "Downloading · 40%",
+            "tone": "progress"
+          }
+        ],
+        "arrived": []
+      },
+      {
+        "asking": [],
+        "standing": [],
+        "arrived": [
+          {
+            "title": "Salt Year",
+            "ref": "salt-year",
+            "meta": "Album · Fleeting Verses · 2019",
+            "image": "/art/fragments-of-the-wind.jpg",
+            "status": "In library",
+            "tone": "library"
+          }
+        ]
+      }
+    ],
     "books": [
       {
         "asking": [],
@@ -557,7 +601,7 @@ export default function Search({ data = placeholder, state = 'full' }: SearchPro
               ))}
             </Section>
           )}
-          {(data.outside.household.length > 0 || data.outside.music.length > 0 || data.outside.moreReleases !== '' || data.outside.books.length > 0 || data.outside.podcasts.length > 0) && (
+          {(data.outside.household.length > 0 || data.outside.music.length > 0 || data.outside.moreReleases !== '' || data.outside.albums.length > 0 || data.outside.books.length > 0 || data.outside.podcasts.length > 0) && (
             <Section title="Not in your library" last={true} platform={platform}>
               {data.outside.household.map((item, i) => (
                 <Fragment key={i}>
@@ -606,6 +650,38 @@ export default function Search({ data = placeholder, state = 'full' }: SearchPro
               {data.outside.moreReleases !== '' && (
                 <ExpanderRow label={data.outside.moreReleases} />
               )}
+              {data.outside.albums.map((album, i) => (
+                <Fragment key={i}>
+                  {album.asking.map((asking, i) => (
+                    <Fragment key={i}>
+                      <ResultRow
+                        title={asking.title}
+                        meta={asking.meta}
+                        image={asking.image}
+                        status={asking.status}
+                        tone={asking.tone as Exclude<ComponentProps<typeof ResultRow>['tone'], undefined>}
+                        divider={true}
+                        trailing={
+                          <Button variant="secondary" size="sm" onClick={askFor(asking.ref)} platform={platform}>
+                            {asking.action}
+                          </Button>
+                        }
+                        platform={platform}
+                      />
+                    </Fragment>
+                  ))}
+                  {album.standing.map((standing, i) => (
+                    <Fragment key={i}>
+                      <ResultRow title={standing.title} meta={standing.meta} image={standing.image} status={standing.status} tone={standing.tone as Exclude<ComponentProps<typeof ResultRow>['tone'], undefined>} onClick={() => navigate('/requests')} divider={true} platform={platform} />
+                    </Fragment>
+                  ))}
+                  {album.arrived.map((arrived, i) => (
+                    <Fragment key={i}>
+                      <ResultRow title={arrived.title} meta={arrived.meta} image={arrived.image} status={arrived.status} tone={arrived.tone as Exclude<ComponentProps<typeof ResultRow>['tone'], undefined>} onClick={arrived.ref ? () => navigate(generatePath('/music/albums/:ref', { ref: arrived.ref })) : undefined} onAction={play(arrived.ref, 'music', 'now')} divider={true} platform={platform} />
+                    </Fragment>
+                  ))}
+                </Fragment>
+              ))}
               {data.outside.books.map((book, i) => (
                 <Fragment key={i}>
                   {book.asking.map((asking, i) => (

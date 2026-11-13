@@ -47,6 +47,7 @@ import {
   type ImportOutcome,
   type MediumSteps,
   type PollOutcome,
+  type SearchOutcome,
   StepUnavailable,
   stepsRegistry,
 } from './requests/steps.js';
@@ -1397,6 +1398,221 @@ describe('[M3.books] a download that stops moving', () => {
     expect(reread(one).state.status).toBe('downloading');
     await everyMinute(job, 1);
     expect(reread(one).state).toMatchObject({ reason: 'downloadStalled' });
+  });
+});
+
+describe('[M3.albums] a search that waits', () => {
+  /** Stand-in steps whose search answers each outcome in turn, the last repeating. */
+  const searching = (...outcomes: SearchOutcome[]) => {
+    const steps = standInSteps('album');
+    const search = vi.fn(() =>
+      Promise.resolve(outcomes[Math.min(search.mock.calls.length, outcomes.length) - 1]!),
+    );
+    return { ...steps, search };
+  };
+
+  it('[M3.albums] is asked again on the next turn, and then picks', async () => {
+    const picked: SearchOutcome = { kind: 'picked', release: standInRelease('a'), others: [] };
+    const steps = searching({ kind: 'waiting' }, { kind: 'waiting' }, picked);
+    const job = deps(steps);
+    const one = request('album');
+    await runUntil(job, one, 'searching');
+
+    for (const _ of [1, 2]) {
+      clock += 1_000;
+      await advanceRequests(job);
+      expect(reread(one).state.status).toBe('searching');
+    }
+    clock += 1_000;
+    await advanceRequests(job);
+    expect(steps.search).toHaveBeenCalledTimes(3);
+    expect(reread(one)).toMatchObject({ state: { status: 'queued' }, release: { id: 'a' } });
+  });
+
+  it('[M3.albums] saves nothing while it waits', async () => {
+    const job = deps(searching({ kind: 'waiting' }));
+    const one = request('album');
+    await runUntil(job, one, 'searching');
+    const before = reread(one);
+    for (let turn = 0; turn < 5; turn += 1) {
+      clock += MINUTE;
+      await advanceRequests(job);
+    }
+    expect(reread(one)).toEqual(before);
+  });
+
+  it('[M3.albums] waits, then offers a choice for a person to make', async () => {
+    const steps = searching({ kind: 'waiting' }, { kind: 'choose', candidates });
+    const job = deps(steps);
+    const one = request('album');
+    await runUntil(job, one, 'needsChoice');
+    expect(steps.search).toHaveBeenCalledTimes(2);
+    expect(steps.calls.start).toBe(0);
+  });
+});
+
+describe('[M3.albums] a download whose files are not the album', () => {
+  const others = [standInRelease('b'), standInRelease('c')];
+  const wrong = { kind: 'failed', reason: 'wrongRelease' } as const;
+  const turns = async (job: RequestJobDeps, count: number) => {
+    for (let turn = 0; turn < count; turn += 1) {
+      clock += 1_000;
+      await advanceRequests(job);
+    }
+  };
+
+  it('[M3.albums] drops that torrent and starts the next of the others by itself', async () => {
+    const steps = standInSteps('album', {
+      search: { kind: 'picked', release: standInRelease('a'), others },
+      polls: [wrong],
+    });
+    const job = deps(steps);
+    const one = request('album');
+    await runUntil(job, one, 'queued');
+    await turns(job, 2);
+    expect(steps.cancelled).toEqual([{ release: 'a', start: 1 }]);
+    expect(reread(one)).toMatchObject({
+      state: { status: 'queued' },
+      release: { id: 'b' },
+      handle: null,
+      autoStarts: 1,
+    });
+  });
+
+  it('[M3.albums] stays failed after three starts of its own, offering what is left', async () => {
+    const offered = ['a', 'b', 'c', 'd', 'e', 'f'].map(standInRelease);
+    const steps = standInSteps('album', {
+      search: { kind: 'choose', candidates: offered },
+      polls: [wrong],
+    });
+    const job = deps(steps);
+    const one = request('album');
+    await runUntil(job, one, 'needsChoice');
+    chooseRelease(job, one.id, 'a');
+    await turns(job, 30);
+    expect(steps.calls.start).toBe(4);
+    expect(reread(one).state).toEqual({
+      status: 'failed',
+      failedStep: 'queued',
+      reason: 'wrongRelease',
+    });
+    expect(reread(one).autoStarts).toBe(3);
+    expect(otherReleases(reread(one)).map((release) => release.id)).toEqual(['e', 'f']);
+
+    await pickAnotherRelease(job, one.id);
+    expect(reread(one).state.status).toBe('needsChoice');
+    expect(reread(one).candidates.map((release) => release.id)).toEqual(['e', 'f']);
+    chooseRelease(job, one.id, 'e');
+    await turns(job, 10);
+    expect(steps.calls.start).toBe(5);
+    expect(reread(one).state).toMatchObject({ status: 'failed', reason: 'wrongRelease' });
+  });
+
+  it('[M3.albums] shares the count of starts with a stall', async () => {
+    const offered = ['a', 'b', 'c', 'd', 'e', 'f'].map(standInRelease);
+    const steps = standInSteps('album', {
+      search: { kind: 'choose', candidates: offered },
+      polls: [{ kind: 'downloading', progress: 0.5 }],
+    });
+    const job = deps({
+      ...steps,
+      download: {
+        ...steps.download!,
+        // The first release stalls; every one after it is the wrong release.
+        poll: (handle) =>
+          (handle as { release: string }).release === 'a'
+            ? steps.download!.poll(handle)
+            : Promise.resolve(wrong),
+      },
+    });
+    const one = request('album');
+    await runUntil(job, one, 'needsChoice');
+    chooseRelease(job, one.id, 'a');
+    await runUntil(job, one, 'downloading');
+    for (let minute = 0; minute < 16; minute += 1) {
+      clock += MINUTE;
+      await advanceRequests(job);
+    }
+    expect(reread(one).release?.id).toBe('b');
+    expect(reread(one).autoStarts).toBe(1);
+    await turns(job, 30);
+    expect(steps.calls.start).toBe(4);
+    expect(reread(one)).toMatchObject({
+      state: { status: 'failed', reason: 'wrongRelease' },
+      release: { id: 'd' },
+      autoStarts: 3,
+    });
+  });
+
+  it('[M3.albums] with no others, stays failed, starting nothing, and has nothing to pick', async () => {
+    const steps = standInSteps('album', {
+      search: { kind: 'picked', release: standInRelease('a'), others: [] },
+      polls: [wrong],
+    });
+    const job = deps(steps);
+    const one = request('album');
+    await runUntil(job, one, 'queued');
+    await turns(job, 10);
+    expect(reread(one).state).toMatchObject({ status: 'failed', reason: 'wrongRelease' });
+    expect(steps.calls.start).toBe(1);
+    expect(await pickAnotherRelease(job, one.id)).toBeNull();
+    expect(otherReleases(reread(one))).toEqual([]);
+  });
+
+  it('[M3.albums] found by the import, drops that torrent and starts the next by itself', async () => {
+    const steps = standInSteps('album', {
+      search: { kind: 'picked', release: standInRelease('a'), others },
+    });
+    const job = deps({
+      ...steps,
+      // The first release's files fit no edition once downloaded; the next one's import is asked.
+      import: (request, key, signal) =>
+        request.release?.id === 'a' ? Promise.resolve(wrong) : steps.import(request, key, signal),
+    });
+    const one = request('album');
+    await runUntil(job, one, 'importing');
+    await turns(job, 1);
+    expect(steps.cancelled).toEqual([{ release: 'a', start: 1 }]);
+    expect(reread(one)).toMatchObject({
+      state: { status: 'queued' },
+      release: { id: 'b' },
+      handle: null,
+      stepKey: null,
+      autoStarts: 1,
+    });
+    await runUntilImported(job, one);
+    expect(steps.calls.start).toBe(2);
+  });
+
+  it('[M3.albums] found by the import with no others, stays failed at the import', async () => {
+    const steps = standInSteps('album', {
+      search: { kind: 'picked', release: standInRelease('a'), others: [] },
+    });
+    const job = deps({ ...steps, import: () => Promise.resolve(wrong) });
+    const one = request('album');
+    await runUntil(job, one, 'importing');
+    await turns(job, 3);
+    expect(reread(one).state).toEqual({
+      status: 'failed',
+      failedStep: 'importing',
+      reason: 'wrongRelease',
+    });
+    expect(steps.calls.start).toBe(1);
+  });
+
+  it('[M3.albums] a retry starts that release afresh, dropping the old torrent', async () => {
+    const steps = standInSteps('album', {
+      search: { kind: 'picked', release: standInRelease('a'), others: [] },
+      polls: [wrong],
+    });
+    const job = deps(steps);
+    const one = request('album');
+    await runUntil(job, one, 'queued');
+    await turns(job, 2);
+    expect(reread(one).state).toMatchObject({ status: 'failed', reason: 'wrongRelease' });
+    await retryRequest(job, one.id);
+    expect(steps.cancelled).toEqual([{ release: 'a', start: 1 }]);
+    expect(reread(one)).toMatchObject({ state: { status: 'queued' }, handle: null });
   });
 });
 

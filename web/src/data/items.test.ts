@@ -1,10 +1,12 @@
-import { ItemDetail } from '@auralis/schema';
+import { ItemDetail, type RequestRef } from '@auralis/schema';
 import { describe, expect, it } from 'vitest';
+import { createApiClient } from '../api/client';
 import { frame as album } from '../generated/pages/Album';
 import { frame as book } from '../generated/pages/Book';
 import { frame as episodePage } from '../generated/pages/Episode';
 import { frame as show } from '../generated/pages/Show';
-import { albumData, bookData, episodeData, showAwaited, showData } from './items';
+import { albumData, albumVerb, bookData, episodeData, showAwaited, showData } from './items';
+import { SignedOut } from './store';
 
 const detail = (over: Partial<ItemDetail>): ItemDetail =>
   ItemDetail.parse({
@@ -19,6 +21,7 @@ const detail = (over: Partial<ItemDetail>): ItemDetail =>
     chapters: [],
     episodes: [],
     tracks: [],
+    request: null,
     ...over,
   });
 
@@ -290,5 +293,74 @@ describe('[M1.shell] an episode’s page from GET /api/items/{ref}', () => {
       episodePage.placeholder,
     );
     expect(done).toMatchObject({ meta: '10 min', progress: 0, notes: '' });
+  });
+});
+
+describe('[M3.albums] a kept-only album’s page offers its lossless copy', () => {
+  const id = '65de8562c54b89ceef199f91bacd8709';
+  const request: RequestRef = {
+    medium: 'album',
+    target: {
+      title: 'The Slip',
+      creator: 'Nine Inch Nails',
+      ids: { mbid: '5990b23f-6412-3eaf-989c-a4831f4f95f7' },
+    },
+  };
+  const page = (over: Partial<ItemDetail> = {}) =>
+    detail({
+      ref: { source: 'jellyfin', id },
+      kind: 'album',
+      title: 'The Slip',
+      sub: 'Nine Inch Nails',
+      art: null,
+      ...over,
+    });
+
+  it('gives an album whose every track is a kept song Add to library, in the canvas’s words', () => {
+    const offered = album.placeholder.menu.find((item) => item.key === 'addToLibrary');
+    expect(albumData(page({ request }), album.placeholder).menu).toEqual([offered]);
+  });
+
+  it('gives every other album no menu', () => {
+    expect(albumData(page(), album.placeholder).menu).toEqual([]);
+  });
+
+  const answering = (item: ItemDetail, status = 202) => {
+    const asked: { method: string; path: string; body: unknown }[] = [];
+    const api = createApiClient({
+      baseUrl: 'http://auralis.test',
+      fetch: async (input: Request) => {
+        const body = input.method === 'POST' ? await input.json() : null;
+        asked.push({ method: input.method, path: new URL(input.url).pathname, body });
+        if (input.method === 'GET') return Response.json(item);
+        return new Response(status === 202 ? '{"id":"r1"}' : '{}', {
+          status,
+          headers: { 'content-type': 'application/json' },
+        });
+      },
+    });
+    return { api, asked };
+  };
+
+  it('asks for the album with the page’s own request, then loads the page again', async () => {
+    const { api, asked } = answering(page({ request }));
+    expect(await albumVerb(api, `jellyfin:${id}`, 'addToLibrary')).toEqual({ reload: true });
+    expect(asked.at(-1)).toEqual({ method: 'POST', path: '/api/requests', body: { ref: request } });
+  });
+
+  it('asks for nothing on an album with no request, or for any other verb', async () => {
+    const none = answering(page());
+    await expect(albumVerb(none.api, `jellyfin:${id}`, 'addToLibrary')).rejects.toThrow();
+    expect(none.asked.filter(({ method }) => method === 'POST')).toEqual([]);
+    const other = answering(page({ request }));
+    await expect(albumVerb(other.api, `jellyfin:${id}`, 'artist')).rejects.toThrow();
+    expect(other.asked).toEqual([]);
+  });
+
+  it('goes to sign in when the server wants one', async () => {
+    const { api } = answering(page({ request }), 401);
+    await expect(albumVerb(api, `jellyfin:${id}`, 'addToLibrary')).rejects.toBeInstanceOf(
+      SignedOut,
+    );
   });
 });

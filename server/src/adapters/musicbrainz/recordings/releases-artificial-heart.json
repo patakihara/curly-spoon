@@ -1,0 +1,4236 @@
+{
+  "upstream": "musicbrainz",
+  "upstreamVersion": "MusicBrainz web service 2",
+  "call": "releases-artificial-heart",
+  "request": {
+    "method": "GET",
+    "path": "/ws/2/release",
+    "query": {
+      "fmt": "json",
+      "inc": "recordings+media",
+      "limit": "100",
+      "offset": "0",
+      "release-group": "c99bcaea-d214-4cb9-b15d-3f1558b1c1b3",
+      "status": "official"
+    },
+    "headers": {
+      "accept": "application/json",
+      "user-agent": "Auralis/0.0.0 ( https://github.com/patakihara/curly-spoon )"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "release-offset": 0,
+        "releases": [
+          {
+            "release-events": [
+              {
+                "area": {
+                  "name": "United States",
+                  "id": "489ce91b-6658-3307-9877-795b68554c98",
+                  "disambiguation": "",
+                  "type-id": null,
+                  "iso-3166-1-codes": [
+                    "US"
+                  ],
+                  "sort-name": "United States",
+                  "type": null
+                },
+                "date": "2011-09-02"
+              }
+            ],
+            "country": "US",
+            "packaging": "Digipak",
+            "title": "Artificial Heart",
+            "text-representation": {
+              "script": "Latn",
+              "language": "eng"
+            },
+            "cover-art-archive": {
+              "back": false,
+              "count": 1,
+              "darkened": false,
+              "artwork": true,
+              "front": true
+            },
+            "status-id": "4e304316-386d-3409-af2e-78857eec5cfe",
+            "barcode": "616892180166",
+            "disambiguation": "",
+            "media": [
+              {
+                "title": "",
+                "tracks": [
+                  {
+                    "id": "5a25f8d8-98b5-3e2e-a962-7c8358079a7f",
+                    "number": "1",
+                    "length": 139000,
+                    "title": "Sticking It to Myself",
+                    "position": 1,
+                    "recording": {
+                      "disambiguation": "",
+                      "id": "e997b3e7-d406-45c7-a1b0-b5003e5de149",
+                      "length": 139000,
+                      "first-release-date": "2011-09-02",
+                      "title": "Sticking It to Myself",
+                      "video": false
+                    }
+                  },
+                  {
+                    "length": 153000,
+                    "id": "2f133e90-732e-358b-ba51-d8b91c964553",
+                    "number": "2",
+                    "recording": {
+                      "video": false,
+                      "first-release-date": "2011-09-02",
+                      "title": "Artificial Heart",
+                      "length": 153000,
+                      "id": "a173a941-77d2-46b7-9501-b154a3c79f17",
+                      "disambiguation": ""
+                    },
+                    "position": 2,
+                    "title": "Artificial Heart"
+                  },
+                  {
+                    "recording": {
+                      "disambiguation": "",
+                      "length": 182000,
+                      "id": "6b9196aa-2592-4c10-a8c4-6049bcb7a0d9",
+                      "first-release-date": "2011-09-02",
+                      "title": "Nemeses",
+                      "video": false
+                    },
+                    "position": 3,
+                    "title": "Nemeses",
+                    "length": 182000,
+                    "id": "3a1fcab5-c96e-310f-a865-11f1a17314f5",
+                    "number": "3"
+                  },
+                  {
+                    "title": "The World Belongs to You",
+                    "position": 4,
+                    "recording": {
+                      "length": 131000,
+                      "id": "06507226-e4b8-4a46-a34c-95162d2bb3b0",
+                      "disambiguation": "",
+                      "video": false,
+                      "title": "The World Belongs to You",
+                      "first-release-date": "2011-09-02"
+                    },
+                    "number": "4",
+                    "id": "afed1ba9-2e7a-39e5-b5e2-a00b040d57f3",
+                    "length": 131000
+                  },
+                  {
+                    "number": "5",
+                    "id": "e3674785-1538-31b2-b520-183979e6f96b",
+                    "length": 177000,
+                    "position": 5,
+                    "title": "Today With Your Wife",
+                    "recording": {
+                      "disambiguation": "",
+                      "id": "6bd9ef8b-60cc-439e-89ec-91d588aa3fb7",
+                      "length": 177000,
+                      "first-release-date": "2011-09-02",
+                      "title": "Today With Your Wife",
+                      "video": false
+                    }
+                  },
+                  {
+                    "recording": {
+                      "disambiguation": "",
+                      "length": 102000,
+                      "id": "3af1834e-bdd1-423c-8e9a-cc6f0b4f2bf5",
+                      "first-release-date": "2011-09-02",
+                      "title": "Sucker Punch",
+                      "video": false
+                    },
+                    "position": 6,
+                    "title": "Sucker Punch",
+                    "length": 102000,
+                    "id": "89f6f9f7-4625-3be3-886d-01507ae56882",
+                    "number": "6"
+                  },
+                  {
+                    "position": 7,
+                    "title": "Glasses",
+                    "recording": {
+                      "video": false,
+                      "first-release-date": "2011-09-02",
+                      "title": "Glasses",
+                      "id": "4c1d60e7-026a-4b8a-940c-7f5f3b150eac",
+                      "length": 167000,
+                      "disambiguation": ""
+                    },
+                    "number": "7",
+                    "id": "e0908828-99fe-3af3-ac5a-a7f536e0475a",
+                    "length": 167000
+                  },
+                  {
+                    "length": 148000,
+                    "id": "d5abcad0-438e-3252-9d63-e757e746128b",
+                    "number": "8",
+                    "recording": {
+                      "disambiguation": "",
+                      "length": 148000,
+                      "id": "daee9d79-535b-4cec-aa0d-f18b49946835",
+                      "title": "Je suis Rick Springfield",
+                      "first-release-date": "2011-09-02",
+                      "video": false
+                    },
+                    "position": 8,
+                    "title": "Je suis Rick Springfield"
+                  },
+                  {
+                    "recording": {
+                      "video": false,
+                      "first-release-date": "2011-09-02",
+                      "title": "Alone at Home",
+                      "length": 122000,
+                      "id": "f4e031f0-0749-4688-9373-52afe89cecd2",
+                      "disambiguation": ""
+                    },
+                    "title": "Alone at Home",
+                    "position": 9,
+                    "length": 122000,
+                    "id": "eaa833ae-c1ad-3360-b060-228d4864e12f",
+                    "number": "9"
+                  },
+                  {
+                    "length": 180000,
+                    "number": "10",
+                    "id": "17a89af0-8674-3325-9d11-131458c2005a",
+                    "recording": {
+                      "title": "Fraud",
+                      "first-release-date": "2011-09-02",
+                      "video": false,
+                      "disambiguation": "",
+                      "length": 180000,
+                      "id": "f1cd15be-37eb-4208-90bf-d81b70f177f6"
+                    },
+                    "position": 10,
+                    "title": "Fraud"
+                  },
+                  {
+                    "id": "b73b1194-788b-3974-8460-eeb4a1928dea",
+                    "number": "11",
+                    "length": 148000,
+                    "position": 11,
+                    "title": "Good Morning Tucson",
+                    "recording": {
+                      "length": 148000,
+                      "id": "a050ec76-6301-4453-81e7-6743f23a7b71",
+                      "disambiguation": "",
+                      "video": false,
+                      "title": "Good Morning Tucson",
+                      "first-release-date": "2011-09-02"
+                    }
+                  },
+                  {
+                    "recording": {
+                      "disambiguation": "",
+                      "id": "1a5e0681-f329-423a-bac9-66fe5e485e73",
+                      "length": 173000,
+                      "title": "Now I Am an Arsonist",
+                      "first-release-date": "2011-09-02",
+                      "video": false
+                    },
+                    "title": "Now I Am an Arsonist",
+                    "position": 12,
+                    "length": 173000,
+                    "id": "606bfb3c-758a-3f4a-9f4a-5209a5d120a0",
+                    "number": "12"
+                  },
+                  {
+                    "id": "71ad6299-4f8e-3d87-8f50-7d82d974391a",
+                    "number": "13",
+                    "length": 142000,
+                    "title": "Down Today",
+                    "position": 13,
+                    "recording": {
+                      "length": 142000,
+                      "id": "885acbf4-536b-47c0-93f1-433d52503ec4",
+                      "disambiguation": "",
+                      "video": false,
+                      "title": "Down Today",
+                      "first-release-date": "2011-09-02"
+                    }
+                  },
+                  {
+                    "length": 178000,
+                    "number": "14",
+                    "id": "44e74cd8-0c14-3233-9c67-6351ad70d686",
+                    "recording": {
+                      "disambiguation": "",
+                      "id": "8ef6e52c-681f-4a9f-bdc0-d554cc0f78d4",
+                      "length": 178000,
+                      "title": "Dissolve",
+                      "first-release-date": "2011-09-02",
+                      "video": false
+                    },
+                    "position": 14,
+                    "title": "Dissolve"
+                  },
+                  {
+                    "id": "4c372d6c-fb2d-335c-b5c8-b3f223280bcb",
+                    "number": "15",
+                    "length": 139000,
+                    "position": 15,
+                    "title": "Nobody Loves You Like Me",
+                    "recording": {
+                      "video": false,
+                      "title": "Nobody Loves You Like Me",
+                      "first-release-date": "2011-09-02",
+                      "id": "5757317f-18a4-424a-9b0e-fe2176bd6a22",
+                      "length": 139000,
+                      "disambiguation": ""
+                    }
+                  },
+                  {
+                    "length": 255000,
+                    "number": "16",
+                    "id": "391af833-2333-3101-8d12-f8bea341a122",
+                    "recording": {
+                      "title": "Still Alive",
+                      "first-release-date": "2011-09-02",
+                      "video": false,
+                      "disambiguation": "",
+                      "length": 255000,
+                      "id": "2fde62cc-1ced-41b5-b5e6-64ac2da201a4"
+                    },
+                    "position": 16,
+                    "title": "Still Alive"
+                  },
+                  {
+                    "length": 142000,
+                    "id": "7c1037dd-f78e-3c97-9668-bff191d8061f",
+                    "number": "17",
+                    "recording": {
+                      "first-release-date": "2011-09-02",
+                      "title": "Want You Gone (Elegant Too remix)",
+                      "video": false,
+                      "disambiguation": "",
+                      "id": "29f7d9ca-ea08-4ab4-ba5c-50aced3f25ae",
+                      "length": 142000
+                    },
+                    "position": 17,
+                    "title": "Want You Gone"
+                  },
+                  {
+                    "recording": {
+                      "video": false,
+                      "title": "The Stache",
+                      "first-release-date": "2011-09-02",
+                      "id": "aefc6055-e83e-4896-aaea-a231d9cd64b7",
+                      "length": 180000,
+                      "disambiguation": ""
+                    },
+                    "position": 18,
+                    "title": "The Stache",
+                    "length": 180000,
+                    "id": "2d2735f0-47c9-3291-bf8c-ab711dc84105",
+                    "number": "18"
+                  }
+                ],
+                "position": 1,
+                "format-id": "9712d52a-4509-3d4b-a1a2-67c88c643e31",
+                "id": "3316e75a-01aa-3b07-b79c-fdc2e819012c",
+                "format": "CD",
+                "track-offset": 0,
+                "track-count": 18
+              }
+            ],
+            "status": "Official",
+            "packaging-id": "8f931351-d2e2-310f-afc6-37b89ddba246",
+            "asin": "B005OH6WEC",
+            "id": "6f238401-4ba3-4691-8c62-02242627a28c",
+            "quality": "normal",
+            "date": "2011-09-02"
+          },
+          {
+            "title": "Artificial Heart",
+            "country": "XW",
+            "packaging": null,
+            "release-events": [
+              {
+                "date": "2012-01",
+                "area": {
+                  "type-id": null,
+                  "disambiguation": "",
+                  "id": "525d4e18-3d00-31b9-a58b-a146a916de8f",
+                  "name": "[Worldwide]",
+                  "type": null,
+                  "sort-name": "[Worldwide]",
+                  "iso-3166-1-codes": [
+                    "XW"
+                  ]
+                }
+              }
+            ],
+            "text-representation": {
+              "language": "eng",
+              "script": "Latn"
+            },
+            "cover-art-archive": {
+              "front": true,
+              "artwork": true,
+              "darkened": false,
+              "count": 1,
+              "back": false
+            },
+            "packaging-id": null,
+            "asin": null,
+            "media": [
+              {
+                "format-id": "9712d52a-4509-3d4b-a1a2-67c88c643e31",
+                "id": "c1414a44-3293-304b-a9e4-e6d599d66ba1",
+                "format": "CD",
+                "track-offset": 0,
+                "track-count": 18,
+                "position": 1,
+                "tracks": [
+                  {
+                    "id": "dfe18954-19aa-3c62-be13-1dab4edf0f40",
+                    "number": "1",
+                    "length": 139000,
+                    "position": 1,
+                    "title": "Sticking it to Myself",
+                    "recording": {
+                      "video": false,
+                      "title": "Sticking It to Myself",
+                      "first-release-date": "2011-09-02",
+                      "id": "e997b3e7-d406-45c7-a1b0-b5003e5de149",
+                      "length": 139000,
+                      "disambiguation": ""
+                    }
+                  },
+                  {
+                    "length": 153000,
+                    "number": "2",
+                    "id": "d07cc6d3-3ff9-3b3e-b237-65241ff4640e",
+                    "recording": {
+                      "id": "a173a941-77d2-46b7-9501-b154a3c79f17",
+                      "length": 153000,
+                      "disambiguation": "",
+                      "video": false,
+                      "title": "Artificial Heart",
+                      "first-release-date": "2011-09-02"
+                    },
+                    "title": "Artificial Heart",
+                    "position": 2
+                  },
+                  {
+                    "recording": {
+                      "video": false,
+                      "first-release-date": "2011-09-02",
+                      "title": "Nemeses",
+                      "length": 182000,
+                      "id": "6b9196aa-2592-4c10-a8c4-6049bcb7a0d9",
+                      "disambiguation": ""
+                    },
+                    "title": "Nemeses",
+                    "position": 3,
+                    "length": 182000,
+                    "id": "262949cc-2858-37a6-83b5-b38e5ea6443d",
+                    "number": "3"
+                  },
+                  {
+                    "length": 131000,
+                    "id": "eca52260-5f06-3cc0-ba16-1c6d3fdf3475",
+                    "number": "4",
+                    "recording": {
+                      "video": false,
+                      "title": "The World Belongs to You",
+                      "first-release-date": "2011-09-02",
+                      "length": 131000,
+                      "id": "06507226-e4b8-4a46-a34c-95162d2bb3b0",
+                      "disambiguation": ""
+                    },
+                    "position": 4,
+                    "title": "The World Belongs to You"
+                  },
+                  {
+                    "recording": {
+                      "video": false,
+                      "first-release-date": "2011-09-02",
+                      "title": "Today With Your Wife",
+                      "length": 177000,
+                      "id": "6bd9ef8b-60cc-439e-89ec-91d588aa3fb7",
+                      "disambiguation": ""
+                    },
+                    "position": 5,
+                    "title": "Today with Your Wife",
+                    "length": 177000,
+                    "id": "600622f3-9b2f-3699-991f-f87ae8a40d17",
+                    "number": "5"
+                  },
+                  {
+                    "recording": {
+                      "length": 102000,
+                      "id": "3af1834e-bdd1-423c-8e9a-cc6f0b4f2bf5",
+                      "disambiguation": "",
+                      "video": false,
+                      "title": "Sucker Punch",
+                      "first-release-date": "2011-09-02"
+                    },
+                    "title": "Sucker Punch",
+                    "position": 6,
+                    "length": 102000,
+                    "id": "891b57b2-ec1d-3f53-9cfb-4015baee466c",
+                    "number": "6"
+                  },
+                  {
+                    "position": 7,
+                    "title": "Glasses",
+                    "recording": {
+                      "video": false,
+                      "title": "Glasses",
+                      "first-release-date": "2011-09-02",
+                      "id": "4c1d60e7-026a-4b8a-940c-7f5f3b150eac",
+                      "length": 167000,
+                      "disambiguation": ""
+                    },
+                    "number": "7",
+                    "id": "895a5235-d5bd-3e84-b380-f7ad89308ecd",
+                    "length": 167000
+                  },
+                  {
+                    "title": "Je Suis Rick Springfield",
+                    "position": 8,
+                    "recording": {
+                      "disambiguation": "",
+                      "length": 148000,
+                      "id": "daee9d79-535b-4cec-aa0d-f18b49946835",
+                      "first-release-date": "2011-09-02",
+                      "title": "Je suis Rick Springfield",
+                      "video": false
+                    },
+                    "number": "8",
+                    "id": "5fb578de-2632-3775-9f87-369bbe089464",
+                    "length": 148000
+                  },
+                  {
+                    "position": 9,
+                    "title": "Alone at Home",
+                    "recording": {
+                      "video": false,
+                      "first-release-date": "2011-09-02",
+                      "title": "Alone at Home",
+                      "length": 122000,
+                      "id": "f4e031f0-0749-4688-9373-52afe89cecd2",
+                      "disambiguation": ""
+                    },
+                    "id": "66146692-9619-3921-bda3-a14fd71d68b3",
+                    "number": "9",
+                    "length": 122000
+                  },
+                  {
+                    "id": "8774b6a1-a141-3110-bfe0-f04ef319d589",
+                    "number": "10",
+                    "length": 180000,
+                    "position": 10,
+                    "title": "Fraud",
+                    "recording": {
+                      "video": false,
+                      "title": "Fraud",
+                      "first-release-date": "2011-09-02",
+                      "length": 180000,
+                      "id": "f1cd15be-37eb-4208-90bf-d81b70f177f6",
+                      "disambiguation": ""
+                    }
+                  },
+                  {
+                    "length": 148000,
+                    "number": "11",
+                    "id": "26139371-c1cc-3c05-988d-584473854cdb",
+                    "recording": {
+                      "disambiguation": "",
+                      "id": "a050ec76-6301-4453-81e7-6743f23a7b71",
+                      "length": 148000,
+                      "first-release-date": "2011-09-02",
+                      "title": "Good Morning Tucson",
+                      "video": false
+                    },
+                    "position": 11,
+                    "title": "Good Morning Tucson"
+                  },
+                  {
+                    "length": 173000,
+                    "number": "12",
+                    "id": "5cdb4f73-1d99-3a4d-8cde-e688121dc12e",
+                    "recording": {
+                      "disambiguation": "",
+                      "length": 173000,
+                      "id": "1a5e0681-f329-423a-bac9-66fe5e485e73",
+                      "title": "Now I Am an Arsonist",
+                      "first-release-date": "2011-09-02",
+                      "video": false
+                    },
+                    "position": 12,
+                    "title": "Now I Am an Arsonist"
+                  },
+                  {
+                    "recording": {
+                      "video": false,
+                      "title": "Down Today",
+                      "first-release-date": "2011-09-02",
+                      "length": 142000,
+                      "id": "885acbf4-536b-47c0-93f1-433d52503ec4",
+                      "disambiguation": ""
+                    },
+                    "title": "Down Today",
+                    "position": 13,
+                    "length": 142000,
+                    "id": "bbc86549-1007-3024-bd91-0ddd2fd9a290",
+                    "number": "13"
+                  },
+                  {
+                    "title": "Dissolve",
+                    "position": 14,
+                    "recording": {
+                      "first-release-date": "2011-09-02",
+                      "title": "Dissolve",
+                      "video": false,
+                      "disambiguation": "",
+                      "length": 178000,
+                      "id": "8ef6e52c-681f-4a9f-bdc0-d554cc0f78d4"
+                    },
+                    "id": "440f553c-3cba-369c-972c-7860eace44b4",
+                    "number": "14",
+                    "length": 178000
+                  },
+                  {
+                    "id": "f5886edf-e0b8-3764-be95-7ec241884223",
+                    "number": "15",
+                    "length": 139000,
+                    "title": "Nobody Loves You Like Me",
+                    "position": 15,
+                    "recording": {
+                      "video": false,
+                      "first-release-date": "2011-09-02",
+                      "title": "Nobody Loves You Like Me",
+                      "id": "5757317f-18a4-424a-9b0e-fe2176bd6a22",
+                      "length": 139000,
+                      "disambiguation": ""
+                    }
+                  },
+                  {
+                    "recording": {
+                      "title": "Still Alive",
+                      "first-release-date": "2011-09-02",
+                      "video": false,
+                      "disambiguation": "",
+                      "id": "2fde62cc-1ced-41b5-b5e6-64ac2da201a4",
+                      "length": 255000
+                    },
+                    "title": "Still Alive",
+                    "position": 16,
+                    "length": 255000,
+                    "id": "645bcce5-6156-3182-bc5e-bbfb56097540",
+                    "number": "16"
+                  },
+                  {
+                    "position": 17,
+                    "title": "Want You Gone (Elegant Too Remix)",
+                    "recording": {
+                      "id": "29f7d9ca-ea08-4ab4-ba5c-50aced3f25ae",
+                      "length": 142000,
+                      "disambiguation": "",
+                      "video": false,
+                      "first-release-date": "2011-09-02",
+                      "title": "Want You Gone (Elegant Too remix)"
+                    },
+                    "id": "2fca3106-beca-3295-b532-4478b6a784ef",
+                    "number": "17",
+                    "length": 142000
+                  },
+                  {
+                    "title": "The Stache",
+                    "position": 18,
+                    "recording": {
+                      "id": "aefc6055-e83e-4896-aaea-a231d9cd64b7",
+                      "length": 180000,
+                      "disambiguation": "",
+                      "video": false,
+                      "first-release-date": "2011-09-02",
+                      "title": "The Stache"
+                    },
+                    "number": "18",
+                    "id": "11041396-55fb-3c5c-9a67-1fc0e8a40426",
+                    "length": 180000
+                  }
+                ],
+                "title": ""
+              },
+              {
+                "tracks": [
+                  {
+                    "length": 139000,
+                    "number": "1",
+                    "id": "269436fc-abdf-3b70-94f6-5b7bd72e9f98",
+                    "recording": {
+                      "video": false,
+                      "first-release-date": "2011-09-02",
+                      "title": "Sticking It to Myself",
+                      "length": 139000,
+                      "id": "e997b3e7-d406-45c7-a1b0-b5003e5de149",
+                      "disambiguation": ""
+                    },
+                    "title": "Sticking it to Myself",
+                    "position": 1
+                  },
+                  {
+                    "title": "Artificial Heart",
+                    "position": 2,
+                    "recording": {
+                      "video": false,
+                      "title": "Artificial Heart",
+                      "first-release-date": "2011-09-02",
+                      "length": 153000,
+                      "id": "a173a941-77d2-46b7-9501-b154a3c79f17",
+                      "disambiguation": ""
+                    },
+                    "id": "db15ff29-e943-3f35-ae32-5d3a534a6171",
+                    "number": "2",
+                    "length": 153000
+                  },
+                  {
+                    "number": "3",
+                    "id": "5121af26-f648-34ad-8553-3cdb83f3d340",
+                    "length": 182000,
+                    "position": 3,
+                    "title": "Nemeses",
+                    "recording": {
+                      "id": "6b9196aa-2592-4c10-a8c4-6049bcb7a0d9",
+                      "length": 182000,
+                      "disambiguation": "",
+                      "video": false,
+                      "title": "Nemeses",
+                      "first-release-date": "2011-09-02"
+                    }
+                  },
+                  {
+                    "recording": {
+                      "disambiguation": "",
+                      "id": "06507226-e4b8-4a46-a34c-95162d2bb3b0",
+                      "length": 131000,
+                      "title": "The World Belongs to You",
+                      "first-release-date": "2011-09-02",
+                      "video": false
+                    },
+                    "title": "The World Belongs to You",
+                    "position": 4,
+                    "length": 131000,
+                    "number": "4",
+                    "id": "85fe4803-da71-3015-b478-4471aa8e2ad0"
+                  },
+                  {
+                    "id": "fcd5df30-285e-3ea7-8b82-67c4d87433f8",
+                    "number": "5",
+                    "length": 177000,
+                    "position": 5,
+                    "title": "Today with Your Wife",
+                    "recording": {
+                      "first-release-date": "2011-09-02",
+                      "title": "Today With Your Wife",
+                      "video": false,
+                      "disambiguation": "",
+                      "length": 177000,
+                      "id": "6bd9ef8b-60cc-439e-89ec-91d588aa3fb7"
+                    }
+                  },
+                  {
+                    "length": 102000,
+                    "id": "8f1eac2d-1d29-3538-9fb2-6cd34d99c924",
+                    "number": "6",
+                    "recording": {
+                      "id": "3af1834e-bdd1-423c-8e9a-cc6f0b4f2bf5",
+                      "length": 102000,
+                      "disambiguation": "",
+                      "video": false,
+                      "first-release-date": "2011-09-02",
+                      "title": "Sucker Punch"
+                    },
+                    "title": "Sucker Punch",
+                    "position": 6
+                  },
+                  {
+                    "title": "Glasses",
+                    "position": 7,
+                    "recording": {
+                      "disambiguation": "",
+                      "length": 167000,
+                      "id": "4c1d60e7-026a-4b8a-940c-7f5f3b150eac",
+                      "first-release-date": "2011-09-02",
+                      "title": "Glasses",
+                      "video": false
+                    },
+                    "id": "941e5210-67cb-38a3-b0cc-89d119608e69",
+                    "number": "7",
+                    "length": 167000
+                  },
+                  {
+                    "position": 8,
+                    "title": "Je Suis Rick Springfield",
+                    "recording": {
+                      "length": 148000,
+                      "id": "daee9d79-535b-4cec-aa0d-f18b49946835",
+                      "disambiguation": "",
+                      "video": false,
+                      "first-release-date": "2011-09-02",
+                      "title": "Je suis Rick Springfield"
+                    },
+                    "id": "0b9cf064-5570-3253-bf48-5a9f707aed81",
+                    "number": "8",
+                    "length": 148000
+                  },
+                  {
+                    "length": 122000,
+                    "id": "e87c0669-0ad5-34b0-95ed-4db35eb2787c",
+                    "number": "9",
+                    "recording": {
+                      "title": "Alone at Home",
+                      "first-release-date": "2011-09-02",
+                      "video": false,
+                      "disambiguation": "",
+                      "id": "f4e031f0-0749-4688-9373-52afe89cecd2",
+                      "length": 122000
+                    },
+                    "title": "Alone at Home",
+                    "position": 9
+                  },
+                  {
+                    "number": "10",
+                    "id": "a2efee0b-e88d-3fb1-ac20-30b098eabeef",
+                    "length": 180000,
+                    "position": 10,
+                    "title": "Fraud",
+                    "recording": {
+                      "title": "Fraud",
+                      "first-release-date": "2011-09-02",
+                      "video": false,
+                      "disambiguation": "",
+                      "id": "f1cd15be-37eb-4208-90bf-d81b70f177f6",
+                      "length": 180000
+                    }
+                  },
+                  {
+                    "number": "11",
+                    "id": "86a7d5ae-eb69-3f99-b94b-e7f2ee32a5f0",
+                    "length": 148000,
+                    "position": 11,
+                    "title": "Good Morning Tucson",
+                    "recording": {
+                      "video": false,
+                      "title": "Good Morning Tucson",
+                      "first-release-date": "2011-09-02",
+                      "length": 148000,
+                      "id": "a050ec76-6301-4453-81e7-6743f23a7b71",
+                      "disambiguation": ""
+                    }
+                  },
+                  {
+                    "recording": {
+                      "id": "1a5e0681-f329-423a-bac9-66fe5e485e73",
+                      "length": 173000,
+                      "disambiguation": "",
+                      "video": false,
+                      "first-release-date": "2011-09-02",
+                      "title": "Now I Am an Arsonist"
+                    },
+                    "title": "Now I Am an Arsonist",
+                    "position": 12,
+                    "length": 173000,
+                    "id": "91cb4bb7-daa7-3f0f-9fd3-e3e984fad67c",
+                    "number": "12"
+                  },
+                  {
+                    "length": 142000,
+                    "id": "c5942c8e-36c1-39d7-ac8c-cf1657d93e22",
+                    "number": "13",
+                    "recording": {
+                      "disambiguation": "",
+                      "length": 142000,
+                      "id": "885acbf4-536b-47c0-93f1-433d52503ec4",
+                      "first-release-date": "2011-09-02",
+                      "title": "Down Today",
+                      "video": false
+                    },
+                    "position": 13,
+                    "title": "Down Today"
+                  },
+                  {
+                    "title": "Dissolve",
+                    "position": 14,
+                    "recording": {
+                      "length": 178000,
+                      "id": "8ef6e52c-681f-4a9f-bdc0-d554cc0f78d4",
+                      "disambiguation": "",
+                      "video": false,
+                      "title": "Dissolve",
+                      "first-release-date": "2011-09-02"
+                    },
+                    "id": "34a40f98-95d3-339a-972e-8aff8228771e",
+                    "number": "14",
+                    "length": 178000
+                  },
+                  {
+                    "number": "15",
+                    "id": "139f5ded-8995-3ec9-b511-42c999ed3119",
+                    "length": 139000,
+                    "position": 15,
+                    "title": "Nobody Loves You Like Me",
+                    "recording": {
+                      "id": "5757317f-18a4-424a-9b0e-fe2176bd6a22",
+                      "length": 139000,
+                      "disambiguation": "",
+                      "video": false,
+                      "first-release-date": "2011-09-02",
+                      "title": "Nobody Loves You Like Me"
+                    }
+                  },
+                  {
+                    "position": 16,
+                    "title": "Still Alive",
+                    "recording": {
+                      "disambiguation": "",
+                      "id": "2fde62cc-1ced-41b5-b5e6-64ac2da201a4",
+                      "length": 255000,
+                      "title": "Still Alive",
+                      "first-release-date": "2011-09-02",
+                      "video": false
+                    },
+                    "number": "16",
+                    "id": "2726747e-b2ce-340c-b992-90dd440a53ce",
+                    "length": 255000
+                  },
+                  {
+                    "recording": {
+                      "id": "29f7d9ca-ea08-4ab4-ba5c-50aced3f25ae",
+                      "length": 142000,
+                      "disambiguation": "",
+                      "video": false,
+                      "title": "Want You Gone (Elegant Too remix)",
+                      "first-release-date": "2011-09-02"
+                    },
+                    "position": 17,
+                    "title": "Want You Gone (Elegant Too Remix)",
+                    "length": 142000,
+                    "id": "8a9bb153-10ac-3082-8d27-317ae97467e7",
+                    "number": "17"
+                  },
+                  {
+                    "number": "18",
+                    "id": "81f8db9d-fd16-337a-8704-1d05a5193832",
+                    "length": 180000,
+                    "title": "The Stache",
+                    "position": 18,
+                    "recording": {
+                      "first-release-date": "2011-09-02",
+                      "title": "The Stache",
+                      "video": false,
+                      "disambiguation": "",
+                      "length": 180000,
+                      "id": "aefc6055-e83e-4896-aaea-a231d9cd64b7"
+                    }
+                  }
+                ],
+                "title": "Part No. 29: Outdated Technology Platform",
+                "track-offset": 0,
+                "format": "12\" Vinyl",
+                "track-count": 18,
+                "format-id": "3e9080b0-5e6c-34ab-bd15-f526b6306a64",
+                "id": "7d9ef302-9599-3def-b629-d138d1fbb877",
+                "position": 2
+              },
+              {
+                "tracks": [
+                  {
+                    "number": "1",
+                    "id": "1a82fc14-86bc-3f42-ae00-e10240af9902",
+                    "length": null,
+                    "title": "Program Initiation Assistant",
+                    "position": 1,
+                    "recording": {
+                      "disambiguation": "",
+                      "length": null,
+                      "id": "c6abe011-a8f6-4e2d-a6a4-1850e7ef12b2",
+                      "first-release-date": "2012-01",
+                      "title": "Program Initiation Assistant",
+                      "video": false
+                    }
+                  },
+                  {
+                    "title": "Sticking It to Myself",
+                    "position": 2,
+                    "recording": {
+                      "length": 139000,
+                      "id": "e997b3e7-d406-45c7-a1b0-b5003e5de149",
+                      "disambiguation": "",
+                      "video": false,
+                      "first-release-date": "2011-09-02",
+                      "title": "Sticking It to Myself"
+                    },
+                    "number": "2",
+                    "id": "16f2711e-e0dd-3fc5-94c3-fa8e0bb2b8b2",
+                    "length": null
+                  },
+                  {
+                    "title": "Artificial Heart",
+                    "position": 3,
+                    "recording": {
+                      "disambiguation": "",
+                      "length": 153000,
+                      "id": "a173a941-77d2-46b7-9501-b154a3c79f17",
+                      "title": "Artificial Heart",
+                      "first-release-date": "2011-09-02",
+                      "video": false
+                    },
+                    "id": "8d4d73b4-67be-3c2c-a6cc-eb769b0444eb",
+                    "number": "3",
+                    "length": null
+                  },
+                  {
+                    "title": "Nemeses (Featuring John Roderick)",
+                    "position": 4,
+                    "recording": {
+                      "disambiguation": "",
+                      "id": "6b9196aa-2592-4c10-a8c4-6049bcb7a0d9",
+                      "length": 182000,
+                      "title": "Nemeses",
+                      "first-release-date": "2011-09-02",
+                      "video": false
+                    },
+                    "number": "4",
+                    "id": "9ab6c0b8-1784-3a4f-9144-cb98abf57e01",
+                    "length": null
+                  },
+                  {
+                    "title": "The World Belongs to You",
+                    "position": 5,
+                    "recording": {
+                      "length": 131000,
+                      "id": "06507226-e4b8-4a46-a34c-95162d2bb3b0",
+                      "disambiguation": "",
+                      "video": false,
+                      "title": "The World Belongs to You",
+                      "first-release-date": "2011-09-02"
+                    },
+                    "number": "5",
+                    "id": "f4adaa1d-5129-3a7a-a98b-75f780bc664c",
+                    "length": null
+                  },
+                  {
+                    "title": "Today with Your Wife",
+                    "position": 6,
+                    "recording": {
+                      "title": "Today With Your Wife",
+                      "first-release-date": "2011-09-02",
+                      "video": false,
+                      "disambiguation": "",
+                      "id": "6bd9ef8b-60cc-439e-89ec-91d588aa3fb7",
+                      "length": 177000
+                    },
+                    "id": "f84adb3f-5d9d-36dc-a1e6-12f27a68199e",
+                    "number": "6",
+                    "length": null
+                  },
+                  {
+                    "position": 7,
+                    "title": "Sucker Punch",
+                    "recording": {
+                      "disambiguation": "",
+                      "id": "3af1834e-bdd1-423c-8e9a-cc6f0b4f2bf5",
+                      "length": 102000,
+                      "title": "Sucker Punch",
+                      "first-release-date": "2011-09-02",
+                      "video": false
+                    },
+                    "number": "7",
+                    "id": "dbb34fe6-bb2a-31c8-baec-04be804dac39",
+                    "length": null
+                  },
+                  {
+                    "number": "8",
+                    "id": "5da6001e-0d84-3d80-abcd-dbd838136093",
+                    "length": null,
+                    "title": "Glasses",
+                    "position": 8,
+                    "recording": {
+                      "video": false,
+                      "first-release-date": "2011-09-02",
+                      "title": "Glasses",
+                      "id": "4c1d60e7-026a-4b8a-940c-7f5f3b150eac",
+                      "length": 167000,
+                      "disambiguation": ""
+                    }
+                  },
+                  {
+                    "length": null,
+                    "id": "4235230a-479f-329b-b2f6-b2a770009d8e",
+                    "number": "9",
+                    "recording": {
+                      "length": 148000,
+                      "id": "daee9d79-535b-4cec-aa0d-f18b49946835",
+                      "disambiguation": "",
+                      "video": false,
+                      "first-release-date": "2011-09-02",
+                      "title": "Je suis Rick Springfield"
+                    },
+                    "title": "Je Suis Rick Springfield",
+                    "position": 9
+                  },
+                  {
+                    "position": 10,
+                    "title": "Alone at Home",
+                    "recording": {
+                      "disambiguation": "",
+                      "length": 122000,
+                      "id": "f4e031f0-0749-4688-9373-52afe89cecd2",
+                      "first-release-date": "2011-09-02",
+                      "title": "Alone at Home",
+                      "video": false
+                    },
+                    "id": "893860c4-d217-35ea-be25-33645c2b1697",
+                    "number": "10",
+                    "length": null
+                  },
+                  {
+                    "title": "Fraud",
+                    "position": 11,
+                    "recording": {
+                      "disambiguation": "",
+                      "id": "f1cd15be-37eb-4208-90bf-d81b70f177f6",
+                      "length": 180000,
+                      "first-release-date": "2011-09-02",
+                      "title": "Fraud",
+                      "video": false
+                    },
+                    "id": "1b4089e7-e384-37a4-aeb9-78b0bfac7377",
+                    "number": "11",
+                    "length": null
+                  },
+                  {
+                    "length": null,
+                    "number": "12",
+                    "id": "07a6a268-cd5a-3a65-94cf-85c47f6dd634",
+                    "recording": {
+                      "video": false,
+                      "title": "Good Morning Tucson",
+                      "first-release-date": "2011-09-02",
+                      "id": "a050ec76-6301-4453-81e7-6743f23a7b71",
+                      "length": 148000,
+                      "disambiguation": ""
+                    },
+                    "title": "Good Morning Tucson",
+                    "position": 12
+                  },
+                  {
+                    "recording": {
+                      "video": false,
+                      "first-release-date": "2011-09-02",
+                      "title": "Now I Am an Arsonist",
+                      "length": 173000,
+                      "id": "1a5e0681-f329-423a-bac9-66fe5e485e73",
+                      "disambiguation": ""
+                    },
+                    "position": 13,
+                    "title": "Now I Am an Arsonist (Featuring Suzanne Vega)",
+                    "length": null,
+                    "id": "f63bc897-c756-39b7-8e4d-da8d5127dba3",
+                    "number": "13"
+                  },
+                  {
+                    "number": "14",
+                    "id": "16297d49-e3b4-3536-8c52-e33a73962652",
+                    "length": null,
+                    "position": 14,
+                    "title": "Down Today",
+                    "recording": {
+                      "id": "885acbf4-536b-47c0-93f1-433d52503ec4",
+                      "length": 142000,
+                      "disambiguation": "",
+                      "video": false,
+                      "title": "Down Today",
+                      "first-release-date": "2011-09-02"
+                    }
+                  },
+                  {
+                    "length": null,
+                    "id": "0febbc99-c466-3f0f-8cee-d806853e0665",
+                    "number": "15",
+                    "recording": {
+                      "disambiguation": "",
+                      "id": "8ef6e52c-681f-4a9f-bdc0-d554cc0f78d4",
+                      "length": 178000,
+                      "first-release-date": "2011-09-02",
+                      "title": "Dissolve",
+                      "video": false
+                    },
+                    "title": "Dissolve",
+                    "position": 15
+                  },
+                  {
+                    "title": "Nobody Loves You Like Me",
+                    "position": 16,
+                    "recording": {
+                      "disambiguation": "",
+                      "length": 139000,
+                      "id": "5757317f-18a4-424a-9b0e-fe2176bd6a22",
+                      "first-release-date": "2011-09-02",
+                      "title": "Nobody Loves You Like Me",
+                      "video": false
+                    },
+                    "id": "0438790f-9a4b-31ba-b4b8-a044ccdad66b",
+                    "number": "16",
+                    "length": null
+                  },
+                  {
+                    "recording": {
+                      "disambiguation": "",
+                      "id": "2fde62cc-1ced-41b5-b5e6-64ac2da201a4",
+                      "length": 255000,
+                      "first-release-date": "2011-09-02",
+                      "title": "Still Alive",
+                      "video": false
+                    },
+                    "position": 17,
+                    "title": "Still Alive (Featuring Sara Quin)",
+                    "length": null,
+                    "number": "17",
+                    "id": "4c30aca0-4fe9-3751-9939-d3c9e54f4a5b"
+                  },
+                  {
+                    "recording": {
+                      "first-release-date": "2011-09-02",
+                      "title": "Want You Gone (Elegant Too remix)",
+                      "video": false,
+                      "disambiguation": "",
+                      "id": "29f7d9ca-ea08-4ab4-ba5c-50aced3f25ae",
+                      "length": 142000
+                    },
+                    "title": "Want You Gone (Elegant Too Remix)",
+                    "position": 18,
+                    "length": null,
+                    "id": "c7977613-4fa9-3a74-90a2-7f347d1863ec",
+                    "number": "18"
+                  },
+                  {
+                    "recording": {
+                      "id": "aefc6055-e83e-4896-aaea-a231d9cd64b7",
+                      "length": 180000,
+                      "disambiguation": "",
+                      "video": false,
+                      "title": "The Stache",
+                      "first-release-date": "2011-09-02"
+                    },
+                    "position": 19,
+                    "title": "The Stache",
+                    "length": null,
+                    "number": "19",
+                    "id": "83b1ae5f-4cf7-3ed6-b904-5dc73d10a75a"
+                  },
+                  {
+                    "id": "0ad98da5-1536-31d0-9d45-538d9d6c279e",
+                    "number": "20",
+                    "length": null,
+                    "title": "Octopus",
+                    "position": 20,
+                    "recording": {
+                      "first-release-date": "2008",
+                      "title": "Octopus",
+                      "video": false,
+                      "disambiguation": "",
+                      "id": "9ed32d7d-2966-483d-a2cb-aeb9fc28d1b8",
+                      "length": 176000
+                    }
+                  },
+                  {
+                    "recording": {
+                      "disambiguation": "",
+                      "length": 275000,
+                      "id": "6ced6292-2382-4cb5-b858-383b15eb3821",
+                      "first-release-date": "2008",
+                      "title": "Re Vos Cerveaux",
+                      "video": false
+                    },
+                    "title": "Re Vos Cerveaux",
+                    "position": 21,
+                    "length": null,
+                    "number": "21",
+                    "id": "96aeec74-d73a-364a-9d94-360e1cd3884b"
+                  },
+                  {
+                    "recording": {
+                      "video": false,
+                      "title": "My Beige Bear",
+                      "first-release-date": "2008",
+                      "length": 197000,
+                      "id": "80df52d7-8bb9-40a1-8ca5-d7a4077f2dd0",
+                      "disambiguation": ""
+                    },
+                    "title": "My Beige Bear",
+                    "position": 22,
+                    "length": null,
+                    "id": "2cb41542-ea02-35fc-b81c-b46816818d83",
+                    "number": "22"
+                  },
+                  {
+                    "number": "23",
+                    "id": "a1773500-9f3a-3167-a4c9-77ccd2d21ce1",
+                    "length": null,
+                    "title": "Lady Aberlin's Muumuu",
+                    "position": 23,
+                    "recording": {
+                      "first-release-date": "2008",
+                      "title": "Lady Aberlin’s Muumuu",
+                      "video": false,
+                      "disambiguation": "",
+                      "id": "9e08cf99-2f33-4c38-bbf3-2937a69a318c",
+                      "length": 134000
+                    }
+                  },
+                  {
+                    "title": "Washy Ad Jeffy",
+                    "position": 24,
+                    "recording": {
+                      "title": "Washy Ad Jeffy",
+                      "first-release-date": "2008",
+                      "video": false,
+                      "disambiguation": "",
+                      "id": "73740317-1b00-4339-9f68-d85d08dc6193",
+                      "length": 122000
+                    },
+                    "number": "24",
+                    "id": "5b653847-a967-3dc1-9435-e2adf81349e7",
+                    "length": null
+                  },
+                  {
+                    "position": 25,
+                    "title": "Monkey Shines",
+                    "recording": {
+                      "video": false,
+                      "title": "Monkey Shines",
+                      "first-release-date": "2008",
+                      "id": "a840914e-015a-4518-bddc-406a87b94a5b",
+                      "length": 51000,
+                      "disambiguation": ""
+                    },
+                    "id": "2c3e18c0-44d4-3803-8965-c71de9ab923c",
+                    "number": "25",
+                    "length": null
+                  },
+                  {
+                    "position": 26,
+                    "title": "Big Dick Farts a Polka",
+                    "recording": {
+                      "title": "Big Dick Farts a Polka",
+                      "first-release-date": "2008",
+                      "video": false,
+                      "disambiguation": "",
+                      "id": "433591ed-be81-4f3c-8e21-417edea19618",
+                      "length": 138000
+                    },
+                    "number": "26",
+                    "id": "c90d3a3b-4768-3168-9dac-3dcf4231ddca",
+                    "length": null
+                  },
+                  {
+                    "position": 27,
+                    "title": "Space Doggity",
+                    "recording": {
+                      "disambiguation": "",
+                      "id": "015ddf47-0c2c-44cd-908b-578dfcdcf0ef",
+                      "length": 206000,
+                      "title": "Space Doggity",
+                      "first-release-date": "2008",
+                      "video": false
+                    },
+                    "number": "27",
+                    "id": "34504d67-0176-3c5d-bd5d-60b2fb89202a",
+                    "length": null
+                  },
+                  {
+                    "length": null,
+                    "number": "28",
+                    "id": "5fa45697-debb-3433-af2f-e5ad895f515f",
+                    "recording": {
+                      "title": "Always the Moon",
+                      "first-release-date": "2008",
+                      "video": false,
+                      "disambiguation": "",
+                      "id": "5b5fa3c6-4d17-4df0-ae27-b58fcd7d2141",
+                      "length": 169000
+                    },
+                    "position": 28,
+                    "title": "Always the Moon"
+                  },
+                  {
+                    "id": "f2192536-5339-367f-8416-64816a7f1110",
+                    "number": "29",
+                    "length": null,
+                    "position": 29,
+                    "title": "Blue Sunny Day",
+                    "recording": {
+                      "disambiguation": "",
+                      "id": "98e3bb8a-98eb-4f62-acac-af4e051e0989",
+                      "length": 230000,
+                      "first-release-date": "2008",
+                      "title": "Blue Sunny Day",
+                      "video": false
+                    }
+                  },
+                  {
+                    "length": null,
+                    "id": "f288ace5-62a7-3cbf-a2da-ab5fb37f4f26",
+                    "number": "30",
+                    "recording": {
+                      "first-release-date": "2006-08-01",
+                      "title": "See You All in Hell",
+                      "video": false,
+                      "disambiguation": "",
+                      "id": "5f4ad767-17e3-4b90-a78d-07f34739d661",
+                      "length": 57893
+                    },
+                    "position": 30,
+                    "title": "See You All in Hell"
+                  },
+                  {
+                    "length": null,
+                    "number": "31",
+                    "id": "9a30908d-792c-364a-be88-2448ae42ad7e",
+                    "recording": {
+                      "first-release-date": "2006-02",
+                      "title": "My Monkey",
+                      "video": false,
+                      "disambiguation": "",
+                      "id": "e637b872-2de7-4390-9817-eb510f1f5359",
+                      "length": 166000
+                    },
+                    "position": 31,
+                    "title": "My Monkey"
+                  },
+                  {
+                    "recording": {
+                      "video": false,
+                      "first-release-date": "2006-02",
+                      "title": "W’s Duty",
+                      "length": 108973,
+                      "id": "17cbc0c3-ef8f-47ea-8181-845c40ae379a",
+                      "disambiguation": ""
+                    },
+                    "title": "W's Duty",
+                    "position": 32,
+                    "length": null,
+                    "number": "32",
+                    "id": "bca6a635-22d4-3d44-ace3-c70defc1bd4a"
+                  },
+                  {
+                    "recording": {
+                      "video": false,
+                      "first-release-date": "2006-02",
+                      "title": "Shop Vac",
+                      "length": 211000,
+                      "id": "e5c3cf8d-ef9f-4950-9345-6aa2ea7d318f",
+                      "disambiguation": ""
+                    },
+                    "title": "Shop Vac",
+                    "position": 33,
+                    "length": null,
+                    "number": "33",
+                    "id": "9a34f37d-c789-38c2-9092-f952c30b7b1f"
+                  },
+                  {
+                    "length": null,
+                    "number": "34",
+                    "id": "dd3b42c8-9978-3a1c-9cfe-246b1d386449",
+                    "recording": {
+                      "first-release-date": "2006-02",
+                      "title": "Baby Got Back",
+                      "video": false,
+                      "disambiguation": "",
+                      "id": "fd5bb283-e31c-42eb-9594-667176111f70",
+                      "length": 332000
+                    },
+                    "position": 34,
+                    "title": "Baby Got Back"
+                  },
+                  {
+                    "length": null,
+                    "id": "f1b2f558-2a95-3bf2-a04a-72f8fe82a675",
+                    "number": "35",
+                    "recording": {
+                      "video": false,
+                      "first-release-date": "2006-02",
+                      "title": "Someone Is Crazy",
+                      "id": "be2dee49-e8b4-4235-82f7-3cec689d7032",
+                      "length": 124106,
+                      "disambiguation": ""
+                    },
+                    "position": 35,
+                    "title": "Someone Is Crazy"
+                  },
+                  {
+                    "length": null,
+                    "number": "36",
+                    "id": "aba422a2-42a7-3661-92e8-4d53aecb4145",
+                    "recording": {
+                      "disambiguation": "",
+                      "id": "4761e75c-ea4b-48ed-aa91-0be0d0436713",
+                      "length": 126613,
+                      "title": "Brand New Sucker",
+                      "first-release-date": "2006-02",
+                      "video": false
+                    },
+                    "position": 36,
+                    "title": "Brand New Sucker"
+                  },
+                  {
+                    "length": null,
+                    "number": "37",
+                    "id": "474440e8-3a90-367d-a5c9-ae35dd47edb0",
+                    "recording": {
+                      "disambiguation": "",
+                      "length": 183973,
+                      "id": "515bdb14-0772-4787-a5e1-287c6932d2fb",
+                      "first-release-date": "2006-02",
+                      "title": "Sibling Rivalry",
+                      "video": false
+                    },
+                    "position": 37,
+                    "title": "Sibling Rivalry"
+                  },
+                  {
+                    "position": 38,
+                    "title": "The Town Crotch",
+                    "recording": {
+                      "title": "The Town Crotch",
+                      "first-release-date": "2006-02",
+                      "video": false,
+                      "disambiguation": "",
+                      "id": "78a6f427-4ab7-4a5c-b15d-f208688bd941",
+                      "length": 284306
+                    },
+                    "number": "38",
+                    "id": "d5948d2d-e9a9-3541-8437-f28465b4ccf0",
+                    "length": null
+                  },
+                  {
+                    "recording": {
+                      "video": false,
+                      "title": "Podsafe Christmas Song",
+                      "first-release-date": "2006-02-10",
+                      "id": "bc20ef2b-d1c7-40e0-9d59-3945849233b8",
+                      "length": 164493,
+                      "disambiguation": ""
+                    },
+                    "position": 39,
+                    "title": "Podsafe Christmas Song",
+                    "length": null,
+                    "number": "39",
+                    "id": "7d46954e-64dd-3aed-a571-37d70c354be5"
+                  },
+                  {
+                    "id": "9070ad6b-43f7-3097-8ae7-5cf31d2032ec",
+                    "number": "40",
+                    "length": null,
+                    "title": "Furry Old Lobster",
+                    "position": 40,
+                    "recording": {
+                      "video": false,
+                      "first-release-date": "2006-02-10",
+                      "title": "Furry Old Lobster",
+                      "length": 122066,
+                      "id": "b27cca8d-1cb3-4219-be40-b8f591743724",
+                      "disambiguation": ""
+                    }
+                  },
+                  {
+                    "id": "3fcb012f-bcca-3474-bcb9-7fa6cfcc59f9",
+                    "number": "41",
+                    "length": null,
+                    "title": "Drive",
+                    "position": 41,
+                    "recording": {
+                      "length": 154960,
+                      "id": "77049809-80fc-403a-932a-d2f2d137457e",
+                      "disambiguation": "",
+                      "video": false,
+                      "first-release-date": "2006-02-10",
+                      "title": "Drive"
+                    }
+                  },
+                  {
+                    "recording": {
+                      "id": "b450f099-04c9-44f0-8a88-993b0fde7614",
+                      "length": 167906,
+                      "disambiguation": "",
+                      "video": false,
+                      "title": "Flickr",
+                      "first-release-date": "2006-02-10"
+                    },
+                    "position": 42,
+                    "title": "Flickr",
+                    "length": null,
+                    "id": "c90a1282-bba0-3dd6-8dc5-31e9b665606b",
+                    "number": "42"
+                  },
+                  {
+                    "recording": {
+                      "length": 140413,
+                      "id": "e61c0ea4-08b2-4e02-8f37-6b1a2d930d27",
+                      "disambiguation": "",
+                      "video": false,
+                      "first-release-date": "2006-02-10",
+                      "title": "Resolutions"
+                    },
+                    "position": 43,
+                    "title": "Resolutions",
+                    "length": null,
+                    "number": "43",
+                    "id": "d5c02d92-e158-3fad-b8aa-f0e857904de0"
+                  },
+                  {
+                    "number": "44",
+                    "id": "b28a37b5-0d1f-39e6-b639-430c0cf38ab3",
+                    "length": null,
+                    "position": 44,
+                    "title": "You Could Be Her",
+                    "recording": {
+                      "disambiguation": "",
+                      "length": 261253,
+                      "id": "3d995557-1820-4d61-8317-97dae911bf8e",
+                      "title": "You Could Be Her",
+                      "first-release-date": "2006-02-10",
+                      "video": false
+                    }
+                  },
+                  {
+                    "id": "eaaf3e3a-50a0-3fa0-9408-8cee3f189f5e",
+                    "number": "45",
+                    "length": null,
+                    "title": "I Will",
+                    "position": 45,
+                    "recording": {
+                      "disambiguation": "",
+                      "length": 136146,
+                      "id": "179434fa-66de-48bc-bbf6-b03865164e31",
+                      "first-release-date": "2006-02-10",
+                      "title": "I Will",
+                      "video": false
+                    }
+                  },
+                  {
+                    "position": 46,
+                    "title": "Dance, Soterios Johnson, Dance",
+                    "recording": {
+                      "disambiguation": "",
+                      "id": "7d68f5b9-cfd2-4812-baa8-bd62bac7c936",
+                      "length": 231306,
+                      "first-release-date": "2006-02-10",
+                      "title": "Dance, Soterios Johnson, Dance",
+                      "video": false
+                    },
+                    "id": "6930b7aa-f9aa-395c-b7a0-23db833aec34",
+                    "number": "46",
+                    "length": null
+                  },
+                  {
+                    "length": null,
+                    "number": "47",
+                    "id": "b2eb2417-f914-3e70-9a1f-a31fa680a1a6",
+                    "recording": {
+                      "video": false,
+                      "title": "So Far So Good",
+                      "first-release-date": "2006-02-10",
+                      "length": 202066,
+                      "id": "d72c4186-a5a8-4629-a52a-cc62dd15a69b",
+                      "disambiguation": ""
+                    },
+                    "position": 47,
+                    "title": "So Far So Good"
+                  },
+                  {
+                    "recording": {
+                      "disambiguation": "",
+                      "id": "592d0400-ef61-4aa6-a0c5-ac75774c2885",
+                      "length": 198480,
+                      "title": "Curl",
+                      "first-release-date": "2006-02-10",
+                      "video": false
+                    },
+                    "title": "Curl",
+                    "position": 48,
+                    "length": null,
+                    "number": "48",
+                    "id": "f1f80386-2bd5-328e-a2a8-f362d7e071b6"
+                  },
+                  {
+                    "position": 49,
+                    "title": "Chiron Beta Prime",
+                    "recording": {
+                      "id": "981e4ad7-fe5e-4316-a658-377c040e0359",
+                      "length": 170613,
+                      "disambiguation": "",
+                      "video": false,
+                      "title": "Chiron Beta Prime",
+                      "first-release-date": "2006-04-28"
+                    },
+                    "number": "49",
+                    "id": "8635feff-944b-3775-b470-6f8f500d823f",
+                    "length": null
+                  },
+                  {
+                    "number": "50",
+                    "id": "b85537c3-465a-3818-b0fe-417119d20846",
+                    "length": null,
+                    "title": "Take Care of Me",
+                    "position": 50,
+                    "recording": {
+                      "disambiguation": "",
+                      "id": "1da3d8d1-5951-420d-960a-012a9c7923d0",
+                      "length": 165053,
+                      "title": "Take Care of Me",
+                      "first-release-date": "2006-04-28",
+                      "video": false
+                    }
+                  },
+                  {
+                    "recording": {
+                      "first-release-date": "2006-04-28",
+                      "title": "A Talk With George",
+                      "video": false,
+                      "disambiguation": "",
+                      "length": 185000,
+                      "id": "5d5d6b09-4de5-42ae-a3a8-d72395696527"
+                    },
+                    "position": 51,
+                    "title": "A Talk With George",
+                    "length": null,
+                    "number": "51",
+                    "id": "3f196dcf-5cc3-32d8-ae8b-2da551d986dd"
+                  },
+                  {
+                    "position": 52,
+                    "title": "Don't Talk to Strangers",
+                    "recording": {
+                      "video": false,
+                      "title": "Don’t Talk to Strangers",
+                      "first-release-date": "2006-04-28",
+                      "id": "ba1f50a5-4757-43cc-ba0f-25e46379901c",
+                      "length": 189266,
+                      "disambiguation": ""
+                    },
+                    "number": "52",
+                    "id": "29a340e1-4182-33d2-a347-d9b0209fd34d",
+                    "length": null
+                  },
+                  {
+                    "number": "53",
+                    "id": "544b3fe5-4346-373f-88a0-0c6c43fb4a2a",
+                    "length": null,
+                    "position": 53,
+                    "title": "Stroller Town",
+                    "recording": {
+                      "id": "a9f7a0e7-de16-436d-8472-d2d40e6bcd43",
+                      "length": 166906,
+                      "disambiguation": "",
+                      "video": false,
+                      "first-release-date": "2006-04-28",
+                      "title": "Stroller Town"
+                    }
+                  },
+                  {
+                    "number": "54",
+                    "id": "11c6a355-054a-300d-8d22-7892471d89a8",
+                    "length": null,
+                    "position": 54,
+                    "title": "Re Your Brains",
+                    "recording": {
+                      "length": 272746,
+                      "id": "9ed08060-236b-4794-9901-612a34a86382",
+                      "disambiguation": "",
+                      "video": false,
+                      "title": "Re: Your Brains",
+                      "first-release-date": "2006-04-28"
+                    }
+                  },
+                  {
+                    "id": "e4c3ded4-c88b-32f3-b765-793d506d0c4e",
+                    "number": "55",
+                    "length": null,
+                    "title": "Madelaine",
+                    "position": 55,
+                    "recording": {
+                      "disambiguation": "",
+                      "length": 222666,
+                      "id": "4e1b55bf-8803-43f2-b84d-4a3e86786bc8",
+                      "title": "Madelaine",
+                      "first-release-date": "2006-04-28",
+                      "video": false
+                    }
+                  },
+                  {
+                    "length": null,
+                    "number": "56",
+                    "id": "8f525ac5-28c7-3e92-b212-d01f1d76063e",
+                    "recording": {
+                      "length": 232000,
+                      "id": "a0ac0678-8aac-4b28-9c4f-01be9fe60481",
+                      "disambiguation": "",
+                      "video": false,
+                      "title": "When You Go",
+                      "first-release-date": "2006-04-28"
+                    },
+                    "title": "When You Go",
+                    "position": 56
+                  },
+                  {
+                    "recording": {
+                      "length": 189280,
+                      "id": "83306c31-9312-4cbd-a6e4-07b99d6c501b",
+                      "disambiguation": "",
+                      "video": false,
+                      "title": "Code Monkey",
+                      "first-release-date": "2006-04-28"
+                    },
+                    "title": "Code Monkey",
+                    "position": 57,
+                    "length": null,
+                    "id": "c47d4c0b-7769-32f5-bb19-243f90aef99a",
+                    "number": "57"
+                  },
+                  {
+                    "number": "58",
+                    "id": "01ca8918-d22d-3c29-8b32-0d78fb616269",
+                    "length": null,
+                    "position": 58,
+                    "title": "The Presidents",
+                    "recording": {
+                      "title": "The Presidents",
+                      "first-release-date": "2006-04-28",
+                      "video": false,
+                      "disambiguation": "",
+                      "id": "783db64f-de37-46a2-bd97-ef888dd11a0f",
+                      "length": 248933
+                    }
+                  },
+                  {
+                    "recording": {
+                      "id": "f2b4670d-e960-42cf-a9c6-a36046f60789",
+                      "length": 133013,
+                      "disambiguation": "",
+                      "video": false,
+                      "first-release-date": "2006-07-07",
+                      "title": "Just as Long as Me"
+                    },
+                    "position": 59,
+                    "title": "Just as Long as Me",
+                    "length": null,
+                    "id": "a5003147-b047-387a-bd34-7fcd71a405a3",
+                    "number": "59"
+                  },
+                  {
+                    "recording": {
+                      "id": "7895d7dc-c07b-4a6a-bc86-e978a4edc036",
+                      "length": 209840,
+                      "disambiguation": "",
+                      "video": false,
+                      "title": "Till the Money Comes",
+                      "first-release-date": "2006-07-07"
+                    },
+                    "title": "Till the Money Comes",
+                    "position": 60,
+                    "length": null,
+                    "number": "60",
+                    "id": "8a436736-9b77-3dd9-a458-1dbb6e6bbe33"
+                  },
+                  {
+                    "id": "913ed888-00ed-3dc7-803c-a5bf5b9b63f7",
+                    "number": "61",
+                    "length": null,
+                    "position": 61,
+                    "title": "Tom Cruise Crazy",
+                    "recording": {
+                      "disambiguation": "",
+                      "length": null,
+                      "id": "c83eb313-d428-487f-862b-80d0eee8ed84",
+                      "first-release-date": "2012-01",
+                      "title": "Tom Cruise Crazy",
+                      "video": false
+                    }
+                  },
+                  {
+                    "recording": {
+                      "first-release-date": "2006-07-07",
+                      "title": "Famous Blue Raincoat",
+                      "video": false,
+                      "disambiguation": "",
+                      "id": "f5017a2d-5d00-4dfd-a9b1-ac33a73bbe3a",
+                      "length": 240560
+                    },
+                    "position": 62,
+                    "title": "Famous Blue Raincoat",
+                    "length": null,
+                    "id": "efa6a099-6f1e-367f-b2df-25fcd6a02eb4",
+                    "number": "62"
+                  },
+                  {
+                    "title": "Soft Rocked By Me",
+                    "position": 63,
+                    "recording": {
+                      "title": "Soft Rocked by Me",
+                      "first-release-date": "2006-07-07",
+                      "video": false,
+                      "disambiguation": "",
+                      "length": 259146,
+                      "id": "433b52a4-68d4-4b7f-b973-7eaa4e7a914b"
+                    },
+                    "id": "76b97b15-759a-3d99-8e01-0980a41d03f4",
+                    "number": "63",
+                    "length": null
+                  },
+                  {
+                    "id": "40293787-40cb-33ac-a7cb-6a3adf4811c6",
+                    "number": "64",
+                    "length": null,
+                    "position": 64,
+                    "title": "Not About You",
+                    "recording": {
+                      "id": "44576260-d3d4-43f4-81a6-6b5be93991d5",
+                      "length": 132400,
+                      "disambiguation": "",
+                      "video": false,
+                      "first-release-date": "2006-07-07",
+                      "title": "Not About You"
+                    }
+                  },
+                  {
+                    "number": "65",
+                    "id": "b1e19fc5-3501-332b-9891-d6f24c027ec8",
+                    "length": null,
+                    "position": 65,
+                    "title": "Rock and Roll Boy",
+                    "recording": {
+                      "first-release-date": "2006-07-07",
+                      "title": "Rock and Roll Boy",
+                      "video": false,
+                      "disambiguation": "",
+                      "id": "b50f5113-d4dd-4ffd-aecc-d6d70eeec915",
+                      "length": 208413
+                    }
+                  },
+                  {
+                    "id": "9fcf4555-e999-3560-b412-945bcd24d374",
+                    "number": "66",
+                    "length": null,
+                    "position": 66,
+                    "title": "Drinking with You",
+                    "recording": {
+                      "title": "Drinking With You",
+                      "first-release-date": "2006-07-07",
+                      "video": false,
+                      "disambiguation": "",
+                      "id": "0791290a-52cc-49f5-a3d9-a364c23dcc34",
+                      "length": 211200
+                    }
+                  },
+                  {
+                    "position": 67,
+                    "title": "Pizza Day",
+                    "recording": {
+                      "length": 189053,
+                      "id": "8d430423-0984-4be5-8148-d8eaeb45ebe8",
+                      "disambiguation": "",
+                      "video": false,
+                      "title": "Pizza Day",
+                      "first-release-date": "2006-07-07"
+                    },
+                    "number": "67",
+                    "id": "398f0695-dc87-3a16-b084-3ba412fa441d",
+                    "length": null
+                  },
+                  {
+                    "recording": {
+                      "video": false,
+                      "title": "SkyMall",
+                      "first-release-date": "2006-07-07",
+                      "length": 235213,
+                      "id": "fa554204-8621-4ba1-a6fb-a9c29d3c861c",
+                      "disambiguation": ""
+                    },
+                    "title": "SkyMall",
+                    "position": 68,
+                    "length": null,
+                    "id": "fec8b65c-08b6-3726-804d-0a23ff07c301",
+                    "number": "68"
+                  },
+                  {
+                    "recording": {
+                      "video": false,
+                      "title": "Seahorse",
+                      "first-release-date": "2006-09-29",
+                      "length": 208786,
+                      "id": "e87d05cc-aa03-40d4-89ca-7b0ee63f7ae1",
+                      "disambiguation": ""
+                    },
+                    "title": "Seahorse",
+                    "position": 69,
+                    "length": null,
+                    "id": "44036657-862f-312d-9ffe-eb96e3c26590",
+                    "number": "69"
+                  },
+                  {
+                    "number": "70",
+                    "id": "6d4d6286-d7a0-358c-a526-0db36dc32cb2",
+                    "length": null,
+                    "position": 70,
+                    "title": "Creepy Doll",
+                    "recording": {
+                      "first-release-date": "2006-09-29",
+                      "title": "Creepy Doll",
+                      "video": false,
+                      "disambiguation": "",
+                      "length": 240080,
+                      "id": "37eadc3c-23fd-4e77-b2f4-77e62630c265"
+                    }
+                  },
+                  {
+                    "length": null,
+                    "id": "9c761ae7-09bf-386c-af2c-9ae350718ad7",
+                    "number": "71",
+                    "recording": {
+                      "length": 216520,
+                      "id": "e39a8e17-6ed1-45dd-9afd-3174de8063fb",
+                      "disambiguation": "",
+                      "video": false,
+                      "first-release-date": "2006-09-29",
+                      "title": "Under the Pines"
+                    },
+                    "title": "Under the Pines",
+                    "position": 71
+                  },
+                  {
+                    "number": "72",
+                    "id": "7b33a37a-72bd-3f4d-bdb9-8ef3eb2cf0d3",
+                    "length": null,
+                    "position": 72,
+                    "title": "Big Bad World One",
+                    "recording": {
+                      "video": false,
+                      "first-release-date": "2006-09-29",
+                      "title": "Big Bad World One",
+                      "length": 170400,
+                      "id": "faa182af-7fdf-4f62-8349-e1c1afb790b5",
+                      "disambiguation": ""
+                    }
+                  },
+                  {
+                    "recording": {
+                      "video": false,
+                      "first-release-date": "2006-09-29",
+                      "title": "Mr. Fancy Pants",
+                      "id": "f62fb24b-cf40-49d3-80cb-0ee9d5446478",
+                      "length": 79453,
+                      "disambiguation": ""
+                    },
+                    "title": "Mr. Fancy Pants",
+                    "position": 73,
+                    "length": null,
+                    "number": "73",
+                    "id": "cddc764c-ebe7-3ce2-a145-11ddb8409a65"
+                  },
+                  {
+                    "recording": {
+                      "disambiguation": "",
+                      "id": "579f4315-9a82-44f2-a97d-730fdb3eb935",
+                      "length": 136933,
+                      "first-release-date": "2006-09-29",
+                      "title": "You Ruined Everything",
+                      "video": false
+                    },
+                    "title": "You Ruined Everything",
+                    "position": 74,
+                    "length": null,
+                    "id": "c71035bd-4211-39e7-aa70-fb66843d4c81",
+                    "number": "74"
+                  },
+                  {
+                    "id": "9c089e4a-d278-3bf3-9f11-a0ff2cffa771",
+                    "number": "75",
+                    "length": null,
+                    "position": 75,
+                    "title": "I'm Your Moon",
+                    "recording": {
+                      "disambiguation": "",
+                      "id": "d070163a-4136-4ade-a05c-29812e94b4bf",
+                      "length": 192586,
+                      "title": "I’m Your Moon",
+                      "first-release-date": "2006-09-29",
+                      "video": false
+                    }
+                  },
+                  {
+                    "id": "374e5d77-d708-3cac-805d-0242cd97c3f1",
+                    "number": "76",
+                    "length": null,
+                    "position": 76,
+                    "title": "The Big Boom",
+                    "recording": {
+                      "length": 157320,
+                      "id": "75a3a4c3-8703-4b0d-b212-ca427c8d7ec7",
+                      "disambiguation": "",
+                      "video": false,
+                      "title": "The Big Boom",
+                      "first-release-date": "2006-09-29"
+                    }
+                  },
+                  {
+                    "number": "77",
+                    "id": "4e753f24-040a-3c4a-add2-1bd025d26064",
+                    "length": null,
+                    "position": 77,
+                    "title": "Make You Cry",
+                    "recording": {
+                      "length": 189120,
+                      "id": "74fcf9c6-7897-421c-8370-30e9f9b1c74b",
+                      "disambiguation": "",
+                      "video": false,
+                      "first-release-date": "2006-09-29",
+                      "title": "Make You Cry"
+                    }
+                  },
+                  {
+                    "number": "78",
+                    "id": "5fc764e1-fecc-34ac-a419-71802720a8d2",
+                    "length": null,
+                    "position": 78,
+                    "title": "Pull the String",
+                    "recording": {
+                      "video": false,
+                      "first-release-date": "2006-09-29",
+                      "title": "Pull the String",
+                      "id": "3177e4d8-9bcb-4304-b68e-07ed023fba4c",
+                      "length": 149933,
+                      "disambiguation": ""
+                    }
+                  },
+                  {
+                    "length": null,
+                    "number": "79",
+                    "id": "a94b88f0-6405-32ed-8f70-2dd7767c5585",
+                    "recording": {
+                      "title": "Summer’s Over",
+                      "first-release-date": "2006-09-29",
+                      "video": false,
+                      "disambiguation": "",
+                      "length": 176933,
+                      "id": "6800fdac-7d82-4f6f-bbb2-15a1e972baf2"
+                    },
+                    "position": 79,
+                    "title": "Summer's Over"
+                  },
+                  {
+                    "number": "80",
+                    "id": "50e89f9a-eaab-38c0-aabf-5f121db44f2b",
+                    "length": null,
+                    "title": "We Will Rock You",
+                    "position": 80,
+                    "recording": {
+                      "id": "4db4553c-017f-4dca-9217-cb22031d8f2b",
+                      "length": 114040,
+                      "disambiguation": "",
+                      "video": false,
+                      "title": "We Will Rock You",
+                      "first-release-date": "2006-12-15"
+                    }
+                  },
+                  {
+                    "id": "d9f24386-d4ea-376f-ad96-ad33f4f13be4",
+                    "number": "81",
+                    "length": null,
+                    "position": 81,
+                    "title": "We Are the Champions",
+                    "recording": {
+                      "first-release-date": "2006-12-15",
+                      "title": "We Are the Champions",
+                      "video": false,
+                      "disambiguation": "",
+                      "id": "7ba59df4-753c-4df7-8ed3-e5af21773c19",
+                      "length": 133066
+                    }
+                  },
+                  {
+                    "recording": {
+                      "first-release-date": "2005-08",
+                      "title": "That Spells DNA",
+                      "video": false,
+                      "disambiguation": "",
+                      "id": "581c0028-660d-4cee-8db8-d56e7e4d12e6",
+                      "length": 191000
+                    },
+                    "title": "That Spells DNA",
+                    "position": 82,
+                    "length": null,
+                    "id": "44f3e45c-ed1e-3b6c-bb2d-8746f93c7ded",
+                    "number": "82"
+                  },
+                  {
+                    "recording": {
+                      "length": 183000,
+                      "id": "9387420a-0cc2-485d-ae7a-6298270148e3",
+                      "disambiguation": "",
+                      "video": false,
+                      "first-release-date": "2005-08",
+                      "title": "I Feel Fantastic"
+                    },
+                    "title": "I Feel Fantastic",
+                    "position": 83,
+                    "length": null,
+                    "number": "83",
+                    "id": "bf5b0843-2f3d-3c61-95b8-fc5bdee297be"
+                  },
+                  {
+                    "title": "Womb with a View",
+                    "position": 84,
+                    "recording": {
+                      "disambiguation": "",
+                      "id": "fd406ede-7472-4215-8800-b61018efc4b5",
+                      "length": 248000,
+                      "first-release-date": "2005-08",
+                      "title": "Womb With a View",
+                      "video": false
+                    },
+                    "id": "f22fbcdd-5345-3a95-8da4-02a17462a65a",
+                    "number": "84",
+                    "length": null
+                  },
+                  {
+                    "title": "Todd the T1000",
+                    "position": 85,
+                    "recording": {
+                      "title": "Todd the T1000",
+                      "first-release-date": "2005-08",
+                      "video": false,
+                      "disambiguation": "",
+                      "id": "1eee6b50-2c5a-49da-8544-cd86f2b0aa95",
+                      "length": 226000
+                    },
+                    "number": "85",
+                    "id": "b1bc5eeb-1c52-3723-8843-5b2d5212e7c5",
+                    "length": null
+                  },
+                  {
+                    "length": null,
+                    "number": "86",
+                    "id": "6ec6d724-39b2-3512-9f5b-f5289ceff5dc",
+                    "recording": {
+                      "disambiguation": "",
+                      "length": 195000,
+                      "id": "9a608ce2-9139-4da8-a88a-2f5371f49464",
+                      "first-release-date": "2005-08",
+                      "title": "Better",
+                      "video": false
+                    },
+                    "position": 86,
+                    "title": "Better"
+                  },
+                  {
+                    "recording": {
+                      "disambiguation": "",
+                      "length": 229000,
+                      "id": "5c627a87-37fc-432f-baf0-8a28f64d0269",
+                      "title": "The Future Soon",
+                      "first-release-date": "2004-10",
+                      "video": false
+                    },
+                    "position": 87,
+                    "title": "The Future Soon",
+                    "length": null,
+                    "number": "87",
+                    "id": "6cf01a07-0a8f-390d-88b3-6d76ffe05f1d"
+                  },
+                  {
+                    "recording": {
+                      "video": false,
+                      "first-release-date": "2004-10",
+                      "title": "Skullcrusher Mountain",
+                      "id": "8035b3eb-fa89-453d-80c1-2693e3e7e05c",
+                      "length": 256386,
+                      "disambiguation": ""
+                    },
+                    "position": 88,
+                    "title": "Skullcrusher Mountain",
+                    "length": null,
+                    "number": "88",
+                    "id": "5551551d-b37e-322e-bb65-516f55ddfd9d"
+                  },
+                  {
+                    "title": "I Crush Everything",
+                    "position": 89,
+                    "recording": {
+                      "length": 283000,
+                      "id": "18396d42-16a5-4b3f-8af3-93ff053b08f4",
+                      "disambiguation": "",
+                      "video": false,
+                      "title": "I Crush Everything",
+                      "first-release-date": "2004-10"
+                    },
+                    "id": "6ce125c4-b9a0-3466-aa00-c95709fa1e6b",
+                    "number": "89",
+                    "length": null
+                  },
+                  {
+                    "recording": {
+                      "disambiguation": "",
+                      "length": 185640,
+                      "id": "8e61f617-defa-49d6-9a14-bfb43e2dac98",
+                      "title": "Betty and Me",
+                      "first-release-date": "2004-10",
+                      "video": false
+                    },
+                    "position": 90,
+                    "title": "Betty and Me",
+                    "length": null,
+                    "id": "476edbc1-cfc6-3615-a3cf-f1b31836339b",
+                    "number": "90"
+                  },
+                  {
+                    "length": null,
+                    "number": "91",
+                    "id": "6b832e1a-ec95-382c-870b-00103b55583f",
+                    "recording": {
+                      "id": "9f8e2309-c091-4529-a3ff-5c06e60b56cc",
+                      "length": null,
+                      "disambiguation": "",
+                      "video": false,
+                      "first-release-date": "2012-01",
+                      "title": "Mandelbrot Set"
+                    },
+                    "position": 91,
+                    "title": "Mandelbrot Set"
+                  },
+                  {
+                    "number": "92",
+                    "id": "02a4de6c-ec1f-3b63-ab6d-e1698d27c4a8",
+                    "length": null,
+                    "position": 92,
+                    "title": "I'm Having a Party",
+                    "recording": {
+                      "length": 207160,
+                      "id": "101315b7-e9fa-4eae-a5f3-bd4228701aa4",
+                      "disambiguation": "",
+                      "video": false,
+                      "title": "I’m Having a Party",
+                      "first-release-date": "2003-11-05"
+                    }
+                  },
+                  {
+                    "title": "Bozo's Lament",
+                    "position": 93,
+                    "recording": {
+                      "video": false,
+                      "title": "Bozo’s Lament",
+                      "first-release-date": "2003-11-05",
+                      "length": 159706,
+                      "id": "c390413b-25d2-4ff4-a9e0-366be2bad411",
+                      "disambiguation": ""
+                    },
+                    "id": "57506e26-fea9-3952-b502-95238adc5024",
+                    "number": "93",
+                    "length": null
+                  },
+                  {
+                    "recording": {
+                      "length": 211146,
+                      "id": "aa7d601f-00ec-42cf-8df7-6fc70ccab882",
+                      "disambiguation": "",
+                      "video": false,
+                      "first-release-date": "2003-11-05",
+                      "title": "Kenesaw Mountain Landis"
+                    },
+                    "position": 94,
+                    "title": "Kenesaw Mountain Landis",
+                    "length": null,
+                    "id": "7166fc9b-4270-319d-9c20-b80298a8cc16",
+                    "number": "94"
+                  },
+                  {
+                    "number": "95",
+                    "id": "e9b14576-f310-3948-ab4d-a28672115061",
+                    "length": null,
+                    "title": "Ikea",
+                    "position": 95,
+                    "recording": {
+                      "disambiguation": "",
+                      "length": 183520,
+                      "id": "79ecab83-d46e-4d7a-abc5-e9af2ef49db8",
+                      "title": "Ikea",
+                      "first-release-date": "2003-11-05",
+                      "video": false
+                    }
+                  },
+                  {
+                    "position": 96,
+                    "title": "I Hate California",
+                    "recording": {
+                      "title": "I Hate California",
+                      "first-release-date": "2003-11-05",
+                      "video": false,
+                      "disambiguation": "",
+                      "id": "74b36199-2e0e-4bbf-8577-3ee4195e3871",
+                      "length": 188200
+                    },
+                    "id": "a481aa4a-56c7-3f9c-8a2d-9c869a9e655e",
+                    "number": "96",
+                    "length": null
+                  },
+                  {
+                    "position": 97,
+                    "title": "Christmas Is Interesting",
+                    "recording": {
+                      "video": false,
+                      "title": "Christmas Is Interesting",
+                      "first-release-date": "2003-11-05",
+                      "id": "1ee088a1-4082-478b-b888-74d033ee73d9",
+                      "length": 233906,
+                      "disambiguation": ""
+                    },
+                    "number": "97",
+                    "id": "84aed8b3-8755-3187-a87c-dba13de572e2",
+                    "length": null
+                  },
+                  {
+                    "recording": {
+                      "disambiguation": "",
+                      "id": "6f93393f-aba6-4e26-9630-b82530229de8",
+                      "length": 214506,
+                      "title": "Over There",
+                      "first-release-date": "2003-11-05",
+                      "video": false
+                    },
+                    "title": "Over There",
+                    "position": 98,
+                    "length": null,
+                    "id": "7ea3b467-bc3d-3f01-ab6b-c0ae968c3bc7",
+                    "number": "98"
+                  },
+                  {
+                    "length": null,
+                    "id": "33993ba5-bac4-35c9-9727-216eac672246",
+                    "number": "99",
+                    "recording": {
+                      "disambiguation": "",
+                      "id": "e1eec2f1-f2cd-45f6-b79d-507a0157f683",
+                      "length": 263546,
+                      "title": "Millionaire Girlfriend",
+                      "first-release-date": "2003-11-05",
+                      "video": false
+                    },
+                    "title": "Millionaire Girlfriend",
+                    "position": 99
+                  },
+                  {
+                    "number": "100",
+                    "id": "c4c153bd-ed77-3d8d-9223-9633d8a4bdc2",
+                    "length": null,
+                    "title": "First of May",
+                    "position": 100,
+                    "recording": {
+                      "disambiguation": "",
+                      "id": "0b51ec3b-f06d-4256-8fc6-343f51c00143",
+                      "length": 250426,
+                      "title": "First of May",
+                      "first-release-date": "2003-11-05",
+                      "video": false
+                    }
+                  },
+                  {
+                    "length": null,
+                    "id": "d1bfc1f7-8e82-38d9-9820-c7ae8b77ea29",
+                    "number": "101",
+                    "recording": {
+                      "first-release-date": "2003-11-05",
+                      "title": "De‐Evolving",
+                      "video": false,
+                      "disambiguation": "",
+                      "length": 278546,
+                      "id": "c9ca4ad7-90e7-4d5e-92f3-f6b4bff87acb"
+                    },
+                    "position": 101,
+                    "title": "De-Evolving"
+                  },
+                  {
+                    "title": "I'm a Mason Now",
+                    "position": 102,
+                    "recording": {
+                      "title": "I’m a Mason Now",
+                      "first-release-date": "2003-11-05",
+                      "video": false,
+                      "disambiguation": "",
+                      "id": "b11fc5b1-7e7a-498e-b19f-4a67c4cb6b29",
+                      "length": 137400
+                    },
+                    "number": "102",
+                    "id": "08559bd0-835c-3a1a-b45e-19b1e18fc5b0",
+                    "length": null
+                  },
+                  {
+                    "title": "Overhead",
+                    "position": 103,
+                    "recording": {
+                      "title": "Overhead",
+                      "first-release-date": "2003-11-05",
+                      "video": false,
+                      "disambiguation": "",
+                      "length": 201706,
+                      "id": "935cdddf-2dd4-4472-82a7-680c15d9ae82"
+                    },
+                    "number": "103",
+                    "id": "b285f612-6eaa-32b5-b0d0-215b40010147",
+                    "length": null
+                  },
+                  {
+                    "id": "497bc3ae-d3e1-3acd-b55d-21b396e3ea4a",
+                    "number": "104",
+                    "length": null,
+                    "title": "Screwed (Demo)",
+                    "position": 104,
+                    "recording": {
+                      "video": false,
+                      "first-release-date": "2005",
+                      "title": "Screwed (demo)",
+                      "length": 235000,
+                      "id": "bd02c508-b062-4eae-80fd-b5b653b76bb6",
+                      "disambiguation": ""
+                    }
+                  },
+                  {
+                    "title": "Bills, Bills, Bills",
+                    "position": 105,
+                    "recording": {
+                      "disambiguation": "",
+                      "length": 197000,
+                      "id": "ec2b01fc-9eb8-40f0-9231-8caf216d0d34",
+                      "first-release-date": "2005",
+                      "title": "Bills, Bills, Bills",
+                      "video": false
+                    },
+                    "id": "a94b8f3a-123b-36d1-b659-a781f0e6f09e",
+                    "number": "105",
+                    "length": null
+                  },
+                  {
+                    "recording": {
+                      "first-release-date": "2005",
+                      "title": "A Laptop Like You",
+                      "video": false,
+                      "disambiguation": "Demo",
+                      "length": 205000,
+                      "id": "c06651be-0d5f-4252-8dd8-c8c90f101a1c"
+                    },
+                    "title": "A Laptop Like You (Demo)",
+                    "position": 106,
+                    "length": null,
+                    "number": "106",
+                    "id": "96ee3ce6-6650-3a26-a24e-8b7e2b147837"
+                  },
+                  {
+                    "title": "Bacteria",
+                    "position": 107,
+                    "recording": {
+                      "title": "Bacteria",
+                      "first-release-date": "2005",
+                      "video": false,
+                      "disambiguation": "",
+                      "id": "7bb7a4ce-f204-459b-8e29-1496b040518c",
+                      "length": 155000
+                    },
+                    "number": "107",
+                    "id": "d705a4e7-a74d-3048-9d05-58f31f6f885a",
+                    "length": null
+                  },
+                  {
+                    "recording": {
+                      "disambiguation": "Demo",
+                      "id": "5f4cb89b-7415-4beb-bf73-a463005aa34f",
+                      "length": 252000,
+                      "first-release-date": "2005",
+                      "title": "Brookline",
+                      "video": false
+                    },
+                    "position": 108,
+                    "title": "Brookline (Demo)",
+                    "length": null,
+                    "number": "108",
+                    "id": "c11c0822-d88c-3996-98f0-7b291ed3b924"
+                  },
+                  {
+                    "recording": {
+                      "disambiguation": "Demo",
+                      "length": 196000,
+                      "id": "e0ffa593-a1df-4624-8e71-3ed2fb57fdac",
+                      "first-release-date": "2005",
+                      "title": "Dance, Soterios Johnson, Dance",
+                      "video": false
+                    },
+                    "position": 109,
+                    "title": "Dance, Soterios Johnson, Dance (Demo)",
+                    "length": null,
+                    "number": "109",
+                    "id": "46edc023-9bfe-3713-8a44-1610ffa7948d"
+                  },
+                  {
+                    "recording": {
+                      "first-release-date": "2005",
+                      "title": "Beds Hurt My Booty",
+                      "video": false,
+                      "disambiguation": "",
+                      "length": 73000,
+                      "id": "5ede20b9-299f-4ea1-a6c7-0bde72dfcefc"
+                    },
+                    "position": 110,
+                    "title": "Beds Hurt My Booty",
+                    "length": null,
+                    "id": "f09d26ec-4804-3efb-bf23-02870f8b50b7",
+                    "number": "110"
+                  },
+                  {
+                    "recording": {
+                      "disambiguation": "Demo",
+                      "id": "8fdc420a-4cf4-4a55-998d-57706cac8002",
+                      "length": 288000,
+                      "first-release-date": "2005",
+                      "title": "I Crush Everything",
+                      "video": false
+                    },
+                    "title": "I Crush Everything (Demo)",
+                    "position": 111,
+                    "length": null,
+                    "id": "79c71f4b-76ae-3681-a051-81ed2beba499",
+                    "number": "111"
+                  },
+                  {
+                    "length": null,
+                    "number": "112",
+                    "id": "3c9f0b7d-3de6-3d62-81fb-273a76b1a609",
+                    "recording": {
+                      "first-release-date": "2005",
+                      "title": "Skullcrusher Mountain",
+                      "video": false,
+                      "disambiguation": "Demo",
+                      "id": "1d7d29b2-8976-458b-80fa-81f150830005",
+                      "length": 252000
+                    },
+                    "title": "Skullcrusher Mountain (Demo)",
+                    "position": 112
+                  },
+                  {
+                    "number": "113",
+                    "id": "3cd0271b-d3bf-351b-abd9-7b0c53750c27",
+                    "length": null,
+                    "position": 113,
+                    "title": "The Future Soon (Demo)",
+                    "recording": {
+                      "first-release-date": "2005",
+                      "title": "The Future Soon",
+                      "video": false,
+                      "disambiguation": "Demo",
+                      "length": 232000,
+                      "id": "bb5771a5-570c-412f-8000-a9209efd43ec"
+                    }
+                  },
+                  {
+                    "number": "114",
+                    "id": "529b0ff5-faf9-328e-a730-db747c17043d",
+                    "length": null,
+                    "title": "Gambler's Prayer (Demo)",
+                    "position": 114,
+                    "recording": {
+                      "title": "Gambler’s Prayer",
+                      "first-release-date": "2005",
+                      "video": false,
+                      "disambiguation": "",
+                      "length": 261000,
+                      "id": "242ebd1c-950c-425c-8af1-07a75a2eb62c"
+                    }
+                  },
+                  {
+                    "title": "Mandelbrot Set (Demo)",
+                    "position": 115,
+                    "recording": {
+                      "title": "Mandelbrot Set",
+                      "first-release-date": "2005",
+                      "video": false,
+                      "disambiguation": "Demo",
+                      "id": "2ebec4a7-fb22-4744-aa41-27a950bd78ea",
+                      "length": 240000
+                    },
+                    "id": "70f5677b-d3a3-3615-bbd0-b4a71a90a224",
+                    "number": "115",
+                    "length": null
+                  },
+                  {
+                    "recording": {
+                      "id": "5042a3bc-9f79-405a-8905-966aa37c1a6b",
+                      "length": 140000,
+                      "disambiguation": "",
+                      "video": false,
+                      "first-release-date": "2005",
+                      "title": "Camp Bachelor Alma Mater"
+                    },
+                    "title": "Camp Bachelor Alma Mater",
+                    "position": 116,
+                    "length": null,
+                    "number": "116",
+                    "id": "a50d4287-9fe0-35b1-89fc-fde6a275c6d0"
+                  },
+                  {
+                    "length": null,
+                    "id": "6f6b2eb0-6857-348b-8d11-52290b428788",
+                    "number": "117",
+                    "recording": {
+                      "id": "ee2866b1-93c0-4760-886a-12a84b1d5287",
+                      "length": 237000,
+                      "disambiguation": "",
+                      "video": false,
+                      "title": "You Oughta Know",
+                      "first-release-date": "2012-01"
+                    },
+                    "position": 117,
+                    "title": "You Oughta Know"
+                  },
+                  {
+                    "length": null,
+                    "id": "2b8852e1-2cfd-3598-a2c9-d72e216d2c56",
+                    "number": "118",
+                    "recording": {
+                      "title": "Code Monkey",
+                      "first-release-date": "2012-01",
+                      "video": false,
+                      "disambiguation": "PG version 2, backmasked swearing",
+                      "id": "6bebfad1-9cf0-4a89-8800-6b5c76552e50",
+                      "length": 187000
+                    },
+                    "title": "Code Monkey (PG)",
+                    "position": 118
+                  },
+                  {
+                    "position": 119,
+                    "title": "Mandelbrot Set (PG)",
+                    "recording": {
+                      "video": false,
+                      "title": "Mandelbrot Set",
+                      "first-release-date": "2012-01",
+                      "id": "e15583fe-699c-4a6e-ac08-34bdb3c34cca",
+                      "length": 261000,
+                      "disambiguation": "PG version"
+                    },
+                    "number": "119",
+                    "id": "78ce58ff-0533-3ce1-9644-0fc8adbc85ea",
+                    "length": null
+                  },
+                  {
+                    "title": "Intro 1",
+                    "position": 120,
+                    "recording": {
+                      "length": 63000,
+                      "id": "838b4bac-f509-499f-abb2-275bbe263f96",
+                      "disambiguation": "live, 2009‐05‐14: Belly Up, Solana Beach, CA, USA",
+                      "video": false,
+                      "title": "Intro 1",
+                      "first-release-date": "2012-01"
+                    },
+                    "number": "120",
+                    "id": "178f358c-bdcb-384c-be1d-32b6405d95e9",
+                    "length": null
+                  },
+                  {
+                    "number": "121",
+                    "id": "3827602f-95fe-317c-8a09-5f8adb11bcec",
+                    "length": null,
+                    "title": "Shop Vac",
+                    "position": 121,
+                    "recording": {
+                      "first-release-date": "2012-01",
+                      "title": "Shop Vac",
+                      "video": false,
+                      "disambiguation": "live, 2009‐05‐14: Belly Up, Solana Beach, CA, USA",
+                      "length": 203000,
+                      "id": "49ac5757-8096-4ac8-8c2a-0b0b8caec635"
+                    }
+                  },
+                  {
+                    "position": 122,
+                    "title": "Mandelbrot Set",
+                    "recording": {
+                      "length": 223000,
+                      "id": "6760cbd8-c300-49df-aaa7-c80bf3067ba3",
+                      "disambiguation": "live, 2009‐05‐14: Belly Up, Solana Beach, CA, USA",
+                      "video": false,
+                      "first-release-date": "2012-01",
+                      "title": "Mandelbrot Set"
+                    },
+                    "number": "122",
+                    "id": "eb6989b0-45e0-3382-b459-378473f87f9a",
+                    "length": null
+                  },
+                  {
+                    "position": 123,
+                    "title": "Intro 2",
+                    "recording": {
+                      "video": false,
+                      "first-release-date": "2012-01",
+                      "title": "Intro 2",
+                      "id": "a246d2d6-a8e5-4702-afa3-dbccede4fbaa",
+                      "length": 88000,
+                      "disambiguation": "live, 2009‐05‐14: Belly Up, Solana Beach, CA, USA"
+                    },
+                    "id": "2ea90307-1fe3-3465-8b96-03de5f85d2d3",
+                    "number": "123",
+                    "length": null
+                  },
+                  {
+                    "number": "124",
+                    "id": "4806ca43-84c7-3ee4-8bcf-891d9b6ce2f1",
+                    "length": null,
+                    "title": "Millionaire Girlfriend",
+                    "position": 124,
+                    "recording": {
+                      "video": false,
+                      "first-release-date": "2012-01",
+                      "title": "Millionaire Girlfriend",
+                      "length": 249000,
+                      "id": "36fba3f6-7200-4d86-9903-b7fa979727b0",
+                      "disambiguation": "live, 2009‐05‐14: Belly Up, Solana Beach, CA, USA"
+                    }
+                  },
+                  {
+                    "length": null,
+                    "number": "125",
+                    "id": "6ab3b2eb-8a38-3e40-b389-b343f10addb6",
+                    "recording": {
+                      "first-release-date": "2012-01",
+                      "title": "Intro 3",
+                      "video": false,
+                      "disambiguation": "live, 2009‐05‐14: Belly Up, Solana Beach, CA, USA",
+                      "length": 187000,
+                      "id": "472d17d6-4ea2-4f5b-98b0-58ae6fff0273"
+                    },
+                    "position": 125,
+                    "title": "Intro 3"
+                  },
+                  {
+                    "number": "126",
+                    "id": "fdea620e-c971-3eed-85db-264c6cca91a3",
+                    "length": null,
+                    "title": "I'm Your Moon",
+                    "position": 126,
+                    "recording": {
+                      "disambiguation": "live, 2009‐05‐14: Belly Up, Solana Beach, CA, USA",
+                      "id": "40f9613c-58a5-4fbd-9daa-6f60019fdb46",
+                      "length": 202000,
+                      "first-release-date": "2012-01",
+                      "title": "I'm Your Moon",
+                      "video": false
+                    }
+                  },
+                  {
+                    "recording": {
+                      "video": false,
+                      "first-release-date": "2012-01",
+                      "title": "Intro 4",
+                      "id": "c323b904-b4b2-411b-bee5-eeb9da7d9729",
+                      "length": 39000,
+                      "disambiguation": "live, 2009‐05‐14: Belly Up, Solana Beach, CA, USA"
+                    },
+                    "title": "Intro 4",
+                    "position": 127,
+                    "length": null,
+                    "id": "58a52afd-b441-30b5-bc5c-f2c34bccd60a",
+                    "number": "127"
+                  },
+                  {
+                    "length": null,
+                    "number": "128",
+                    "id": "1b5ee768-7ee4-3e05-97c7-b5311fabebe9",
+                    "recording": {
+                      "disambiguation": "live, 2009‐05‐14: Belly Up, Solana Beach, CA, USA",
+                      "id": "e4c35b99-d8fc-4f44-bdb6-27d5c005420a",
+                      "length": 167000,
+                      "title": "Big Bad World One",
+                      "first-release-date": "2012-01",
+                      "video": false
+                    },
+                    "title": "Big Bad World One",
+                    "position": 128
+                  },
+                  {
+                    "length": null,
+                    "id": "f3b4afbc-3319-37f2-aec8-1a9db2b80250",
+                    "number": "129",
+                    "recording": {
+                      "video": false,
+                      "first-release-date": "2012-01",
+                      "title": "Intro 5",
+                      "id": "c6fd72e3-5899-485c-b081-ea239f9d8c36",
+                      "length": 89000,
+                      "disambiguation": "live, 2009‐05‐14: Belly Up, Solana Beach, CA, USA"
+                    },
+                    "position": 129,
+                    "title": "Intro 5"
+                  },
+                  {
+                    "number": "130",
+                    "id": "951aea75-d46c-3164-8fc5-58888da4113d",
+                    "length": null,
+                    "position": 130,
+                    "title": "Code Monkey",
+                    "recording": {
+                      "title": "Code Monkey",
+                      "first-release-date": "2012-01",
+                      "video": false,
+                      "disambiguation": "live, 2009‐05‐14: Belly Up, Solana Beach, CA, USA",
+                      "id": "4195fd65-87ba-4946-984f-5ffe42697e6d",
+                      "length": 214000
+                    }
+                  },
+                  {
+                    "title": "Tom Cruise Crazy",
+                    "position": 131,
+                    "recording": {
+                      "title": "Tom Cruise Crazy",
+                      "first-release-date": "2012-01",
+                      "video": false,
+                      "disambiguation": "live, 2009‐05‐14: Belly Up, Solana Beach, CA, USA",
+                      "id": "5f99d70e-39a9-40c9-ac2a-5e4bbf76e099",
+                      "length": 240000
+                    },
+                    "id": "ead79dc0-b6ca-3c37-8324-adc54a4ea846",
+                    "number": "131",
+                    "length": null
+                  },
+                  {
+                    "recording": {
+                      "id": "c4701f4f-1570-4cd6-9187-876462c574d2",
+                      "length": 136000,
+                      "disambiguation": "live, 2009‐05‐14: Belly Up, Solana Beach, CA, USA",
+                      "video": false,
+                      "title": "Intro 6",
+                      "first-release-date": "2012-01"
+                    },
+                    "position": 132,
+                    "title": "Intro 6",
+                    "length": null,
+                    "id": "53d223ed-4903-31e3-9a5c-37637b170f09",
+                    "number": "132"
+                  },
+                  {
+                    "position": 133,
+                    "title": "Make You Cry",
+                    "recording": {
+                      "id": "ba659e00-dc60-4983-ad6a-ff4637947dae",
+                      "length": 181000,
+                      "disambiguation": "live, 2009‐05‐14: Belly Up, Solana Beach, CA, USA",
+                      "video": false,
+                      "first-release-date": "2012-01",
+                      "title": "Make You Cry"
+                    },
+                    "number": "133",
+                    "id": "92fc46c9-95cb-3a19-aa6c-f83c67c0844e",
+                    "length": null
+                  },
+                  {
+                    "title": "Intro 7",
+                    "position": 134,
+                    "recording": {
+                      "video": false,
+                      "title": "Intro 7",
+                      "first-release-date": "2012-01",
+                      "id": "b783fc3e-bf55-4ae1-80e0-b406024fa0cf",
+                      "length": 110000,
+                      "disambiguation": "live, 2009‐05‐14: Belly Up, Solana Beach, CA, USA"
+                    },
+                    "number": "134",
+                    "id": "a5392278-ac7a-3c46-9f19-773896795c3c",
+                    "length": null
+                  },
+                  {
+                    "recording": {
+                      "title": "Space Doggity",
+                      "first-release-date": "2012-01",
+                      "video": false,
+                      "disambiguation": "live, 2009‐05‐14: Belly Up, Solana Beach, CA, USA",
+                      "length": 193000,
+                      "id": "b09413e9-5985-4480-9f44-518aa8de1acd"
+                    },
+                    "title": "Space Doggity",
+                    "position": 135,
+                    "length": null,
+                    "id": "a5c3c96d-1b0e-32cf-beb0-95d8dec42f06",
+                    "number": "135"
+                  },
+                  {
+                    "position": 136,
+                    "title": "Intro 8",
+                    "recording": {
+                      "video": false,
+                      "first-release-date": "2012-01",
+                      "title": "Intro 8",
+                      "length": null,
+                      "id": "2d612739-5589-4274-b6ca-09d53639b0cd",
+                      "disambiguation": "live, 2009-05-14: Belly Up Solana Beach"
+                    },
+                    "number": "136",
+                    "id": "fb80f1ff-8954-344c-a1fd-7b470ae1de83",
+                    "length": null
+                  },
+                  {
+                    "title": "Birdhouse in Your Soul",
+                    "position": 137,
+                    "recording": {
+                      "disambiguation": "live, 2009‐05‐14: Belly Up, Solana Beach, CA, USA",
+                      "id": "0a1f29ae-0b90-4936-b22a-a197647b08b4",
+                      "length": 144000,
+                      "first-release-date": "2012-01",
+                      "title": "Birdhouse in Your Soul",
+                      "video": false
+                    },
+                    "id": "2ce06207-a112-395d-bf4f-7f0bdd7c6714",
+                    "number": "137",
+                    "length": null
+                  },
+                  {
+                    "length": null,
+                    "id": "e1dae510-9ebe-359c-b7cb-8df25cf49908",
+                    "number": "138",
+                    "recording": {
+                      "length": null,
+                      "id": "2edc9b81-d432-4fe7-9d2e-006acab01e0c",
+                      "disambiguation": "live, 2009-05-14: Belly Up Solana Beach",
+                      "video": false,
+                      "first-release-date": "2012-01",
+                      "title": "Intro 9"
+                    },
+                    "title": "Intro 9",
+                    "position": 138
+                  },
+                  {
+                    "position": 139,
+                    "title": "Creepy Doll",
+                    "recording": {
+                      "length": 225000,
+                      "id": "68c2022f-a920-47c2-a1b4-62f2755087c0",
+                      "disambiguation": "live, 2009‐05‐14: Belly Up, Solana Beach, CA, USA",
+                      "video": false,
+                      "first-release-date": "2012-01",
+                      "title": "Creepy Doll"
+                    },
+                    "id": "ae36f17d-3756-3d7c-80ff-d1ad46125262",
+                    "number": "139",
+                    "length": null
+                  },
+                  {
+                    "length": null,
+                    "id": "bdc47a28-cd84-3289-989e-4bff1147e9f2",
+                    "number": "140",
+                    "recording": {
+                      "video": false,
+                      "first-release-date": "2012-01",
+                      "title": "I Feel Fantastic",
+                      "length": 187000,
+                      "id": "6f129d05-4ec2-4334-a2c1-b87df3b5fd7e",
+                      "disambiguation": "live, 2009‐05‐14: Belly Up, Solana Beach, CA, USA"
+                    },
+                    "title": "I Feel Fantastic",
+                    "position": 140
+                  },
+                  {
+                    "position": 141,
+                    "title": "Intro 10",
+                    "recording": {
+                      "first-release-date": "2012-01",
+                      "title": "Intro 10",
+                      "video": false,
+                      "disambiguation": "live, 2009-05-14: Belly Up Solana Beach",
+                      "id": "647f4d46-bd39-4adf-9acb-cceebd5250da",
+                      "length": null
+                    },
+                    "id": "e71d0048-8115-3bbb-8c26-0a08cb1093fa",
+                    "number": "141",
+                    "length": null
+                  },
+                  {
+                    "recording": {
+                      "disambiguation": "live, 2009-05-14: Belly Up Solana Beach",
+                      "length": null,
+                      "id": "ae6b1b5f-130c-4b29-973b-4468e2a2d619",
+                      "first-release-date": "2012-01",
+                      "title": "Mr. Fancy Pants",
+                      "video": false
+                    },
+                    "position": 142,
+                    "title": "Mr. Fancy Pants",
+                    "length": null,
+                    "number": "142",
+                    "id": "2da271c9-e4d0-3738-9ce1-8983076183f4"
+                  },
+                  {
+                    "recording": {
+                      "id": "924fa98d-612a-4e83-b954-41fba0b98f56",
+                      "length": null,
+                      "disambiguation": "live, 2009-05-14: Belly Up Solana Beach",
+                      "video": false,
+                      "first-release-date": "2012-01",
+                      "title": "Intro 11"
+                    },
+                    "title": "Intro 11",
+                    "position": 143,
+                    "length": null,
+                    "number": "143",
+                    "id": "f12c0368-0908-331b-9637-9a49cc865d6f"
+                  },
+                  {
+                    "length": null,
+                    "id": "09339cde-3436-3fa4-b229-09a4e4c1fda5",
+                    "number": "144",
+                    "recording": {
+                      "length": null,
+                      "id": "d8678304-727a-49c8-a464-9da8c2714c22",
+                      "disambiguation": "live, 2009-05-14: Belly Up Solana Beach",
+                      "video": false,
+                      "title": "Pressure",
+                      "first-release-date": "2012-01"
+                    },
+                    "position": 144,
+                    "title": "Pressure"
+                  },
+                  {
+                    "recording": {
+                      "disambiguation": "live, 2009-05-14: Belly Up Solana Beach",
+                      "id": "78d488d9-c634-49a0-aafa-a7b47533509b",
+                      "length": null,
+                      "title": "The Future Soon",
+                      "first-release-date": "2012-01",
+                      "video": false
+                    },
+                    "position": 145,
+                    "title": "The Future Soon",
+                    "length": null,
+                    "id": "bbf5605d-db58-35c2-adb9-868d42bd6a2a",
+                    "number": "145"
+                  },
+                  {
+                    "id": "bd048e03-8ca5-39be-b4d3-5da01d7139ca",
+                    "number": "146",
+                    "length": null,
+                    "title": "Ikea",
+                    "position": 146,
+                    "recording": {
+                      "video": false,
+                      "title": "Ikea",
+                      "first-release-date": "2012-01",
+                      "id": "34ed099b-4144-4b57-883d-11a3721011d8",
+                      "length": 168000,
+                      "disambiguation": "live, 2009‐05‐14: Belly Up, Solana Beach, CA, USA"
+                    }
+                  },
+                  {
+                    "recording": {
+                      "title": "Intro 12",
+                      "first-release-date": "2012-01",
+                      "video": false,
+                      "disambiguation": "live, 2009-05-14: Belly Up Solana Beach",
+                      "length": null,
+                      "id": "5e939444-718f-44b4-b879-e77d03db8d7d"
+                    },
+                    "title": "Intro 12",
+                    "position": 147,
+                    "length": null,
+                    "number": "147",
+                    "id": "edfb6662-9371-3f32-a969-f53bfea93aef"
+                  },
+                  {
+                    "length": null,
+                    "id": "ca362c50-0ef4-332d-a525-9ff58fd856fe",
+                    "number": "148",
+                    "recording": {
+                      "first-release-date": "2012-01",
+                      "title": "Betty and Me",
+                      "video": false,
+                      "disambiguation": "live, 2009‐05‐14: Belly Up, Solana Beach, CA, USA",
+                      "length": 198000,
+                      "id": "ce9748ae-ebe1-4264-80f7-ae26e117c7c0"
+                    },
+                    "position": 148,
+                    "title": "Betty and Me"
+                  },
+                  {
+                    "id": "361a3089-dfea-3f10-a8f2-833eb66cdc8f",
+                    "number": "149",
+                    "length": null,
+                    "position": 149,
+                    "title": "Intro 13",
+                    "recording": {
+                      "video": false,
+                      "first-release-date": "2012-01",
+                      "title": "Intro 13",
+                      "length": null,
+                      "id": "f92647a8-f4a2-4c77-a978-4ed454e106bf",
+                      "disambiguation": "live, 2009-05-14: Belly Up Solana Beach"
+                    }
+                  },
+                  {
+                    "length": null,
+                    "id": "5ac955b8-973d-3b9a-9680-8f4ee246bccf",
+                    "number": "150",
+                    "recording": {
+                      "title": "Still Alive",
+                      "first-release-date": "2012-01",
+                      "video": false,
+                      "disambiguation": "live, 2009-05-14: Belly Up Solana Beach",
+                      "id": "ec1dfabe-c179-4c5d-a79d-dfffaf9477bb",
+                      "length": null
+                    },
+                    "title": "Still Alive",
+                    "position": 150
+                  },
+                  {
+                    "position": 151,
+                    "title": "Intro 14",
+                    "recording": {
+                      "title": "Intro 14",
+                      "first-release-date": "2012-01",
+                      "video": false,
+                      "disambiguation": "live, 2009-05-14: Belly Up Solana Beach",
+                      "id": "c573512f-ca44-4f18-9a39-70a4ec0f4d54",
+                      "length": null
+                    },
+                    "id": "dc8f9bfb-b51c-37d5-b7ba-cf36e1bde1fa",
+                    "number": "151",
+                    "length": null
+                  },
+                  {
+                    "length": null,
+                    "number": "152",
+                    "id": "0113f15a-e150-36ed-a858-e5f643dcb745",
+                    "recording": {
+                      "disambiguation": "live, 2009-05-14: Belly Up Solana Beach",
+                      "id": "50b743c1-1387-48ba-aad7-aa0c6d9701a8",
+                      "length": null,
+                      "first-release-date": "2012-01",
+                      "title": "Re: Your Brains",
+                      "video": false
+                    },
+                    "title": "Re Your Brains",
+                    "position": 152
+                  },
+                  {
+                    "number": "153",
+                    "id": "c25d4d59-8b7a-379f-aece-6febf35599a5",
+                    "length": null,
+                    "position": 153,
+                    "title": "Intro 15",
+                    "recording": {
+                      "disambiguation": "live, 2009-05-14: Belly Up Solana Beach",
+                      "id": "20bd60e7-c4b5-493e-ad1f-fedc4fce794e",
+                      "length": null,
+                      "title": "Intro 15",
+                      "first-release-date": "2012-01",
+                      "video": false
+                    }
+                  },
+                  {
+                    "title": "First of May",
+                    "position": 154,
+                    "recording": {
+                      "length": 482000,
+                      "id": "4a6f68a7-17f1-462f-a6b4-57355facfeb5",
+                      "disambiguation": "live, 2009‐05‐14: Belly Up, Solana Beach, CA, USA",
+                      "video": false,
+                      "first-release-date": "2012-01",
+                      "title": "First of May / Sweet Caroline"
+                    },
+                    "number": "154",
+                    "id": "ca714156-b8a5-3d84-b592-04fbd9aad3e2",
+                    "length": null
+                  },
+                  {
+                    "length": null,
+                    "number": "155",
+                    "id": "85f385f8-3fa6-31af-b55d-035e2798d806",
+                    "recording": {
+                      "disambiguation": "live, 2009-05-14: Belly Up Solana Beach",
+                      "length": null,
+                      "id": "20f1469e-448e-46c5-904d-8cc0971e2802",
+                      "title": "Intro 16",
+                      "first-release-date": "2012-01",
+                      "video": false
+                    },
+                    "title": "Intro 16",
+                    "position": 155
+                  },
+                  {
+                    "length": null,
+                    "number": "156",
+                    "id": "ec025a03-cd82-3695-968a-27c1f87e297c",
+                    "recording": {
+                      "video": false,
+                      "first-release-date": "2012-01",
+                      "title": "Welcome to the Machine",
+                      "id": "81eea00f-a6b3-438a-bae3-51d1e22130e2",
+                      "length": 149000,
+                      "disambiguation": "live, 2009‐05‐14: Belly Up, Solana Beach, CA, USA"
+                    },
+                    "title": "Welcome to the Machine",
+                    "position": 156
+                  },
+                  {
+                    "recording": {
+                      "id": "b1f1fdd3-c9e2-4657-8ee9-173c706d04bc",
+                      "length": 117000,
+                      "disambiguation": "live, 2009‐05‐14: Belly Up, Solana Beach, CA, USA",
+                      "video": false,
+                      "title": "Intro 17",
+                      "first-release-date": "2012-01"
+                    },
+                    "position": 157,
+                    "title": "Intro 17",
+                    "length": null,
+                    "number": "157",
+                    "id": "36acd294-509f-3344-a8e2-3fdf17fe45be"
+                  },
+                  {
+                    "number": "158",
+                    "id": "da14567f-7d02-3cfe-ba58-362320f5f9ba",
+                    "length": null,
+                    "position": 158,
+                    "title": "Kodachrome",
+                    "recording": {
+                      "first-release-date": "2012-01",
+                      "title": "Kodachrome",
+                      "video": false,
+                      "disambiguation": "live, 2009‐05‐14: Belly Up, Solana Beach, CA, USA",
+                      "length": 215000,
+                      "id": "a8c71198-9c9f-44cc-9701-b19700eb0461"
+                    }
+                  },
+                  {
+                    "id": "df14ced6-a04b-3101-9e0b-b13c3629840b",
+                    "number": "159",
+                    "length": null,
+                    "title": "Intro 1",
+                    "position": 159,
+                    "recording": {
+                      "video": false,
+                      "first-release-date": "2012-01",
+                      "title": "Intro 1",
+                      "length": null,
+                      "id": "723584be-faec-43b3-8225-88c57972e8a3",
+                      "disambiguation": "live, 2011-02-20: The Tripple Door, Seattle, WA"
+                    }
+                  },
+                  {
+                    "recording": {
+                      "id": "0dd7a93d-3b02-4fce-a988-be793bd23205",
+                      "length": null,
+                      "disambiguation": "live, 2011-02-20: The Triple Door, Seattle, WA",
+                      "video": false,
+                      "title": "Code Monkey",
+                      "first-release-date": "2012-01"
+                    },
+                    "position": 160,
+                    "title": "Code Monkey",
+                    "length": null,
+                    "id": "e17c4776-3019-387b-a7cc-6bb5c62db81e",
+                    "number": "160"
+                  },
+                  {
+                    "id": "6dee06eb-9bff-3365-945f-bdbb9d0773e0",
+                    "number": "161",
+                    "length": null,
+                    "position": 161,
+                    "title": "Intro 2",
+                    "recording": {
+                      "video": false,
+                      "first-release-date": "2012-01",
+                      "title": "Intro 2",
+                      "length": null,
+                      "id": "4d865da6-7ce5-4e07-994c-fe1596d9696d",
+                      "disambiguation": "live, 2011-02-20: The Triple Door, Seattle, WA"
+                    }
+                  },
+                  {
+                    "number": "162",
+                    "id": "68c1b355-c191-36b2-b504-42c56f2af0a9",
+                    "length": null,
+                    "position": 162,
+                    "title": "Shop Vac",
+                    "recording": {
+                      "title": "Shop Vac",
+                      "first-release-date": "2012-01",
+                      "video": false,
+                      "disambiguation": "live, 2011-02-20: The Triple Door, Seattle, WA",
+                      "id": "18b0288c-1c79-464e-a98f-e0a20b16c37e",
+                      "length": null
+                    }
+                  },
+                  {
+                    "position": 163,
+                    "title": "Intro 3",
+                    "recording": {
+                      "first-release-date": "2012-01",
+                      "title": "Intro 3",
+                      "video": false,
+                      "disambiguation": "live, 2011-02-20: The Triple Door, Seattle, WA",
+                      "id": "fcd30cb3-539f-476a-a858-23d670b08a83",
+                      "length": null
+                    },
+                    "id": "cfc46740-a83a-3dab-90d6-2dcb97b826cf",
+                    "number": "163",
+                    "length": null
+                  },
+                  {
+                    "number": "164",
+                    "id": "4e16424a-09f2-35ec-9d2d-4dccda1902f2",
+                    "length": null,
+                    "title": "Sticking It to Myself",
+                    "position": 164,
+                    "recording": {
+                      "video": false,
+                      "title": "Sticking It to Myself",
+                      "first-release-date": "2012-01",
+                      "id": "2215e71e-6ebf-49d5-b73b-24faec0d400c",
+                      "length": null,
+                      "disambiguation": "live, 2011-02-20: The Triple Door, Seattle, WA"
+                    }
+                  },
+                  {
+                    "id": "347e0413-ed04-367e-8e75-f8f4d0d97558",
+                    "number": "165",
+                    "length": null,
+                    "position": 165,
+                    "title": "Intro 4",
+                    "recording": {
+                      "disambiguation": "live, 2011-02-20: The Triple Door, Seattle, WA",
+                      "length": null,
+                      "id": "4a4019ca-b059-406c-a963-3cf3ba100da5",
+                      "title": "Intro 4",
+                      "first-release-date": "2012-01",
+                      "video": false
+                    }
+                  },
+                  {
+                    "position": 166,
+                    "title": "Dissolve",
+                    "recording": {
+                      "video": false,
+                      "title": "Dissolve",
+                      "first-release-date": "2012-01",
+                      "length": null,
+                      "id": "7d03416a-06db-413e-af45-ef51e0018a3d",
+                      "disambiguation": "live, 2011-02-20: The Triple Door, Seattle, WA"
+                    },
+                    "id": "df449f0d-7fc8-3435-aff2-3fa7b86c91c3",
+                    "number": "166",
+                    "length": null
+                  },
+                  {
+                    "recording": {
+                      "title": "Intro 5",
+                      "first-release-date": "2012-01",
+                      "video": false,
+                      "disambiguation": "live, 2011-02-20: The Triple Door, Seattle, WA",
+                      "id": "a70c4778-d116-4d93-ade4-292ba5165e0b",
+                      "length": null
+                    },
+                    "position": 167,
+                    "title": "Intro 5",
+                    "length": null,
+                    "id": "c724fab8-0b72-3567-be12-a1d0c0631860",
+                    "number": "167"
+                  },
+                  {
+                    "length": null,
+                    "number": "168",
+                    "id": "7743972d-331d-320b-83b5-8619d3f7f70c",
+                    "recording": {
+                      "video": false,
+                      "first-release-date": "2012-01",
+                      "title": "Blue Sunny Day",
+                      "id": "a7384f3c-ead1-4ce7-8acd-a41e6c5bf59c",
+                      "length": null,
+                      "disambiguation": "live, 2011-02-20: The Triple Door, Seattle, WA"
+                    },
+                    "title": "Blue Sunny Day",
+                    "position": 168
+                  },
+                  {
+                    "id": "b4e87142-3a9e-37ad-9962-4fb9870f0134",
+                    "number": "169",
+                    "length": null,
+                    "position": 169,
+                    "title": "Intro 6",
+                    "recording": {
+                      "title": "Intro 6",
+                      "first-release-date": "2012-01",
+                      "video": false,
+                      "disambiguation": "live, 2011-02-20: The Triple Door, Seattle, WA",
+                      "id": "e9267533-b1c9-47ef-8fa1-7f652d539954",
+                      "length": null
+                    }
+                  },
+                  {
+                    "title": "Space Doggity",
+                    "position": 170,
+                    "recording": {
+                      "first-release-date": "2012-01",
+                      "title": "Space Doggity",
+                      "video": false,
+                      "disambiguation": "live, 2011-02-20: The Triple Door, Seattle, WA",
+                      "length": null,
+                      "id": "c7b446ab-a3f8-4062-92ca-e3dd1a09528c"
+                    },
+                    "id": "eb26d749-3200-3b0a-b743-343b956d2e3f",
+                    "number": "170",
+                    "length": null
+                  },
+                  {
+                    "title": "Intro 7",
+                    "position": 171,
+                    "recording": {
+                      "first-release-date": "2012-01",
+                      "title": "Intro 7",
+                      "video": false,
+                      "disambiguation": "live, 2011-02-20: The Triple Door, Seattle, WA",
+                      "length": null,
+                      "id": "97bf1c81-1c0e-4028-820f-4d7e7fb0fb79"
+                    },
+                    "id": "983b75fa-bbdb-3fe5-aabd-1cd8fa1a72f3",
+                    "number": "171",
+                    "length": null
+                  },
+                  {
+                    "recording": {
+                      "first-release-date": "2012-01",
+                      "title": "Nemeses",
+                      "video": false,
+                      "disambiguation": "live, 2011-02-20: The Triple Door, Seattle, WA",
+                      "length": null,
+                      "id": "0616f4eb-5e5f-4a28-a2ec-631e445bdb15"
+                    },
+                    "position": 172,
+                    "title": "Nemeses",
+                    "length": null,
+                    "id": "13e07113-a649-3105-9f59-749d44f71881",
+                    "number": "172"
+                  },
+                  {
+                    "id": "21f0b3df-9b93-32bc-b82d-84634d64e7ce",
+                    "number": "173",
+                    "length": null,
+                    "position": 173,
+                    "title": "Intro 8",
+                    "recording": {
+                      "disambiguation": "live, 2011-02-20: The Triple Door, Seattle, WA",
+                      "length": null,
+                      "id": "e4dbb1e3-d5fe-4efd-a931-129535bfbf56",
+                      "title": "Intro 8",
+                      "first-release-date": "2012-01",
+                      "video": false
+                    }
+                  },
+                  {
+                    "id": "fe9ff968-c5ec-3d57-8f3d-7509a0fb90dd",
+                    "number": "174",
+                    "length": null,
+                    "title": "Sucker Punch",
+                    "position": 174,
+                    "recording": {
+                      "video": false,
+                      "title": "Sucker Punch",
+                      "first-release-date": "2012-01",
+                      "length": null,
+                      "id": "ba689f46-e38b-42e4-be5a-99a162751e2c",
+                      "disambiguation": "live, 2011-02-20: The Triple Door, Seattle, WA"
+                    }
+                  },
+                  {
+                    "recording": {
+                      "length": null,
+                      "id": "8a97976d-6a35-424c-820f-f0156be051e3",
+                      "disambiguation": "live, 2011-02-20: The Triple Door, Seattle, WA",
+                      "video": false,
+                      "first-release-date": "2012-01",
+                      "title": "Big Bad World One"
+                    },
+                    "position": 175,
+                    "title": "Big Bad World One",
+                    "length": null,
+                    "number": "175",
+                    "id": "4e849f5e-5137-3369-a707-fffd4a8117be"
+                  },
+                  {
+                    "length": null,
+                    "number": "176",
+                    "id": "5e42436c-f0fd-3123-b221-216bcad42fc1",
+                    "recording": {
+                      "disambiguation": "live, 2011-02-20: The Triple Door, Seattle, WA",
+                      "id": "17bfd578-e837-4648-b1bb-ea812252baff",
+                      "length": null,
+                      "title": "Intro 9",
+                      "first-release-date": "2012-01",
+                      "video": false
+                    },
+                    "position": 176,
+                    "title": "Intro 9"
+                  },
+                  {
+                    "number": "177",
+                    "id": "985d790e-ce9b-3537-a4cd-87dcd2a08857",
+                    "length": null,
+                    "position": 177,
+                    "title": "Creepy Doll",
+                    "recording": {
+                      "disambiguation": "live, 2011-02-20: The Triple Door, Seattle, WA",
+                      "length": null,
+                      "id": "421502d0-7684-4356-8faf-58ced0d225aa",
+                      "title": "Creepy Doll",
+                      "first-release-date": "2012-01",
+                      "video": false
+                    }
+                  },
+                  {
+                    "recording": {
+                      "title": "Intro 10",
+                      "first-release-date": "2012-01",
+                      "video": false,
+                      "disambiguation": "live, 2011-02-20: The Triple Door, Seattle, WA",
+                      "length": null,
+                      "id": "dbc29ad4-20f4-48d6-a7e3-35a57b3b1533"
+                    },
+                    "title": "Intro 10",
+                    "position": 178,
+                    "length": null,
+                    "number": "178",
+                    "id": "a1d7e316-5b27-3651-a71c-f5edcd962b97"
+                  },
+                  {
+                    "recording": {
+                      "video": false,
+                      "first-release-date": "2012-01",
+                      "title": "The Stache",
+                      "id": "584e1900-cb68-45e8-99ff-f88cadb28c69",
+                      "length": null,
+                      "disambiguation": "live, 2011-02-20: The Triple Door, Seattle, WA"
+                    },
+                    "position": 179,
+                    "title": "The Stache",
+                    "length": null,
+                    "id": "e7046d59-93c5-3ec5-a196-44aa9d431e4d",
+                    "number": "179"
+                  },
+                  {
+                    "length": null,
+                    "number": "180",
+                    "id": "b65b96e0-aaf7-349d-a3a2-f0aa9cd4eb44",
+                    "recording": {
+                      "disambiguation": "live, 2011-02-20: The Triple Door, Seattle, WA",
+                      "length": null,
+                      "id": "9b9dbfae-9a0b-4884-952a-7adeb15aaec9",
+                      "first-release-date": "2012-01",
+                      "title": "Intro 11",
+                      "video": false
+                    },
+                    "title": "Intro 11",
+                    "position": 180
+                  },
+                  {
+                    "position": 181,
+                    "title": "Good Morning Tucson",
+                    "recording": {
+                      "id": "40412463-4d60-4492-b4d7-4834dda63963",
+                      "length": null,
+                      "disambiguation": "live, 2011-02-20: The Triple Door, Seattle, WA",
+                      "video": false,
+                      "title": "Good Morning Tucson",
+                      "first-release-date": "2012-01"
+                    },
+                    "number": "181",
+                    "id": "ef03c3ca-efaf-36f5-8531-aeaf82794b0a",
+                    "length": null
+                  },
+                  {
+                    "recording": {
+                      "length": null,
+                      "id": "94d96f7b-2193-46c9-9f19-a6098248414f",
+                      "disambiguation": "live, 2011-02-20: The Triple Door, Seattle, WA",
+                      "video": false,
+                      "title": "Intro 12",
+                      "first-release-date": "2012-01"
+                    },
+                    "position": 182,
+                    "title": "Intro 12",
+                    "length": null,
+                    "id": "fafc5037-213b-385d-ad41-e926023887a1",
+                    "number": "182"
+                  },
+                  {
+                    "id": "f17b802c-12eb-3730-92d9-2f79296ed6d9",
+                    "number": "183",
+                    "length": null,
+                    "title": "Still Alive",
+                    "position": 183,
+                    "recording": {
+                      "title": "Still Alive",
+                      "first-release-date": "2012-01",
+                      "video": false,
+                      "disambiguation": "live, 2011-02-20: The Triple Door, Seattle, WA",
+                      "length": null,
+                      "id": "3aba61a6-fb21-4202-8712-76e9e449c1f8"
+                    }
+                  },
+                  {
+                    "id": "37dafa32-39e4-32bc-bd59-59e25d51b666",
+                    "number": "184",
+                    "length": null,
+                    "title": "Intro 13",
+                    "position": 184,
+                    "recording": {
+                      "video": false,
+                      "title": "Intro 13",
+                      "first-release-date": "2012-01",
+                      "length": null,
+                      "id": "bf569197-d580-4f4c-85cf-b621ac8a534b",
+                      "disambiguation": "live, 2011-02-20: The Triple Door, Seattle, WA"
+                    }
+                  },
+                  {
+                    "id": "25f13e8d-d321-34ea-a2be-ff270730659d",
+                    "number": "185",
+                    "length": null,
+                    "title": "Alone at Home",
+                    "position": 185,
+                    "recording": {
+                      "title": "Alone at Home",
+                      "first-release-date": "2012-01",
+                      "video": false,
+                      "disambiguation": "live, 2011-02-20: The Triple Door, Seattle, WA",
+                      "length": null,
+                      "id": "4dbd3601-833b-43dd-b1f5-84fd1ae7d3aa"
+                    }
+                  },
+                  {
+                    "length": null,
+                    "number": "186",
+                    "id": "d64420c3-8f89-321e-ba8b-1272ccc00541",
+                    "recording": {
+                      "first-release-date": "2012-01",
+                      "title": "Mandelbrot Set",
+                      "video": false,
+                      "disambiguation": "live, 2011-02-20: The Triple Door, Seattle, WA",
+                      "id": "63cb11ca-f27a-4ccf-bb7b-644b3e9a0ab5",
+                      "length": null
+                    },
+                    "title": "Mandelbrot Set",
+                    "position": 186
+                  },
+                  {
+                    "title": "Intro 14",
+                    "position": 187,
+                    "recording": {
+                      "id": "ce7c5c7d-181b-48b2-af37-f31220ae241a",
+                      "length": null,
+                      "disambiguation": "live, 2011-02-20: The Triple Door, Seattle, WA",
+                      "video": false,
+                      "title": "Intro 14",
+                      "first-release-date": "2012-01"
+                    },
+                    "number": "187",
+                    "id": "0384a87b-c3d3-3ae2-ada0-35c5e3ffc35d",
+                    "length": null
+                  },
+                  {
+                    "id": "3f80a058-fa0e-351e-a30c-6360f337223e",
+                    "number": "188",
+                    "length": null,
+                    "title": "Re Your Brains",
+                    "position": 188,
+                    "recording": {
+                      "video": false,
+                      "title": "Re: Your Brains",
+                      "first-release-date": "2012-01",
+                      "length": null,
+                      "id": "3128c16e-fa0d-4196-809d-5fba3e83ca19",
+                      "disambiguation": "live, 2011-02-20: The Triple Door, Seattle, WA"
+                    }
+                  },
+                  {
+                    "position": 189,
+                    "title": "Intro 15",
+                    "recording": {
+                      "video": false,
+                      "first-release-date": "2012-01",
+                      "title": "Intro 15",
+                      "length": null,
+                      "id": "3fc05191-18b9-43db-ab54-8de85cf3f1b5",
+                      "disambiguation": "live, 2011-02-20: The Triple Door, Seattle, WA"
+                    },
+                    "number": "189",
+                    "id": "c3d32fcc-2503-3b9c-b191-706e89026b33",
+                    "length": null
+                  },
+                  {
+                    "recording": {
+                      "id": "935bb3ac-aa34-44d7-93a4-810390fea952",
+                      "length": null,
+                      "disambiguation": "live, 2011-02-20: The Triple Door, Seattle, WA",
+                      "video": false,
+                      "title": "Skullcrusher Mountain",
+                      "first-release-date": "2012-01"
+                    },
+                    "title": "Skullcrusher Mountain",
+                    "position": 190,
+                    "length": null,
+                    "id": "c24326fd-ee8e-3780-95b8-cffc483f4e71",
+                    "number": "190"
+                  },
+                  {
+                    "id": "422811ca-f2d2-35c8-ba1e-cdc47acb899b",
+                    "number": "191",
+                    "length": null,
+                    "title": "Intro 16",
+                    "position": 191,
+                    "recording": {
+                      "length": null,
+                      "id": "6ad89550-b2cd-40e7-a996-73b9e5575dbf",
+                      "disambiguation": "live, 2011-02-20: The Triple Door, Seattle, WA",
+                      "video": false,
+                      "first-release-date": "2012-01",
+                      "title": "Intro 16"
+                    }
+                  },
+                  {
+                    "recording": {
+                      "disambiguation": "live, 2011-02-20: The Triple Door, Seattle, WA",
+                      "length": null,
+                      "id": "8e142c40-a252-40af-ae03-34ba3a960941",
+                      "first-release-date": "2012-01",
+                      "title": "Ikea",
+                      "video": false
+                    },
+                    "title": "Ikea",
+                    "position": 192,
+                    "length": null,
+                    "id": "e7d848b4-e298-33c7-a664-d5c5a067d433",
+                    "number": "192"
+                  },
+                  {
+                    "position": 193,
+                    "title": "Intro 17",
+                    "recording": {
+                      "video": false,
+                      "first-release-date": "2012-01",
+                      "title": "Intro 17",
+                      "length": null,
+                      "id": "e77f67e4-eede-4c79-9a6d-709eb9d797b7",
+                      "disambiguation": "live, 2011-02-20: The Triple Door, Seattle, WA"
+                    },
+                    "id": "486fa1e1-cf38-30bd-a513-69d83ce351f1",
+                    "number": "193",
+                    "length": null
+                  },
+                  {
+                    "position": 194,
+                    "title": "I Feel Fantastic",
+                    "recording": {
+                      "video": false,
+                      "title": "I Feel Fantastic",
+                      "first-release-date": "2012-01",
+                      "length": null,
+                      "id": "e8936532-2275-4a9a-a4d4-e8e42ee2456f",
+                      "disambiguation": "live, 2011-02-20: The Triple Door, Seattle, WA"
+                    },
+                    "number": "194",
+                    "id": "a0591c74-4f6e-3a47-8d8f-1956511170c9",
+                    "length": null
+                  }
+                ],
+                "title": "Part No. 19",
+                "format-id": "aa6e7005-53d9-3793-a5bd-c5372a3981c3",
+                "id": "8effae2a-3a4d-3e21-9853-b1064476813f",
+                "format": "Playbutton",
+                "track-offset": 0,
+                "track-count": 194,
+                "position": 3
+              },
+              {
+                "tracks": [
+                  {
+                    "number": "1",
+                    "id": "3ab62062-5a5f-3196-bdac-c959b6b4be80",
+                    "length": 10000,
+                    "title": "[unknown]",
+                    "position": 1,
+                    "recording": {
+                      "first-release-date": "2012-01",
+                      "title": "[unknown]",
+                      "video": false,
+                      "disambiguation": "",
+                      "length": 10000,
+                      "id": "a30d9cce-9226-4d19-87ae-7841e5ce2d16"
+                    }
+                  }
+                ],
+                "title": "Part No. 337: Nostalgia Device",
+                "format": "Other",
+                "track-offset": 0,
+                "track-count": 1,
+                "id": "c3e01f67-482c-39fd-b1e2-7ca483bcef40",
+                "format-id": "3408c8ed-b520-3a80-be3b-7fa855665346",
+                "position": 4
+              }
+            ],
+            "status": "Official",
+            "barcode": null,
+            "status-id": "4e304316-386d-3409-af2e-78857eec5cfe",
+            "disambiguation": "Level 4 Access Kit",
+            "date": "2012-01",
+            "id": "8cfebf54-4fdd-49ba-b578-06fe8c343eaf",
+            "quality": "normal"
+          },
+          {
+            "status": "Official",
+            "media": [
+              {
+                "id": "39e49cf7-f574-3180-bb14-099564437fb1",
+                "format-id": "907a28d9-b3b2-3ef6-89a8-7b18d91d4794",
+                "track-count": 18,
+                "track-offset": 0,
+                "format": "Digital Media",
+                "position": 1,
+                "tracks": [
+                  {
+                    "length": 139000,
+                    "id": "703fe475-a083-31f2-b907-52fe0f8927a7",
+                    "number": "1",
+                    "recording": {
+                      "disambiguation": "",
+                      "id": "e997b3e7-d406-45c7-a1b0-b5003e5de149",
+                      "length": 139000,
+                      "first-release-date": "2011-09-02",
+                      "title": "Sticking It to Myself",
+                      "video": false
+                    },
+                    "position": 1,
+                    "title": "Sticking it to Myself"
+                  },
+                  {
+                    "recording": {
+                      "disambiguation": "",
+                      "length": 153000,
+                      "id": "a173a941-77d2-46b7-9501-b154a3c79f17",
+                      "title": "Artificial Heart",
+                      "first-release-date": "2011-09-02",
+                      "video": false
+                    },
+                    "position": 2,
+                    "title": "Artificial Heart",
+                    "length": 153000,
+                    "id": "5fcb8820-4867-3929-b901-66578f8464eb",
+                    "number": "2"
+                  },
+                  {
+                    "length": 182000,
+                    "id": "903a80ea-3cdc-3bc5-804f-e354d975156a",
+                    "number": "3",
+                    "recording": {
+                      "disambiguation": "",
+                      "length": 182000,
+                      "id": "6b9196aa-2592-4c10-a8c4-6049bcb7a0d9",
+                      "title": "Nemeses",
+                      "first-release-date": "2011-09-02",
+                      "video": false
+                    },
+                    "title": "Nemeses",
+                    "position": 3
+                  },
+                  {
+                    "length": 131000,
+                    "number": "4",
+                    "id": "889408a7-a10d-3cd9-af62-bcdbdffdb3a3",
+                    "recording": {
+                      "video": false,
+                      "first-release-date": "2011-09-02",
+                      "title": "The World Belongs to You",
+                      "id": "06507226-e4b8-4a46-a34c-95162d2bb3b0",
+                      "length": 131000,
+                      "disambiguation": ""
+                    },
+                    "position": 4,
+                    "title": "The World Belongs to You"
+                  },
+                  {
+                    "recording": {
+                      "id": "6bd9ef8b-60cc-439e-89ec-91d588aa3fb7",
+                      "length": 177000,
+                      "disambiguation": "",
+                      "video": false,
+                      "title": "Today With Your Wife",
+                      "first-release-date": "2011-09-02"
+                    },
+                    "position": 5,
+                    "title": "Today with Your Wife",
+                    "length": 177000,
+                    "id": "bad3ef91-2bae-310d-ad6d-e2d52382f439",
+                    "number": "5"
+                  },
+                  {
+                    "length": 102000,
+                    "id": "1367d000-7dde-38ee-91de-75714c9278b9",
+                    "number": "6",
+                    "recording": {
+                      "title": "Sucker Punch",
+                      "first-release-date": "2011-09-02",
+                      "video": false,
+                      "disambiguation": "",
+                      "length": 102000,
+                      "id": "3af1834e-bdd1-423c-8e9a-cc6f0b4f2bf5"
+                    },
+                    "position": 6,
+                    "title": "Sucker Punch"
+                  },
+                  {
+                    "title": "Glasses",
+                    "position": 7,
+                    "recording": {
+                      "title": "Glasses",
+                      "first-release-date": "2011-09-02",
+                      "video": false,
+                      "disambiguation": "",
+                      "length": 167000,
+                      "id": "4c1d60e7-026a-4b8a-940c-7f5f3b150eac"
+                    },
+                    "number": "7",
+                    "id": "1543c30c-020d-323a-828b-0b93189136c8",
+                    "length": 167000
+                  },
+                  {
+                    "recording": {
+                      "length": 148000,
+                      "id": "daee9d79-535b-4cec-aa0d-f18b49946835",
+                      "disambiguation": "",
+                      "video": false,
+                      "title": "Je suis Rick Springfield",
+                      "first-release-date": "2011-09-02"
+                    },
+                    "position": 8,
+                    "title": "Je Suis Rick Springfield",
+                    "length": 148000,
+                    "id": "dbd775ee-6767-39da-8075-f2ddbf76c9bb",
+                    "number": "8"
+                  },
+                  {
+                    "length": 122000,
+                    "number": "9",
+                    "id": "232f7124-2a69-3685-80ca-703525b4016f",
+                    "recording": {
+                      "id": "f4e031f0-0749-4688-9373-52afe89cecd2",
+                      "length": 122000,
+                      "disambiguation": "",
+                      "video": false,
+                      "first-release-date": "2011-09-02",
+                      "title": "Alone at Home"
+                    },
+                    "position": 9,
+                    "title": "Alone at Home"
+                  },
+                  {
+                    "recording": {
+                      "length": 180000,
+                      "id": "f1cd15be-37eb-4208-90bf-d81b70f177f6",
+                      "disambiguation": "",
+                      "video": false,
+                      "title": "Fraud",
+                      "first-release-date": "2011-09-02"
+                    },
+                    "title": "Fraud",
+                    "position": 10,
+                    "length": 180000,
+                    "number": "10",
+                    "id": "4a4388ca-f09b-3ec6-8306-9af49b86ad95"
+                  },
+                  {
+                    "id": "4479ec24-db86-313a-9660-4e40947a10e6",
+                    "number": "11",
+                    "length": 148000,
+                    "position": 11,
+                    "title": "Good Morning Tucson",
+                    "recording": {
+                      "disambiguation": "",
+                      "id": "a050ec76-6301-4453-81e7-6743f23a7b71",
+                      "length": 148000,
+                      "title": "Good Morning Tucson",
+                      "first-release-date": "2011-09-02",
+                      "video": false
+                    }
+                  },
+                  {
+                    "recording": {
+                      "first-release-date": "2011-09-02",
+                      "title": "Now I Am an Arsonist",
+                      "video": false,
+                      "disambiguation": "",
+                      "id": "1a5e0681-f329-423a-bac9-66fe5e485e73",
+                      "length": 173000
+                    },
+                    "position": 12,
+                    "title": "Now I Am an Arsonist",
+                    "length": 173000,
+                    "id": "b216431f-7011-31dd-8c59-f06d60b5698e",
+                    "number": "12"
+                  },
+                  {
+                    "length": 142000,
+                    "id": "879c4c34-bdc8-3dfe-8f74-97cc8367214b",
+                    "number": "13",
+                    "recording": {
+                      "video": false,
+                      "title": "Down Today",
+                      "first-release-date": "2011-09-02",
+                      "length": 142000,
+                      "id": "885acbf4-536b-47c0-93f1-433d52503ec4",
+                      "disambiguation": ""
+                    },
+                    "position": 13,
+                    "title": "Down Today"
+                  },
+                  {
+                    "length": 178000,
+                    "number": "14",
+                    "id": "ac2eb55f-58c5-38d9-a2b7-35f2c45eb3df",
+                    "recording": {
+                      "id": "8ef6e52c-681f-4a9f-bdc0-d554cc0f78d4",
+                      "length": 178000,
+                      "disambiguation": "",
+                      "video": false,
+                      "title": "Dissolve",
+                      "first-release-date": "2011-09-02"
+                    },
+                    "position": 14,
+                    "title": "Dissolve"
+                  },
+                  {
+                    "recording": {
+                      "disambiguation": "",
+                      "id": "5757317f-18a4-424a-9b0e-fe2176bd6a22",
+                      "length": 139000,
+                      "title": "Nobody Loves You Like Me",
+                      "first-release-date": "2011-09-02",
+                      "video": false
+                    },
+                    "position": 15,
+                    "title": "Nobody Loves You Like Me",
+                    "length": 139000,
+                    "id": "f9deb9da-7628-36c3-b068-eaf711783782",
+                    "number": "15"
+                  },
+                  {
+                    "recording": {
+                      "first-release-date": "2011-09-02",
+                      "title": "Still Alive",
+                      "video": false,
+                      "disambiguation": "",
+                      "id": "2fde62cc-1ced-41b5-b5e6-64ac2da201a4",
+                      "length": 255000
+                    },
+                    "position": 16,
+                    "title": "Still Alive",
+                    "length": 255000,
+                    "id": "25be0145-de8f-39db-8a3f-5462a961a2e5",
+                    "number": "16"
+                  },
+                  {
+                    "length": 142000,
+                    "id": "9edd8ec4-828b-32ed-908c-f17a8df4fe9e",
+                    "number": "17",
+                    "recording": {
+                      "length": 142000,
+                      "id": "29f7d9ca-ea08-4ab4-ba5c-50aced3f25ae",
+                      "disambiguation": "",
+                      "video": false,
+                      "title": "Want You Gone (Elegant Too remix)",
+                      "first-release-date": "2011-09-02"
+                    },
+                    "position": 17,
+                    "title": "Want You Gone (Elegant Too Remix)"
+                  },
+                  {
+                    "recording": {
+                      "first-release-date": "2011-09-02",
+                      "title": "The Stache",
+                      "video": false,
+                      "disambiguation": "",
+                      "id": "aefc6055-e83e-4896-aaea-a231d9cd64b7",
+                      "length": 180000
+                    },
+                    "position": 18,
+                    "title": "The Stache",
+                    "length": 180000,
+                    "number": "18",
+                    "id": "928d458c-d10a-34a8-a9f9-21b88fd87842"
+                  }
+                ],
+                "title": ""
+              }
+            ],
+            "disambiguation": "",
+            "barcode": null,
+            "status-id": "4e304316-386d-3409-af2e-78857eec5cfe",
+            "asin": "B005OU27UW",
+            "packaging-id": null,
+            "quality": "normal",
+            "id": "eb4f050a-9830-48ae-bf3a-b5ea712d1857",
+            "date": "2011-09-02",
+            "packaging": null,
+            "country": "XW",
+            "release-events": [
+              {
+                "area": {
+                  "type-id": null,
+                  "disambiguation": "",
+                  "id": "525d4e18-3d00-31b9-a58b-a146a916de8f",
+                  "name": "[Worldwide]",
+                  "type": null,
+                  "iso-3166-1-codes": [
+                    "XW"
+                  ],
+                  "sort-name": "[Worldwide]"
+                },
+                "date": "2011-09-02"
+              }
+            ],
+            "title": "Artificial Heart",
+            "cover-art-archive": {
+              "count": 1,
+              "back": false,
+              "front": true,
+              "artwork": true,
+              "darkened": false
+            },
+            "text-representation": {
+              "script": "Latn",
+              "language": "eng"
+            }
+          }
+        ],
+        "release-count": 3
+      }
+    }
+  }
+}

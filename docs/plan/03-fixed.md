@@ -41,7 +41,7 @@ Fixed inputs, not re-opened.
 - Books come through Prowlarr first, with the AudiobookBay scraper as fallback, via qBittorrent or Transmission. Approval is automatic by default.
 - **Music follows AbleMusicPlayer's approach**: YouTube Music is the catalogue and the audio source, reached through a NewPipe-style extractor, with Spotify used only to import playlists.
 - **Torrents stay for music too**, above all for higher quality. YouTube Music gives instant play and single-song keeps; **adding an album to the library always goes the torrent route**, for lossless.
-- **A kept song is saved as the original stream** (YouTube Music's Opus, about 130 kbps), not re-encoded.
+- **A kept song is saved as the original stream** (YouTube Music's Opus), not re-encoded.
 :::
 
 ::: card

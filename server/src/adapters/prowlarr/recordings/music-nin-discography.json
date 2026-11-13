@@ -1,0 +1,2424 @@
+{
+  "upstream": "prowlarr",
+  "upstreamVersion": "10.0.0.22097",
+  "call": "music-nin-discography",
+  "request": {
+    "method": "GET",
+    "path": "/api/v1/search",
+    "query": {
+      "categories": "3000",
+      "indexerIds": "5",
+      "query": "Nine Inch Nails discography",
+      "type": "search"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": [
+        {
+          "guid": "http://upstream.invalid/page-8360ec0c0752",
+          "age": 1722,
+          "ageHours": 41330.985295665,
+          "ageMinutes": 2479859.1177399084,
+          "size": 7872675053,
+          "indexerId": 1,
+          "indexer": "indexer-a",
+          "title": "Nine Inch Nails   Discography [FLAC Songs] [PMEDIA] ⭐️",
+          "sortTitle": "nine inch nails discography flac songs pmedia ️",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2022-02-21T22:00:00Z",
+          "downloadUrl": "http://upstream.invalid/1/download?apikey=<token>&link=link-cd2ef9a18394",
+          "infoUrl": "http://upstream.invalid/page-8360ec0c0752",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 100059,
+              "subCategories": []
+            }
+          ],
+          "seeders": 32,
+          "leechers": 15,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/page-554de0559445",
+          "age": 4916,
+          "ageHours": 117987.98529575045,
+          "ageMinutes": 7079279.117745048,
+          "size": 2899102924,
+          "indexerId": 1,
+          "indexer": "indexer-a",
+          "title": "Nine Inch Nails Full Discography (1989 2008) [SatanicWarfare]",
+          "sortTitle": "nine inch nails full discography 1989 2008 satanicwarfare",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2013-05-25T21:00:00Z",
+          "downloadUrl": "http://upstream.invalid/1/download?apikey=<token>&link=link-51caeb340c1d",
+          "infoUrl": "http://upstream.invalid/page-554de0559445",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3010,
+              "name": "Audio/MP3",
+              "subCategories": []
+            },
+            {
+              "id": 100022,
+              "subCategories": []
+            }
+          ],
+          "seeders": 0,
+          "leechers": 0,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/page-7075d598c7a0",
+          "age": 5412,
+          "ageHours": 129890.98529580366,
+          "ageMinutes": 7793459.11774823,
+          "size": 6539087708,
+          "indexerId": 1,
+          "indexer": "indexer-a",
+          "title": "Nine Inch Nails   Discography (1989   2008) [FLAC] [h33t]   Kitlope",
+          "sortTitle": "nine inch nails discography 1989 2008 flac h33t kitlope",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2012-01-15T22:00:00Z",
+          "downloadUrl": "http://upstream.invalid/1/download?apikey=<token>&link=link-6be03167d29c",
+          "infoUrl": "http://upstream.invalid/page-7075d598c7a0",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3040,
+              "name": "Audio/Lossless",
+              "subCategories": []
+            },
+            {
+              "id": 100023,
+              "subCategories": []
+            }
+          ],
+          "seeders": 9,
+          "leechers": 6,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/page-627a6def818e",
+          "age": 6459,
+          "ageHours": 155018.98529583772,
+          "ageMinutes": 9301139.117750276,
+          "size": 2802466160,
+          "indexerId": 1,
+          "indexer": "indexer-a",
+          "title": "Nine Inch Nails Discography (NIN)   Discography, [MP3 VBR   Lossy] Industrial Metal",
+          "sortTitle": "nine inch nails discography nin discography mp3 vbr lossy industrial metal",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2009-03-04T22:00:00Z",
+          "downloadUrl": "http://upstream.invalid/1/download?apikey=<token>&link=link-7edd948d2579",
+          "infoUrl": "http://upstream.invalid/page-627a6def818e",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3010,
+              "name": "Audio/MP3",
+              "subCategories": []
+            },
+            {
+              "id": 100022,
+              "subCategories": []
+            }
+          ],
+          "seeders": 1,
+          "leechers": 0,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "magnet:?xt=urn:btih:A201180B2C3B9755E11D535AAE9B4F3A29394E65",
+          "age": 4811,
+          "ageHours": 115470.13862920314,
+          "ageMinutes": 6928208.317752203,
+          "size": 2734505886,
+          "files": 250,
+          "indexerId": 5,
+          "indexer": "indexer-i",
+          "title": "NINE INCH NAILS - DISCOGRAPHY (1989-13) [CHANNEL NEO]",
+          "sortTitle": "nine inch nails discography 1989 13 channel neo",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2013-09-07T18:50:48Z",
+          "infoUrl": "http://upstream.invalid/page-bb9910724dec",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 100101,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/5/download?apikey=<token>&link=link-9f4b55f8ede3",
+          "infoHash": "A201180B2C3B9755E11D535AAE9B4F3A29394E65",
+          "seeders": 35,
+          "leechers": 3,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "magnet:?xt=urn:btih:551449F20E551221FB7BDD48B534C97D7F27E670",
+          "age": 6215,
+          "ageHours": 149168.77835149167,
+          "ageMinutes": 8950126.70108951,
+          "size": 6406981436,
+          "files": 238,
+          "indexerId": 5,
+          "indexer": "indexer-i",
+          "title": "Nine Inch Nails - Discography (1989 - 2008) [FLAC] -Kitlope",
+          "sortTitle": "nine inch nails discography 1989 2008 flac kitlope",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2009-11-03T16:12:25Z",
+          "infoUrl": "http://upstream.invalid/page-59176aff7a56",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3040,
+              "name": "Audio/Lossless",
+              "subCategories": []
+            },
+            {
+              "id": 100104,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/5/download?apikey=<token>&link=link-a53e5254ac7b",
+          "infoHash": "551449F20E551221FB7BDD48B534C97D7F27E670",
+          "seeders": 16,
+          "leechers": 1,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "magnet:?xt=urn:btih:B5FA87FD6F422329BEE62C495EB3951CCDCEB603",
+          "age": 4821,
+          "ageHours": 115721.38974045214,
+          "ageMinutes": 6943283.384427145,
+          "size": 4390855340,
+          "files": 213,
+          "indexerId": 5,
+          "indexer": "indexer-i",
+          "title": "Nine Inch Nails Album Discography [1989-2013] [FLAC]",
+          "sortTitle": "nine inch nails album discography 1989 2013 flac",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2013-08-28T07:35:44Z",
+          "infoUrl": "http://upstream.invalid/page-f5ab8216c2d3",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3040,
+              "name": "Audio/Lossless",
+              "subCategories": []
+            },
+            {
+              "id": 100104,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/5/download?apikey=<token>&link=link-85422852a72c",
+          "infoHash": "B5FA87FD6F422329BEE62C495EB3951CCDCEB603",
+          "seeders": 6,
+          "leechers": 2,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "magnet:?xt=urn:btih:B763C55A9ED220C6DB9F37C6BA9394C8A61F7483",
+          "age": 5251,
+          "ageHours": 126033.24168498392,
+          "ageMinutes": 7561994.50109906,
+          "size": 2836445023,
+          "files": 406,
+          "indexerId": 5,
+          "indexer": "indexer-i",
+          "title": "Nine Inch Nails Discography 1998- 2007 - Mp3 VBR",
+          "sortTitle": "nine inch nails discography 1998 2007 mp3 vbr",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2012-06-24T15:44:37Z",
+          "infoUrl": "http://upstream.invalid/page-978be563d650",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 100101,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/5/download?apikey=<token>&link=link-1a52829acf75",
+          "infoHash": "B763C55A9ED220C6DB9F37C6BA9394C8A61F7483",
+          "seeders": 1,
+          "leechers": 1,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "magnet:?xt=urn:btih:69C657173E1FE81ECDE43E39F5D93968CF781374",
+          "age": 6604,
+          "ageHours": 158498.7641850722,
+          "ageMinutes": 9509925.851104341,
+          "size": 2164420162,
+          "files": 390,
+          "indexerId": 5,
+          "indexer": "indexer-i",
+          "title": "Nine Inch Nails - discography (27 albums) Halo 1 -27",
+          "sortTitle": "nine inch nails discography 27 albums halo 1 27",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2008-10-10T22:13:16Z",
+          "infoUrl": "http://upstream.invalid/page-50289d409b64",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 100101,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/5/download?apikey=<token>&link=link-c5f743669886",
+          "infoHash": "69C657173E1FE81ECDE43E39F5D93968CF781374",
+          "seeders": 5,
+          "leechers": 3,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "magnet:?xt=urn:btih:044826805DCF57F320F2621B6D0AD3762547C820",
+          "age": 6370,
+          "ageHours": 152890.73779625815,
+          "ageMinutes": 9173444.267775506,
+          "size": 5955611213,
+          "files": 205,
+          "indexerId": 5,
+          "indexer": "indexer-i",
+          "title": "Nine Inch Nails - Discography [FLAC]",
+          "sortTitle": "nine inch nails discography flac",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2009-06-01T14:14:51Z",
+          "infoUrl": "http://upstream.invalid/page-733b5e9ffa99",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3040,
+              "name": "Audio/Lossless",
+              "subCategories": []
+            },
+            {
+              "id": 100104,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/5/download?apikey=<token>&link=link-37d3ab0e894f",
+          "infoHash": "044826805DCF57F320F2621B6D0AD3762547C820",
+          "seeders": 5,
+          "leechers": 4,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "magnet:?xt=urn:btih:67E09810505DD5CCDA53B63C13147AEA5CDD9568",
+          "age": 5230,
+          "ageHours": 125522.40335187505,
+          "ageMinutes": 7531344.20111251,
+          "size": 7101466404,
+          "files": 158,
+          "indexerId": 5,
+          "indexer": "indexer-i",
+          "title": "Nine Inch Nails Discography [Lossless]",
+          "sortTitle": "nine inch nails discography lossless",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2012-07-15T22:34:55Z",
+          "infoUrl": "http://upstream.invalid/page-4c90502f94fd",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 100101,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/5/download?apikey=<token>&link=link-b99bbb30d614",
+          "infoHash": "67E09810505DD5CCDA53B63C13147AEA5CDD9568",
+          "seeders": 4,
+          "leechers": 8,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "magnet:?xt=urn:btih:BD824F85205EE4AE4624C2DFB03E8D92F82380D8",
+          "age": 5998,
+          "ageHours": 143955.19946305253,
+          "ageMinutes": 8637311.967783164,
+          "size": 8088929095,
+          "files": 718,
+          "indexerId": 5,
+          "indexer": "indexer-i",
+          "title": "Nine Inch Nails Complete Discography @ 320",
+          "sortTitle": "nine inch nails complete discography 320",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2010-06-08T21:47:09Z",
+          "infoUrl": "http://upstream.invalid/page-fc21b4f7ee0c",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 100101,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/5/download?apikey=<token>&link=link-851dff75c351",
+          "infoHash": "BD824F85205EE4AE4624C2DFB03E8D92F82380D8",
+          "seeders": 3,
+          "leechers": 0,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "magnet:?xt=urn:btih:1F8A71F738991947D4AB6964A68F4FABDB4C94D6",
+          "age": 6847,
+          "ageHours": 164337.6294631145,
+          "ageMinutes": 9860257.767786887,
+          "size": 1711163236,
+          "files": 239,
+          "indexerId": 5,
+          "indexer": "indexer-i",
+          "title": "Nine Inch Nails-Discography",
+          "sortTitle": "nine inch nails discography",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2008-02-10T15:21:21Z",
+          "infoUrl": "http://upstream.invalid/page-503466ea4f83",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 100101,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/5/download?apikey=<token>&link=link-977bf013bd07",
+          "infoHash": "1F8A71F738991947D4AB6964A68F4FABDB4C94D6",
+          "seeders": 1,
+          "leechers": 1,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "magnet:?xt=urn:btih:AAACFEA8DA0F64C2DA6F06CC109FB1291D0F4A44",
+          "age": 6770,
+          "ageHours": 162495.82196317354,
+          "ageMinutes": 9749749.31779042,
+          "size": 2145391605,
+          "files": 351,
+          "indexerId": 5,
+          "indexer": "indexer-i",
+          "title": "Nine Inch Nails Complete Discography",
+          "sortTitle": "nine inch nails complete discography",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2008-04-27T09:09:48Z",
+          "infoUrl": "http://upstream.invalid/page-f95dee4ed199",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 100101,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/5/download?apikey=<token>&link=link-84c542dd9712",
+          "infoHash": "AAACFEA8DA0F64C2DA6F06CC109FB1291D0F4A44",
+          "seeders": 1,
+          "leechers": 0,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "magnet:?xt=urn:btih:595D5A801D37A4FE3903121B3449592E8C0AF1B8",
+          "age": 6211,
+          "ageHours": 149073.3105743437,
+          "ageMinutes": 8944398.634460634,
+          "size": 2914887767,
+          "files": 466,
+          "indexerId": 5,
+          "indexer": "indexer-i",
+          "title": "Nine Inch Nails Discography",
+          "sortTitle": "nine inch nails discography",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2009-11-07T15:40:29Z",
+          "infoUrl": "http://upstream.invalid/page-95efe6188354",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 100101,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/5/download?apikey=<token>&link=link-2762da81b2c5",
+          "infoHash": "595D5A801D37A4FE3903121B3449592E8C0AF1B8",
+          "seeders": 1,
+          "leechers": 0,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "magnet:?xt=urn:btih:1B3F5B52555CB2C1EF628FF368515EF5C74FD3BB",
+          "age": 6878,
+          "ageHours": 165095.32640773567,
+          "ageMinutes": 9905719.584464151,
+          "size": 1757302358,
+          "files": 276,
+          "indexerId": 5,
+          "indexer": "indexer-i",
+          "title": "Nine Inch Nails -Discography",
+          "sortTitle": "nine inch nails discography",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2008-01-10T01:39:32Z",
+          "infoUrl": "http://upstream.invalid/page-5610a6a4abd0",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 100101,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/5/download?apikey=<token>&link=link-9adb4c9d88cc",
+          "infoHash": "1B3F5B52555CB2C1EF628FF368515EF5C74FD3BB",
+          "seeders": 0,
+          "leechers": 0,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "magnet:?xt=urn:btih:B2E13A87234CBD4E886AEBA7971B1F642E93FD6A",
+          "age": 6311,
+          "ageHours": 151487.0730744597,
+          "ageMinutes": 9089224.384467598,
+          "size": 2836445217,
+          "files": 406,
+          "indexerId": 5,
+          "indexer": "indexer-i",
+          "title": "Nine Inch Nails Discography",
+          "sortTitle": "nine inch nails discography",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2009-07-30T01:54:44Z",
+          "infoUrl": "http://upstream.invalid/page-c7a3c92a8a05",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 100101,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/5/download?apikey=<token>&link=link-d270ec886d57",
+          "infoHash": "B2E13A87234CBD4E886AEBA7971B1F642E93FD6A",
+          "seeders": 0,
+          "leechers": 0,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "magnet:?xt=urn:btih:C54F8745C20DF75F4F499080EC4B71BB305D1392",
+          "age": 6135,
+          "ageHours": 147241.46557451788,
+          "ageMinutes": 8834487.934471084,
+          "size": 1517028695,
+          "files": 249,
+          "indexerId": 5,
+          "indexer": "indexer-i",
+          "title": "Nine Inch Nails - Almost Full Discography",
+          "sortTitle": "nine inch nails almost full discography",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2010-01-22T23:31:11Z",
+          "infoUrl": "http://upstream.invalid/page-ec95ca1d1fbd",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 100101,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/5/download?apikey=<token>&link=link-6d390c19e81c",
+          "infoHash": "C54F8745C20DF75F4F499080EC4B71BB305D1392",
+          "seeders": 0,
+          "leechers": 0,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "magnet:?xt=urn:btih:8B8AD8776422484D0349A3A2471CC6D34EC43D9A",
+          "age": 5859,
+          "ageHours": 140621.54251902143,
+          "ageMinutes": 8437292.551141297,
+          "size": 1402485838,
+          "files": 433,
+          "indexerId": 5,
+          "indexer": "indexer-i",
+          "title": "Nine Inch Nails - 40 ALBUM DISCOGRAPHY [2010]",
+          "sortTitle": "nine inch nails 40 album discography 2010",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2010-10-25T19:26:34Z",
+          "infoUrl": "http://upstream.invalid/page-939d4f0a3e32",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 100101,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/5/download?apikey=<token>&link=link-189d39845454",
+          "infoHash": "8B8AD8776422484D0349A3A2471CC6D34EC43D9A",
+          "seeders": 0,
+          "leechers": 1,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/page-6f3048b3af61",
+          "age": 365,
+          "ageHours": 8760.000011341694,
+          "ageMinutes": 525600.0006805133,
+          "size": 7784628224,
+          "indexerId": 6,
+          "indexer": "indexer-g",
+          "title": "Nine Inch Nails  Discography [FLAC Songs] [PMEDIA] ⭐️",
+          "sortTitle": "nine inch nails discography flac songs pmedia ️",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2025-11-10T00:59:07Z",
+          "downloadUrl": "http://upstream.invalid/6/download?apikey=<token>&link=link-2454565e1901",
+          "infoUrl": "http://upstream.invalid/page-6f3048b3af61",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 104627,
+              "subCategories": []
+            }
+          ],
+          "seeders": 35,
+          "leechers": 4,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/page-8020dd10cc19",
+          "age": 365,
+          "ageHours": 8760.000011203334,
+          "ageMinutes": 525600.0006722116,
+          "size": 1921997864,
+          "indexerId": 6,
+          "indexer": "indexer-g",
+          "title": "NINE INCH NAILS  DISCOGRAPHY PT 2 (promo s  seeds  extras)",
+          "sortTitle": "nine inch nails discography pt 2 promo s seeds extras",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2025-11-10T00:59:07Z",
+          "downloadUrl": "http://upstream.invalid/6/download?apikey=<token>&link=link-9b10ee216687",
+          "infoUrl": "http://upstream.invalid/page-8020dd10cc19",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 104627,
+              "subCategories": []
+            }
+          ],
+          "seeders": 0,
+          "leechers": 0,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/page-e13da29d5f8c",
+          "age": 365,
+          "ageHours": 8760.00001090464,
+          "ageMinutes": 525600.0006542883,
+          "size": 2738041651,
+          "indexerId": 6,
+          "indexer": "indexer-g",
+          "title": "NINE INCH NAILS  DISCOGRAPHY (1989 13) [CHANNEL NEO]",
+          "sortTitle": "nine inch nails discography 1989 13 channel neo",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2025-11-10T00:59:07Z",
+          "downloadUrl": "http://upstream.invalid/6/download?apikey=<token>&link=link-05d5b004ce79",
+          "infoUrl": "http://upstream.invalid/page-e13da29d5f8c",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 104627,
+              "subCategories": []
+            }
+          ],
+          "seeders": 2,
+          "leechers": 5,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/page-923116f2581e",
+          "age": 365,
+          "ageHours": 8760.00001076975,
+          "ageMinutes": 525600.0006461967,
+          "size": 4391604060,
+          "indexerId": 6,
+          "indexer": "indexer-g",
+          "title": "Nine Inch Nails Album Discography [1989 2013] [FLAC]",
+          "sortTitle": "nine inch nails album discography 1989 2013 flac",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2025-11-10T00:59:07Z",
+          "downloadUrl": "http://upstream.invalid/6/download?apikey=<token>&link=link-7ffff2e46a4a",
+          "infoUrl": "http://upstream.invalid/page-923116f2581e",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 104627,
+              "subCategories": []
+            }
+          ],
+          "seeders": 6,
+          "leechers": 0,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/page-16a41a4a8824",
+          "age": 365,
+          "ageHours": 8760.000010642529,
+          "ageMinutes": 525600.0006385633,
+          "size": 2770253905,
+          "indexerId": 6,
+          "indexer": "indexer-g",
+          "title": "Nine Inch Nails  Discography",
+          "sortTitle": "nine inch nails discography",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2025-11-10T00:59:07Z",
+          "downloadUrl": "http://upstream.invalid/6/download?apikey=<token>&link=link-49782625930f",
+          "infoUrl": "http://upstream.invalid/page-16a41a4a8824",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 104627,
+              "subCategories": []
+            }
+          ],
+          "seeders": 0,
+          "leechers": 4,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/page-e077354d8720",
+          "age": 365,
+          "ageHours": 8760.000010517417,
+          "ageMinutes": 525600.000631055,
+          "size": 1277752770,
+          "indexerId": 6,
+          "indexer": "indexer-g",
+          "title": "Nine Inch Nails Discography 2013 (All official albums   Shards of Broken Halos)",
+          "sortTitle": "nine inch nails discography 2013 all official albums shards broken halos",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2025-11-10T00:59:07Z",
+          "downloadUrl": "http://upstream.invalid/6/download?apikey=<token>&link=link-13f41915617f",
+          "infoUrl": "http://upstream.invalid/page-e077354d8720",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 104627,
+              "subCategories": []
+            }
+          ],
+          "seeders": 0,
+          "leechers": 0,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/page-796092452fd1",
+          "age": 365,
+          "ageHours": 8760.00001039836,
+          "ageMinutes": 525600.0006239116,
+          "size": 1428076625,
+          "indexerId": 6,
+          "indexer": "indexer-g",
+          "title": "Nine Inch Nails Discography 2013 (All official albums   Shards of Broken Halos)",
+          "sortTitle": "nine inch nails discography 2013 all official albums shards broken halos",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2025-11-10T00:59:07Z",
+          "downloadUrl": "http://upstream.invalid/6/download?apikey=<token>&link=link-d4911811c647",
+          "infoUrl": "http://upstream.invalid/page-796092452fd1",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 104627,
+              "subCategories": []
+            }
+          ],
+          "seeders": 0,
+          "leechers": 1,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/page-27d3bc0931c0",
+          "age": 365,
+          "ageHours": 8760.000010283722,
+          "ageMinutes": 525600.0006170333,
+          "size": 7097433456,
+          "indexerId": 6,
+          "indexer": "indexer-g",
+          "title": "Nine Inch Nails Discography [Lossless]",
+          "sortTitle": "nine inch nails discography lossless",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2025-11-10T00:59:07Z",
+          "downloadUrl": "http://upstream.invalid/6/download?apikey=<token>&link=link-c21e71df6280",
+          "infoUrl": "http://upstream.invalid/page-27d3bc0931c0",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 104627,
+              "subCategories": []
+            }
+          ],
+          "seeders": 0,
+          "leechers": 0,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/page-b1654a5a243f",
+          "age": 365,
+          "ageHours": 8760.000010168194,
+          "ageMinutes": 525600.0006101034,
+          "size": 2168958484,
+          "indexerId": 6,
+          "indexer": "indexer-g",
+          "title": "Nine Inch Nails  discography (27 albums) Halo 1  27",
+          "sortTitle": "nine inch nails discography 27 albums halo 1 27",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2025-11-10T00:59:07Z",
+          "downloadUrl": "http://upstream.invalid/6/download?apikey=<token>&link=link-d28886d445f4",
+          "infoUrl": "http://upstream.invalid/page-b1654a5a243f",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 104627,
+              "subCategories": []
+            }
+          ],
+          "seeders": 0,
+          "leechers": 2,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/page-3754faef8dfa",
+          "age": 365,
+          "ageHours": 8760.000010054666,
+          "ageMinutes": 525600.0006032917,
+          "size": 24674587115,
+          "indexerId": 6,
+          "indexer": "indexer-g",
+          "title": "Nine Inch Nails Discography 1988 2009",
+          "sortTitle": "nine inch nails discography 1988 2009",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2025-11-10T00:59:07Z",
+          "downloadUrl": "http://upstream.invalid/6/download?apikey=<token>&link=link-709159773894",
+          "infoUrl": "http://upstream.invalid/page-3754faef8dfa",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 104627,
+              "subCategories": []
+            }
+          ],
+          "seeders": 0,
+          "leechers": 8,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/page-e2899d9cc00c",
+          "age": 365,
+          "ageHours": 8760.000009954416,
+          "ageMinutes": 525600.000597275,
+          "size": 2909840343,
+          "indexerId": 6,
+          "indexer": "indexer-g",
+          "title": "Nine Inch Nails  Discography",
+          "sortTitle": "nine inch nails discography",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2025-11-10T00:59:07Z",
+          "downloadUrl": "http://upstream.invalid/6/download?apikey=<token>&link=link-8ae4d4e8a9a2",
+          "infoUrl": "http://upstream.invalid/page-e2899d9cc00c",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 104627,
+              "subCategories": []
+            }
+          ],
+          "seeders": 0,
+          "leechers": 0,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/page-0af36b2d7d5d",
+          "age": 365,
+          "ageHours": 8760.00000989225,
+          "ageMinutes": 525600.0005935467,
+          "size": 3865470566,
+          "indexerId": 6,
+          "indexer": "indexer-g",
+          "title": "Nine Inch Nails  Discography [1989  2008] 320 kbs Mininova",
+          "sortTitle": "nine inch nails discography 1989 2008 320 kbs mininova",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2025-11-10T00:59:07Z",
+          "downloadUrl": "http://upstream.invalid/6/download?apikey=<token>&link=link-4e405fda44b2",
+          "infoUrl": "http://upstream.invalid/page-0af36b2d7d5d",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 104627,
+              "subCategories": []
+            }
+          ],
+          "seeders": 0,
+          "leechers": 1,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/page-a404f28b8b34",
+          "age": 4812,
+          "ageHours": 115489.98529721341,
+          "ageMinutes": 6929399.11783282,
+          "size": 2738041651,
+          "indexerId": 8,
+          "indexer": "indexer-f",
+          "title": "NINE INCH NAILS - DISCOGRAPHY (1989-13) [CHANNEL NEO]",
+          "sortTitle": "nine inch nails discography 1989 13 channel neo",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2013-09-06T23:00:00Z",
+          "infoUrl": "http://upstream.invalid/page-a404f28b8b34",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 1100000,
+              "subCategories": []
+            },
+            {
+              "id": 3010,
+              "name": "Audio/MP3",
+              "subCategories": []
+            },
+            {
+              "id": 1101000,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/8/download?apikey=<token>&link=link-6ad3c14f37f9",
+          "infoHash": "A201180B2C3B9755E11D535AAE9B4F3A29394E65",
+          "seeders": 23,
+          "leechers": 9,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/page-5acf23a02d2a",
+          "age": 4821,
+          "ageHours": 115721.389741725,
+          "ageMinutes": 6943283.384503525,
+          "size": 4390855340,
+          "indexerId": 8,
+          "indexer": "indexer-f",
+          "title": "Nine Inch Nails Album Discography [1989-2013] [FLAC]",
+          "sortTitle": "nine inch nails album discography 1989 2013 flac",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2013-08-28T07:35:44Z",
+          "infoUrl": "http://upstream.invalid/page-5acf23a02d2a",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3040,
+              "name": "Audio/Lossless",
+              "subCategories": []
+            },
+            {
+              "id": 1102000,
+              "subCategories": []
+            },
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 1100000,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/8/download?apikey=<token>&link=link-0ec3f2779116",
+          "infoHash": "B5FA87FD6F422329BEE62C495EB3951CCDCEB603",
+          "seeders": 6,
+          "leechers": 2,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/page-8ad801e4c695",
+          "age": 5251,
+          "ageHours": 126033.2416862225,
+          "ageMinutes": 7561994.501173365,
+          "size": 2836445023,
+          "indexerId": 8,
+          "indexer": "indexer-f",
+          "title": "Nine Inch Nails Discography 1998- 2007 - Mp3 VBR",
+          "sortTitle": "nine inch nails discography 1998 2007 mp3 vbr",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2012-06-24T15:44:37Z",
+          "infoUrl": "http://upstream.invalid/page-8ad801e4c695",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 1100000,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/8/download?apikey=<token>&link=link-542ce5b86309",
+          "infoHash": "B763C55A9ED220C6DB9F37C6BA9394C8A61F7483",
+          "seeders": 1,
+          "leechers": 1,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/page-b276310f1545",
+          "age": 5998,
+          "ageHours": 143955.19946404512,
+          "ageMinutes": 8637311.96784272,
+          "size": 8088929095,
+          "indexerId": 8,
+          "indexer": "indexer-f",
+          "title": "Nine Inch Nails Complete Discography @ 320",
+          "sortTitle": "nine inch nails complete discography 320",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2010-06-08T21:47:09Z",
+          "infoUrl": "http://upstream.invalid/page-b276310f1545",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 1100000,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/8/download?apikey=<token>&link=link-d3eb3f9c383a",
+          "infoHash": "BD824F85205EE4AE4624C2DFB03E8D92F82380D8",
+          "seeders": 3,
+          "leechers": 0,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/page-51eb180f2800",
+          "age": 6216,
+          "ageHours": 149185.98529742335,
+          "ageMinutes": 8951159.117845414,
+          "size": 6410238689,
+          "indexerId": 8,
+          "indexer": "indexer-f",
+          "title": "Nine Inch Nails - Discography (1989 - 2008) [FLAC] - Kitlope",
+          "sortTitle": "nine inch nails discography 1989 2008 flac kitlope",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2009-11-02T23:00:00Z",
+          "infoUrl": "http://upstream.invalid/page-51eb180f2800",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 1100000,
+              "subCategories": []
+            },
+            {
+              "id": 3040,
+              "name": "Audio/Lossless",
+              "subCategories": []
+            },
+            {
+              "id": 1102000,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/8/download?apikey=<token>&link=link-d4b607cc9cb8",
+          "infoHash": "551449F20E551221FB7BDD48B534C97D7F27E670",
+          "seeders": 15,
+          "leechers": 3,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/page-6653ffd91ec4",
+          "age": 6604,
+          "ageHours": 158497.98529748118,
+          "ageMinutes": 9509879.11784888,
+          "size": 2168958484,
+          "indexerId": 8,
+          "indexer": "indexer-f",
+          "title": "Nine Inch Nails - discography (27 albums) Halo 1 - 27",
+          "sortTitle": "nine inch nails discography 27 albums halo 1 27",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2008-10-10T23:00:00Z",
+          "infoUrl": "http://upstream.invalid/page-6653ffd91ec4",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 1100000,
+              "subCategories": []
+            },
+            {
+              "id": 3010,
+              "name": "Audio/MP3",
+              "subCategories": []
+            },
+            {
+              "id": 1101000,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/8/download?apikey=<token>&link=link-cb900bd37fb2",
+          "infoHash": "69C657173E1FE81ECDE43E39F5D93968CF781374",
+          "seeders": 4,
+          "leechers": 1,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/page-b9f9e2675830",
+          "age": 6770,
+          "ageHours": 162495.8219642051,
+          "ageMinutes": 9749749.317852313,
+          "size": 2145391605,
+          "indexerId": 8,
+          "indexer": "indexer-f",
+          "title": "Nine Inch Nails Complete Discography",
+          "sortTitle": "nine inch nails complete discography",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2008-04-27T09:09:48Z",
+          "infoUrl": "http://upstream.invalid/page-b9f9e2675830",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 1100000,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/8/download?apikey=<token>&link=link-ce516c2e018f",
+          "infoHash": "AAACFEA8DA0F64C2DA6F06CC109FB1291D0F4A44",
+          "seeders": 1,
+          "leechers": 0,
+          "protocol": "torrent"
+        }
+      ]
+    }
+  }
+}

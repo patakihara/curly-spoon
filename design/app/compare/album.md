@@ -1,6 +1,6 @@
 ---
 page: album
-pageHash: 86f7210e03a6096e53f9c62ff0b4d131d941fe083001b5044ff6271d5515974b
+pageHash: 11d225f63fdab59077de54d7ee13c8b936b9ed47d427868610028dd7f862812c
 sonora: [kit:mobile/album, kit:desktop/album]
 spotify: [S02, S35]
 ---
@@ -68,3 +68,7 @@ one line where the tracks would be.
 - Provisional, per nav.json: the editions fold and "More by", drawn as a guess.
 - Changed on purpose: the page is not a destination, so on the phone the shell shows it under a top app bar (`BackdropShell appBar`), as the mobile kit's flat detail bar does: the close control and the title, set as a mobile section header in the body face, on the page surface, with no back layer and no rounded front layer behind it; a hairline marks the bar once the content scrolls. The bottom bar and mini-player stay. On desktop it keeps the backdrop, Music's rail item lit.
 - Changed on purpose: the rail's head carries old Sonora's hamburger (`NavRail toggle`), `menu_open` on this labelled rail, on the heading's line; it collapses the rail to the icon rail and back. The mini-player's play and pause glyph is white (`--play-contrast`) and filled: solid bars, not the icon font's hairline outline.
+
+## M3.albums
+
+- Changed on purpose: the header's menu hands its chosen key to the album its page shows (`onSelect={<Choose ref={data.ref} />}`). `addToLibrary` then requests the album's lossless copy, and the web offers it only while the album is just songs the household kept. These renders come from the web app, which binds no album request yet, so the menu draws disabled as before, and the stills are unchanged.

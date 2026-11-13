@@ -91,6 +91,36 @@ export const SearchBook = z
   .openapi('SearchBook');
 export type SearchBook = z.infer<typeof SearchBook>;
 
+/** What MusicBrainz calls a release group: an album, an EP, a single, a broadcast or another kind. */
+export const AlbumType = z
+  .enum(['album', 'ep', 'single', 'broadcast', 'other'])
+  .openapi('AlbumType');
+export type AlbumType = z.infer<typeof AlbumType>;
+
+/**
+ * An album the library lacks, from MusicBrainz, as raw values the apps word themselves: `ref` is what
+ * a request for it takes, `type` its kind, and `status` where a request for it stands, null while
+ * there is none. `progress` runs from 0 to 1 while downloading. An album the household holds is not
+ * listed, unless every track of it is a song kept from YouTube Music, or the person's own request
+ * brought it, which then says `inLibrary`. `kept` counts the person's kept songs from it.
+ */
+export const SearchAlbum = z
+  .object({
+    ref: RequestRef,
+    title: z.string(),
+    artist: z.string().nullable(),
+    year: z.number().int().nullable(),
+    type: AlbumType.nullable(),
+    art: ArtUrl.nullable(),
+    status: RequestStatus.nullable(),
+    progress: z.number().nullable(),
+    /** The library item the person's request became, once it is `inLibrary`. */
+    item: MediaRef.nullable(),
+    kept: z.number().int().nonnegative(),
+  })
+  .openapi('SearchAlbum');
+export type SearchAlbum = z.infer<typeof SearchAlbum>;
+
 /**
  * A song outside the library that plays straight away: its title, its artists, each name as the
  * upstream gives it, its album where it has one, its length in seconds, and its art.
@@ -116,15 +146,21 @@ export type StreamingState = z.infer<typeof StreamingState>;
 export const SearchBookParams = z.object({ asin: Asin });
 export type SearchBookParams = z.infer<typeof SearchBookParams>;
 
+/** An album row's cover, by its MusicBrainz release group id. */
+export const SearchAlbumParams = z.object({ mbid: z.string().uuid() });
+export type SearchAlbumParams = z.infer<typeof SearchAlbumParams>;
+
 /**
- * A search's results, best first, for the query as it was searched, the books the library lacks
- * that the catalogue finds for it, the songs that play straight away, and whether they can now.
+ * A search's results, best first, for the query as it was searched, the books and albums the
+ * library lacks that the catalogues find for it, the songs that play straight away, and whether they
+ * can now.
  */
 export const SearchResults = z
   .object({
     query: z.string(),
     results: z.array(SearchResult),
     books: z.array(SearchBook),
+    albums: z.array(SearchAlbum),
     songs: z.array(SearchSong),
     streaming: StreamingState,
     /** Whether the person has any request, which Search offers whatever it shows. */

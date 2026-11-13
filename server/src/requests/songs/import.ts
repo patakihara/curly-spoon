@@ -29,6 +29,7 @@ import { stepFailure } from '../../adapters/http/unavailable.js';
 import type { JellyfinClient, MusicLibrary } from '../../adapters/jellyfin/client.js';
 import type { FolderItem } from '../../adapters/jellyfin/schemas.js';
 import type { JobLog } from '../../jobs/schedule.js';
+import { albumFolders } from '../../music/folders.js';
 import { indexOneJellyfinAlbum } from '../../libraryIndex/job.js';
 import { OpusRefused } from '../../music/opus/ebml.js';
 import { remux } from '../../music/opus/remux.js';
@@ -42,7 +43,6 @@ import {
   householdTrack,
   placeSong,
   type PlacedSong,
-  songFolders,
   songPlace,
   SongRefused,
 } from './place.js';
@@ -174,7 +174,7 @@ export function songImport(deps: SongImportDeps): MediumSteps['import'] {
   ): Promise<PlacedSong | 'staging'> => {
     const { id } = handle;
     const place = songPlace(match);
-    const folders = await songFolders(deps.musicDir, place);
+    const folders = await albumFolders(deps.musicDir, place);
     const there =
       (await findPlaced(deps.musicDir, folders, place, id)) ??
       (await householdTrack(deps.musicDir, folders, place));
@@ -234,7 +234,7 @@ export function songImport(deps: SongImportDeps): MediumSteps['import'] {
     if (place === 'staging') return { kind: 'waiting' };
     const path = posix.join(library.locations[0]!, place.relPath).normalize('NFC');
     if (place.outcome !== 'household' && !reported.has(path)) {
-      await jellyfin(() => deps.jellyfin.reportCreated(path));
+      await jellyfin(() => deps.jellyfin.reportCreated([path]));
       reported.add(path);
     }
 

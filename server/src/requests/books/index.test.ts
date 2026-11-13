@@ -21,6 +21,7 @@ import { createRequest, getRequest, saveRequest } from '../../store/requests.js'
 import { createSession } from '../../store/sessions.js';
 import { saveLink } from '../../store/upstreamLinks.js';
 import { upsertUser } from '../../store/users.js';
+import { prowlarrOf } from '../prowlarr.js';
 import { bookSteps } from './index.js';
 
 const KEY = Buffer.alloc(32, 7).toString('base64');
@@ -71,8 +72,16 @@ const noFetch: FetchLike = async (url) => {
 };
 const log = { error: () => undefined };
 const db = () => openDatabase(':memory:');
-const stepsWith = (vars: Record<string, string>) =>
-  bookSteps(loadConfig(vars), { db: db(), fetch: noFetch, log, now: Date.now });
+const stepsWith = (vars: Record<string, string>) => {
+  const config = loadConfig(vars);
+  return bookSteps(config, {
+    db: db(),
+    fetch: noFetch,
+    log,
+    now: Date.now,
+    prowlarr: prowlarrOf(config, noFetch),
+  });
+};
 
 describe('book steps from the configuration', () => {
   it('registers with all of it, and calls nothing to do so', () => {
@@ -85,6 +94,7 @@ describe('book steps from the configuration', () => {
       },
       log,
       now: Date.now,
+      prowlarr: prowlarrOf(loadConfig(env), noFetch),
     });
     expect('steps' in made && made.steps.medium).toBe('book');
     expect(calls).toEqual([]);

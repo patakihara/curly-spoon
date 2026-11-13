@@ -11,13 +11,20 @@ export function foldName(name: string): string {
 /** Apostrophes and the marks typed for them: ' ’ ‘ ʼ ` ´ and the full-width '. */
 const APOSTROPHES = /['’‘ʼ`´＇]/g;
 
+/** Dashes MusicBrainz and torrents write differently: ‐ ‑ ‒ – — ― and the minus sign. */
+const DASHES = /[\u2010-\u2015\u2212]/g;
+
 /**
- * Apostrophes dropped (before `foldName`, which would split ´ into a space and an accent), then
- * `foldName`, ß as ss, and whitespace collapsed: indexed text and queries alike. Sign-in keeps
+ * Apostrophes dropped and every dash a hyphen (before `foldName`, which would split ´ into a space and an accent), then
+ * `foldName`, ß as ss, and whitespace collapsed: indexed text and queries alike. MusicBrainz writes
+ * "Ghosts I–IV" with an en dash where torrents write a hyphen; both fold to "ghosts i-iv". Sign-in keeps
  * `foldName` alone: a login name matches an account only as spelled.
  */
 export function searchFold(text: string): string {
-  return foldName(text.replace(APOSTROPHES, '')).replace(/ß/g, 'ss').replace(/\s+/g, ' ').trim();
+  return foldName(text.replace(APOSTROPHES, '').replace(DASHES, '-'))
+    .replace(/ß/g, 'ss')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 /** Words in brackets: "(2002 Remaster)", "[Live]", "{feat. …}". */

@@ -1,11 +1,11 @@
 /**
- * The MusicBrainz client: a release search, a recording search and a release lookup, from
- * `/ws/2` as JSON (`new MusicBrainzClient({ baseUrl, fetch, userAgent, clock? })`). MusicBrainz
+ * The MusicBrainz client: a release search, a recording search, a release lookup, and for albums a
+ * release group's lookup, its official releases and a release-group search, from `/ws/2` as JSON (`new MusicBrainzClient({ baseUrl, fetch, userAgent, clock? })`). MusicBrainz
  * takes no key; it asks each client to name itself in the User-Agent, and to make about one call a
  * second. It answers 503 when a client goes over (twice in 16 calls at about one a second, checked
  * live). So every call waits its turn in one queue, starting at least 1.1 s after the one before;
  * a 503 waits 2 s and is tried twice more, and a third 503 is `StepUnavailable`. One client serves
- * the whole server, so its queue is the whole server's.
+ * the whole server (`requests/musicBrainz.ts`), so its queue is the whole server's.
  *
  * Search terms go in quoted Lucene phrases, with brackets left to the caller to drop: MusicBrainz
  * matches "I'm" only as written, not folded to "im" (checked live).
@@ -15,10 +15,16 @@ import { AdapterError, type FetchLike, requestJson } from '../http/fetch.js';
 import { stepFailure } from '../http/unavailable.js';
 import { StepUnavailable } from '../../requests/steps.js';
 import {
+  type GroupRelease,
+  groupReleasesSchema,
   type RecordingSearch,
   recordingSearchSchema,
   type Release,
   releaseSchema,
+  type ReleaseGroup,
+  releaseGroupLookupSchema,
+  type ReleaseGroupSearch,
+  releaseGroupSearchSchema,
   type ReleaseSearch,
   releaseSearchSchema,
 } from './schemas.js';
@@ -39,10 +45,22 @@ export const MUSICBRAINZ_SEARCH_LIMIT = 25;
 /** What a lookup includes: the tracks with their recordings, every artist credit, the group. */
 export const RELEASE_INCLUDES = 'recordings+artist-credits+release-groups+media';
 
+/** What a release group's releases include: each medium's format and its tracks' recordings. */
+export const GROUP_RELEASE_INCLUDES = 'recordings+media';
+/** How many releases one page of a group's releases holds, MusicBrainz's most. */
+export const GROUP_RELEASES_PAGE = 100;
+/** How many pages of a group's releases are read at most. */
+export const GROUP_RELEASES_PAGES = 3;
+
 /** One call's limit; a search took up to 2.1 s and a lookup 3.5 s (checked live). */
 const MUSICBRAINZ_LIMIT_MS = 10_000;
 /** An answer larger than this is refused rather than read; a 25-row search is about 60 KB. */
 const MUSICBRAINZ_MAX_BYTES = 2 * 1024 * 1024;
+/**
+ * A page of a group's releases with every track is larger: Ghosts I–IV's nine releases, 36 tracks
+ * each and more, are 115 KB (checked live), so a full page of 100 such is about 1.3 MB.
+ */
+const GROUP_RELEASES_MAX_BYTES = 6 * 1024 * 1024;
 const BUSY = 503;
 
 /** The time and a wait, so a test can run the queue on a fake clock. */
@@ -86,6 +104,14 @@ function phrase(value: string): string {
   return `"${value.replace(/[\\"]/g, '\\$&')}"`;
 }
 
+/** Lucene's special characters, each escaped, so a person's words are searched as words. */
+const LUCENE_SPECIAL = /[+\-&|!(){}[\]^"~*?:\\/]/g;
+
+/** A person's words for a release-group search: Lucene's operators escaped, nothing else. */
+export function releaseGroupQuery(words: string): string {
+  return words.replace(LUCENE_SPECIAL, '\\$&').replace(/\s+/g, ' ').trim();
+}
+
 export function releaseQuery({ release, artist }: ReleaseQuery): string {
   return `release:${phrase(release)} AND artist:${phrase(artist)}`;
 }
@@ -124,11 +150,65 @@ export class MusicBrainzClient {
   }
 
   /** One release with its tracks, their recordings, its credits and its group; null when gone. */
-  async release(id: string): Promise<Release | null> {
-    try {
-      return await this.get(`ws/2/release/${encodeURIComponent(id)}`, releaseSchema, {
+  release(id: string): Promise<Release | null> {
+    return this.orNull(() =>
+      this.get(`ws/2/release/${encodeURIComponent(id)}`, releaseSchema, {
         inc: RELEASE_INCLUDES,
-      });
+      }),
+    );
+  }
+
+  /** One release group with its artist credit; null when gone. */
+  async releaseGroup(id: string): Promise<ReleaseGroup | null> {
+    return this.orNull(() =>
+      this.get(`ws/2/release-group/${encodeURIComponent(id)}`, releaseGroupLookupSchema, {
+        inc: 'artist-credits',
+      }),
+    );
+  }
+
+  /**
+   * A release group's official releases, each medium with its format and its tracks' recordings,
+   * read a page of 100 at a time, at most three pages. The answer's count also counts releases
+   * that are not official (Ghosts I–IV: 11 counted, 9 listed, recorded), so a page that is not full is the
+   * last. A group that is gone has none.
+   */
+  async releasesOfGroup(id: string): Promise<GroupRelease[]> {
+    const releases: GroupRelease[] = [];
+    for (let page = 0; page < GROUP_RELEASES_PAGES; page += 1) {
+      const found = await this.orNull(() =>
+        this.get(
+          'ws/2/release',
+          groupReleasesSchema,
+          {
+            'release-group': id,
+            status: 'official',
+            inc: GROUP_RELEASE_INCLUDES,
+            limit: String(GROUP_RELEASES_PAGE),
+            offset: String(page * GROUP_RELEASES_PAGE),
+          },
+          GROUP_RELEASES_MAX_BYTES,
+        ),
+      );
+      if (found === null) break;
+      releases.push(...found.releases);
+      if (found.releases.length < GROUP_RELEASES_PAGE) break;
+    }
+    return releases;
+  }
+
+  /** Release groups matching a person's words, best score first. */
+  searchReleaseGroups(words: string): Promise<ReleaseGroupSearch> {
+    return this.get('ws/2/release-group', releaseGroupSearchSchema, {
+      query: releaseGroupQuery(words),
+      limit: String(MUSICBRAINZ_SEARCH_LIMIT),
+    });
+  }
+
+  /** The answer, or null when MusicBrainz says the id names nothing (400 or 404). */
+  private async orNull<T>(ask: () => Promise<T>): Promise<T | null> {
+    try {
+      return await ask();
     } catch (error) {
       if (error instanceof AdapterError && (error.status === 400 || error.status === 404)) {
         return null;
@@ -152,6 +232,7 @@ export class MusicBrainzClient {
     path: string,
     schema: ZodType<T, ZodTypeDef, unknown>,
     query: Record<string, string>,
+    maxBytes = MUSICBRAINZ_MAX_BYTES,
   ): Promise<T> {
     const base = this.opts.baseUrl.endsWith('/') ? this.opts.baseUrl : `${this.opts.baseUrl}/`;
     const url = new URL(path, base);
@@ -165,7 +246,7 @@ export class MusicBrainzClient {
           url.toString(),
           {
             headers: { 'user-agent': this.opts.userAgent },
-            maxBytes: MUSICBRAINZ_MAX_BYTES,
+            maxBytes,
             timeoutMs: this.opts.timeoutMs ?? MUSICBRAINZ_LIMIT_MS,
           },
           schema,

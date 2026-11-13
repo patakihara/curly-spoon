@@ -29,7 +29,10 @@ export const RequestStatus = z
   .openapi('RequestStatus');
 export type RequestStatus = z.infer<typeof RequestStatus>;
 
-/** Why a request failed, as a key the apps word themselves. */
+/**
+ * Why a request failed, as a key the apps word themselves. `wrongRelease`: the release's files are
+ * not what was asked for, as a torrent whose files fit none of an album's editions.
+ */
 export const RequestFailure = z
   .enum([
     'noRelease',
@@ -39,6 +42,7 @@ export const RequestFailure = z
     'importFailed',
     'notIndexed',
     'cancelledUpstream',
+    'wrongRelease',
   ])
   .openapi('RequestFailure');
 export type RequestFailure = z.infer<typeof RequestFailure>;
@@ -48,7 +52,8 @@ export const Asin = z.string().regex(/^[A-Z0-9]{10}$/);
 
 /**
  * The catalogue ids a request names its target by: an Audible ASIN, an ISBN-10 or ISBN-13, a
- * MusicBrainz release id, a podcast's feed address, a YouTube Music video id.
+ * MusicBrainz release group id (an album, whichever its edition), a podcast's feed address, a
+ * YouTube Music video id.
  */
 export const RequestIds = z
   .object({

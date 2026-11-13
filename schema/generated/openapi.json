@@ -56,7 +56,8 @@
           "downloadStalled",
           "importFailed",
           "notIndexed",
-          "cancelledUpstream"
+          "cancelledUpstream",
+          "wrongRelease"
         ]
       },
       "QueueType": {
@@ -259,6 +260,86 @@
           "items"
         ]
       },
+      "RequestMedium": {
+        "type": "string",
+        "enum": [
+          "book",
+          "album",
+          "song",
+          "podcast"
+        ]
+      },
+      "RequestIds": {
+        "type": "object",
+        "properties": {
+          "asin": {
+            "type": "string",
+            "pattern": "^[A-Z0-9]{10}$"
+          },
+          "isbn": {
+            "type": "string",
+            "pattern": "^(?:\\d{9}[\\dX]|\\d{13})$"
+          },
+          "mbid": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "feedUrl": {
+            "type": "string",
+            "maxLength": 2048,
+            "format": "uri",
+            "pattern": "^https?:\\/\\/"
+          },
+          "youtubeMusicId": {
+            "type": "string",
+            "pattern": "^[\\w-]{1,64}$"
+          }
+        },
+        "additionalProperties": false
+      },
+      "RequestTarget": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "creator": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "ids": {
+            "$ref": "#/components/schemas/RequestIds"
+          }
+        },
+        "required": [
+          "title",
+          "creator",
+          "ids"
+        ],
+        "additionalProperties": false
+      },
+      "RequestRef": {
+        "type": "object",
+        "properties": {
+          "medium": {
+            "$ref": "#/components/schemas/RequestMedium"
+          },
+          "target": {
+            "$ref": "#/components/schemas/RequestTarget"
+          }
+        },
+        "required": [
+          "medium",
+          "target"
+        ],
+        "additionalProperties": false
+      },
       "SearchParent": {
         "type": "object",
         "properties": {
@@ -285,6 +366,16 @@
           "importing",
           "inLibrary",
           "failed"
+        ]
+      },
+      "AlbumType": {
+        "type": "string",
+        "enum": [
+          "album",
+          "ep",
+          "single",
+          "broadcast",
+          "other"
         ]
       },
       "LyricsSource": {
@@ -995,15 +1086,6 @@
           "title"
         ]
       },
-      "RequestMedium": {
-        "type": "string",
-        "enum": [
-          "book",
-          "album",
-          "song",
-          "podcast"
-        ]
-      },
       "RequestVerb": {
         "type": "string",
         "enum": [
@@ -1123,77 +1205,6 @@
           "verbs",
           "candidates"
         ]
-      },
-      "RequestIds": {
-        "type": "object",
-        "properties": {
-          "asin": {
-            "type": "string",
-            "pattern": "^[A-Z0-9]{10}$"
-          },
-          "isbn": {
-            "type": "string",
-            "pattern": "^(?:\\d{9}[\\dX]|\\d{13})$"
-          },
-          "mbid": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "feedUrl": {
-            "type": "string",
-            "maxLength": 2048,
-            "format": "uri",
-            "pattern": "^https?:\\/\\/"
-          },
-          "youtubeMusicId": {
-            "type": "string",
-            "pattern": "^[\\w-]{1,64}$"
-          }
-        },
-        "additionalProperties": false
-      },
-      "RequestTarget": {
-        "type": "object",
-        "properties": {
-          "title": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 300
-          },
-          "creator": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "minLength": 1,
-            "maxLength": 300
-          },
-          "ids": {
-            "$ref": "#/components/schemas/RequestIds"
-          }
-        },
-        "required": [
-          "title",
-          "creator",
-          "ids"
-        ],
-        "additionalProperties": false
-      },
-      "RequestRef": {
-        "type": "object",
-        "properties": {
-          "medium": {
-            "$ref": "#/components/schemas/RequestMedium"
-          },
-          "target": {
-            "$ref": "#/components/schemas/RequestTarget"
-          }
-        },
-        "required": [
-          "medium",
-          "target"
-        ],
-        "additionalProperties": false
       },
       "RequestList": {
         "type": "object",
@@ -2138,6 +2149,16 @@
           },
           "sort": {
             "$ref": "#/components/schemas/EpisodeOrder"
+          },
+          "request": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RequestRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -2151,7 +2172,8 @@
           "availability",
           "chapters",
           "episodes",
-          "tracks"
+          "tracks",
+          "request"
         ]
       },
       "ArtSize": {
@@ -2379,6 +2401,87 @@
           "item"
         ]
       },
+      "SearchAlbum": {
+        "type": "object",
+        "properties": {
+          "ref": {
+            "$ref": "#/components/schemas/RequestRef"
+          },
+          "title": {
+            "type": "string"
+          },
+          "artist": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "year": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "type": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AlbumType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "art": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RequestStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "progress": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "item": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MediaRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "kept": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "ref",
+          "title",
+          "artist",
+          "year",
+          "type",
+          "art",
+          "status",
+          "progress",
+          "item",
+          "kept"
+        ]
+      },
       "SearchSong": {
         "type": "object",
         "properties": {
@@ -2449,6 +2552,12 @@
               "$ref": "#/components/schemas/SearchBook"
             }
           },
+          "albums": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SearchAlbum"
+            }
+          },
           "songs": {
             "type": "array",
             "items": {
@@ -2466,6 +2575,7 @@
           "query",
           "results",
           "books",
+          "albums",
           "songs",
           "streaming",
           "hasRequests"
@@ -5872,6 +5982,127 @@
         "responses": {
           "200": {
             "description": "The image, as the catalogue holds it."
+          },
+          "400": {
+            "description": "The request does not parse, or was refused."
+          },
+          "401": {
+            "description": "No session."
+          },
+          "403": {
+            "description": "Without the role this route needs, or sent from another site."
+          }
+        }
+      }
+    },
+    "/api/search/albums/{mbid}/art": {
+      "get": {
+        "summary": "The front cover of an album a search found, one the library lacks, from the Cover Art Archive",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "operationId": "getSearchAlbumArt",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "mbid",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "$ref": "#/components/schemas/ArtSize"
+            },
+            "required": false,
+            "name": "size",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The image, as the archive holds it.",
+            "content": {
+              "image/*": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request does not parse, or was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Without the role this route needs, or sent from another site.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "head": {
+        "summary": "The front cover of an album a search found, one the library lacks, from the Cover Art Archive",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "operationId": "getSearchAlbumArtHead",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "mbid",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "$ref": "#/components/schemas/ArtSize"
+            },
+            "required": false,
+            "name": "size",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The image, as the archive holds it."
           },
           "400": {
             "description": "The request does not parse, or was refused."

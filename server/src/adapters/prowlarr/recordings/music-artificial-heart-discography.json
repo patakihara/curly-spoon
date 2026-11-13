@@ -1,0 +1,305 @@
+{
+  "upstream": "prowlarr",
+  "upstreamVersion": "10.0.0.22097",
+  "call": "music-artificial-heart-discography",
+  "request": {
+    "method": "GET",
+    "path": "/api/v1/search",
+    "query": {
+      "categories": "3000",
+      "indexerIds": "5",
+      "query": "Jonathan Coulton discography",
+      "type": "search"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": [
+        {
+          "guid": "magnet:?xt=urn:btih:B48ED25B01668963E1F0FF782BE383C5E7060EB4",
+          "age": 6717,
+          "ageHours": 161212.7275289041,
+          "ageMinutes": 9672763.651734263,
+          "size": 392124041,
+          "files": 100,
+          "indexerId": 5,
+          "indexer": "indexer-i",
+          "title": "Jonathan Coulton -Discography",
+          "sortTitle": "jonathan coulton discography",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2008-06-19T20:14:19Z",
+          "infoUrl": "http://upstream.invalid/page-ecea873f61fe",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 100101,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/5/download?apikey=<token>&link=link-cd3a84f3bcc1",
+          "infoHash": "B48ED25B01668963E1F0FF782BE383C5E7060EB4",
+          "seeders": 2,
+          "leechers": 0,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/page-84c3a23297be",
+          "age": 365,
+          "ageHours": 8760.000010909527,
+          "ageMinutes": 525600.0006545833,
+          "size": 1578400481,
+          "indexerId": 6,
+          "indexer": "indexer-g",
+          "title": "Jonathan Coulton Studio Discography FLAC",
+          "sortTitle": "jonathan coulton studio discography flac",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2025-11-10T00:57:58Z",
+          "downloadUrl": "http://upstream.invalid/6/download?apikey=<token>&link=link-d4fd48f9b9da",
+          "infoUrl": "http://upstream.invalid/page-84c3a23297be",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 104627,
+              "subCategories": []
+            }
+          ],
+          "seeders": 1,
+          "leechers": 2,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/page-fb7e2dd5b5c7",
+          "age": 365,
+          "ageHours": 8760.000010701806,
+          "ageMinutes": 525600.0006421183,
+          "size": 2018634629,
+          "indexerId": 6,
+          "indexer": "indexer-g",
+          "title": "[FLAC] Jonathan Coulton Discography",
+          "sortTitle": "flac jonathan coulton discography",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2025-11-10T00:57:58Z",
+          "downloadUrl": "http://upstream.invalid/6/download?apikey=<token>&link=link-ce08ee320d1f",
+          "infoUrl": "http://upstream.invalid/page-fb7e2dd5b5c7",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 104627,
+              "subCategories": []
+            }
+          ],
+          "seeders": 2,
+          "leechers": 0,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/page-904e742bd3e1",
+          "age": 6718,
+          "ageHours": 161233.96614017856,
+          "ageMinutes": 9674037.968410721,
+          "size": 392125480,
+          "indexerId": 8,
+          "indexer": "indexer-f",
+          "title": "Jonathan Coulton - Discography",
+          "sortTitle": "jonathan coulton discography",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2008-06-18T23:00:00Z",
+          "infoUrl": "http://upstream.invalid/page-904e742bd3e1",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 1100000,
+              "subCategories": []
+            },
+            {
+              "id": 3010,
+              "name": "Audio/MP3",
+              "subCategories": []
+            },
+            {
+              "id": 1101000,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/8/download?apikey=<token>&link=link-64612c1894a6",
+          "infoHash": "B48ED25B01668963E1F0FF782BE383C5E7060EB4",
+          "seeders": 2,
+          "leechers": 5,
+          "protocol": "torrent"
+        }
+      ]
+    }
+  }
+}

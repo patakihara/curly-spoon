@@ -1,0 +1,1740 @@
+{
+  "upstream": "musicbrainz",
+  "upstreamVersion": "MusicBrainz web service 2",
+  "call": "release-ghosts-digital",
+  "request": {
+    "method": "GET",
+    "path": "/ws/2/release/3af7ec8c-3bf4-4e6d-9bb3-1885d22b2b6a",
+    "query": {
+      "fmt": "json",
+      "inc": "recordings+artist-credits+release-groups+media"
+    },
+    "headers": {
+      "accept": "application/json",
+      "user-agent": "Auralis/0.0.0 ( https://github.com/patakihara/curly-spoon )"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "text-representation": {
+          "script": "Latn",
+          "language": "eng"
+        },
+        "cover-art-archive": {
+          "artwork": true,
+          "front": true,
+          "darkened": false,
+          "back": false,
+          "count": 77
+        },
+        "release-group": {
+          "title": "Ghosts I–IV",
+          "primary-type-id": "f529b476-6e62-324f-b0aa-1f3e33d313fc",
+          "primary-type": "Album",
+          "disambiguation": "",
+          "first-release-date": "2008-03-02",
+          "secondary-types": [],
+          "secondary-type-ids": [],
+          "id": "550bf4b9-92ca-30ba-9ea2-8b45f9d081f1",
+          "artist-credit": [
+            {
+              "name": "Nine Inch Nails",
+              "joinphrase": "",
+              "artist": {
+                "name": "Nine Inch Nails",
+                "country": "US",
+                "disambiguation": "",
+                "type": "Group",
+                "sort-name": "Nine Inch Nails",
+                "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da"
+              }
+            }
+          ]
+        },
+        "packaging-id": "119eba76-b343-3e02-a292-f0f00644bb9b",
+        "status-id": "4e304316-386d-3409-af2e-78857eec5cfe",
+        "release-events": [
+          {
+            "area": {
+              "iso-3166-1-codes": [
+                "XW"
+              ],
+              "id": "525d4e18-3d00-31b9-a58b-a146a916de8f",
+              "type-id": null,
+              "name": "[Worldwide]",
+              "disambiguation": "",
+              "sort-name": "[Worldwide]",
+              "type": null
+            },
+            "date": "2008-03-02"
+          }
+        ],
+        "title": "Ghosts I–IV",
+        "date": "2008-03-02",
+        "asin": "B00158SHD8",
+        "barcode": "766929908628",
+        "quality": "normal",
+        "artist-credit": [
+          {
+            "name": "Nine Inch Nails",
+            "joinphrase": "",
+            "artist": {
+              "country": "US",
+              "disambiguation": "",
+              "type": "Group",
+              "sort-name": "Nine Inch Nails",
+              "name": "Nine Inch Nails",
+              "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+              "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da"
+            }
+          }
+        ],
+        "disambiguation": "",
+        "country": "XW",
+        "packaging": "None",
+        "status": "Official",
+        "media": [
+          {
+            "track-count": 36,
+            "position": 1,
+            "id": "7e1c3744-7dd3-37a7-8e60-1175c6fba1ab",
+            "track-offset": 0,
+            "format": "Digital Media",
+            "tracks": [
+              {
+                "id": "5568e350-40e6-3b7d-bffa-25bdf524d45d",
+                "artist-credit": [
+                  {
+                    "joinphrase": "",
+                    "artist": {
+                      "name": "Nine Inch Nails",
+                      "sort-name": "Nine Inch Nails",
+                      "type": "Group",
+                      "disambiguation": "",
+                      "country": "US",
+                      "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                      "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b"
+                    },
+                    "name": "Nine Inch Nails"
+                  }
+                ],
+                "length": 169000,
+                "recording": {
+                  "id": "b2fdf3ce-78a6-4e01-9a7b-441700e8ea66",
+                  "length": 169000,
+                  "artist-credit": [
+                    {
+                      "name": "Nine Inch Nails",
+                      "artist": {
+                        "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                        "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                        "name": "Nine Inch Nails",
+                        "country": "US",
+                        "disambiguation": "",
+                        "sort-name": "Nine Inch Nails",
+                        "type": "Group"
+                      },
+                      "joinphrase": ""
+                    }
+                  ],
+                  "first-release-date": "2008-03-02",
+                  "disambiguation": "",
+                  "video": false,
+                  "title": "1 Ghosts I"
+                },
+                "number": "1",
+                "position": 1,
+                "title": "1 Ghosts I"
+              },
+              {
+                "title": "2 Ghosts I",
+                "recording": {
+                  "id": "1f3f0aed-47ed-42f4-b1b6-f02f2a13437c",
+                  "length": 196000,
+                  "artist-credit": [
+                    {
+                      "joinphrase": "",
+                      "artist": {
+                        "sort-name": "Nine Inch Nails",
+                        "type": "Group",
+                        "country": "US",
+                        "disambiguation": "",
+                        "name": "Nine Inch Nails",
+                        "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                        "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b"
+                      },
+                      "name": "Nine Inch Nails"
+                    }
+                  ],
+                  "first-release-date": "2008-03-02",
+                  "disambiguation": "",
+                  "title": "2 Ghosts I",
+                  "video": false
+                },
+                "length": 196000,
+                "artist-credit": [
+                  {
+                    "name": "Nine Inch Nails",
+                    "artist": {
+                      "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                      "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                      "disambiguation": "",
+                      "country": "US",
+                      "type": "Group",
+                      "sort-name": "Nine Inch Nails",
+                      "name": "Nine Inch Nails"
+                    },
+                    "joinphrase": ""
+                  }
+                ],
+                "id": "e06cba8b-8bca-36bb-92ba-45757ba19a1d",
+                "position": 2,
+                "number": "2"
+              },
+              {
+                "title": "3 Ghosts I",
+                "recording": {
+                  "disambiguation": "",
+                  "title": "3 Ghosts I",
+                  "video": false,
+                  "artist-credit": [
+                    {
+                      "name": "Nine Inch Nails",
+                      "artist": {
+                        "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                        "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                        "sort-name": "Nine Inch Nails",
+                        "type": "Group",
+                        "disambiguation": "",
+                        "country": "US",
+                        "name": "Nine Inch Nails"
+                      },
+                      "joinphrase": ""
+                    }
+                  ],
+                  "id": "241a460a-7118-4bf7-abec-12954ea0df4c",
+                  "length": 231000,
+                  "first-release-date": "2008-03-02"
+                },
+                "artist-credit": [
+                  {
+                    "name": "Nine Inch Nails",
+                    "artist": {
+                      "name": "Nine Inch Nails",
+                      "disambiguation": "",
+                      "country": "US",
+                      "sort-name": "Nine Inch Nails",
+                      "type": "Group",
+                      "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                      "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b"
+                    },
+                    "joinphrase": ""
+                  }
+                ],
+                "length": 231000,
+                "id": "68cbe046-566d-3411-9204-7cac98d9de50",
+                "number": "3",
+                "position": 3
+              },
+              {
+                "recording": {
+                  "first-release-date": "2008-03-02",
+                  "id": "3f5dd67f-587d-488b-b295-59ea2e4d8aca",
+                  "length": 133000,
+                  "artist-credit": [
+                    {
+                      "joinphrase": "",
+                      "artist": {
+                        "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                        "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                        "name": "Nine Inch Nails",
+                        "sort-name": "Nine Inch Nails",
+                        "type": "Group",
+                        "country": "US",
+                        "disambiguation": ""
+                      },
+                      "name": "Nine Inch Nails"
+                    }
+                  ],
+                  "title": "4 Ghosts I",
+                  "video": false,
+                  "disambiguation": ""
+                },
+                "artist-credit": [
+                  {
+                    "name": "Nine Inch Nails",
+                    "artist": {
+                      "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                      "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                      "sort-name": "Nine Inch Nails",
+                      "type": "Group",
+                      "country": "US",
+                      "disambiguation": "",
+                      "name": "Nine Inch Nails"
+                    },
+                    "joinphrase": ""
+                  }
+                ],
+                "length": 133000,
+                "id": "d48840b4-9d72-3af5-85be-fecc5aa84ca2",
+                "number": "4",
+                "position": 4,
+                "title": "4 Ghosts I"
+              },
+              {
+                "title": "5 Ghosts I",
+                "id": "d59b6eab-c1ef-304b-ae5e-b940d9e844e8",
+                "artist-credit": [
+                  {
+                    "name": "Nine Inch Nails",
+                    "joinphrase": "",
+                    "artist": {
+                      "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                      "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                      "name": "Nine Inch Nails",
+                      "sort-name": "Nine Inch Nails",
+                      "type": "Group",
+                      "disambiguation": "",
+                      "country": "US"
+                    }
+                  }
+                ],
+                "length": 172000,
+                "recording": {
+                  "artist-credit": [
+                    {
+                      "joinphrase": "",
+                      "artist": {
+                        "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                        "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                        "name": "Nine Inch Nails",
+                        "type": "Group",
+                        "sort-name": "Nine Inch Nails",
+                        "country": "US",
+                        "disambiguation": ""
+                      },
+                      "name": "Nine Inch Nails"
+                    }
+                  ],
+                  "id": "132a7820-4a29-4745-bf20-222386434f47",
+                  "length": 172000,
+                  "first-release-date": "2008-03-02",
+                  "disambiguation": "",
+                  "title": "5 Ghosts I",
+                  "video": false
+                },
+                "number": "5",
+                "position": 5
+              },
+              {
+                "recording": {
+                  "disambiguation": "",
+                  "title": "6 Ghosts I",
+                  "video": false,
+                  "length": 258693,
+                  "id": "00a97470-5826-4cb9-81ee-2d54558054b8",
+                  "artist-credit": [
+                    {
+                      "name": "Nine Inch Nails",
+                      "artist": {
+                        "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                        "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                        "name": "Nine Inch Nails",
+                        "type": "Group",
+                        "sort-name": "Nine Inch Nails",
+                        "disambiguation": "",
+                        "country": "US"
+                      },
+                      "joinphrase": ""
+                    }
+                  ],
+                  "first-release-date": "2008-03-02"
+                },
+                "id": "c8b5f914-fb3a-372e-a323-85f91ee73f4c",
+                "artist-credit": [
+                  {
+                    "name": "Nine Inch Nails",
+                    "artist": {
+                      "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                      "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                      "disambiguation": "",
+                      "country": "US",
+                      "sort-name": "Nine Inch Nails",
+                      "type": "Group",
+                      "name": "Nine Inch Nails"
+                    },
+                    "joinphrase": ""
+                  }
+                ],
+                "length": 259000,
+                "position": 6,
+                "number": "6",
+                "title": "6 Ghosts I"
+              },
+              {
+                "position": 7,
+                "number": "7",
+                "recording": {
+                  "first-release-date": "2008-03-02",
+                  "id": "1d1bb32a-5bc6-4b6f-88cc-c043f6c52509",
+                  "length": 121000,
+                  "artist-credit": [
+                    {
+                      "name": "Nine Inch Nails",
+                      "joinphrase": "",
+                      "artist": {
+                        "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                        "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                        "disambiguation": "",
+                        "country": "US",
+                        "sort-name": "Nine Inch Nails",
+                        "type": "Group",
+                        "name": "Nine Inch Nails"
+                      }
+                    }
+                  ],
+                  "video": false,
+                  "title": "7 Ghosts I",
+                  "disambiguation": ""
+                },
+                "length": 121000,
+                "artist-credit": [
+                  {
+                    "name": "Nine Inch Nails",
+                    "joinphrase": "",
+                    "artist": {
+                      "name": "Nine Inch Nails",
+                      "country": "US",
+                      "disambiguation": "",
+                      "type": "Group",
+                      "sort-name": "Nine Inch Nails",
+                      "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                      "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da"
+                    }
+                  }
+                ],
+                "id": "6b0f8c48-4483-3462-94c7-de5d1fb5a0e6",
+                "title": "7 Ghosts I"
+              },
+              {
+                "title": "8 Ghosts I",
+                "number": "8",
+                "position": 8,
+                "length": 176000,
+                "artist-credit": [
+                  {
+                    "joinphrase": "",
+                    "artist": {
+                      "disambiguation": "",
+                      "country": "US",
+                      "sort-name": "Nine Inch Nails",
+                      "type": "Group",
+                      "name": "Nine Inch Nails",
+                      "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                      "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b"
+                    },
+                    "name": "Nine Inch Nails"
+                  }
+                ],
+                "id": "d0173228-b340-3eee-90b6-4e58fc0c2a1a",
+                "recording": {
+                  "first-release-date": "2008-03-02",
+                  "artist-credit": [
+                    {
+                      "name": "Nine Inch Nails",
+                      "artist": {
+                        "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                        "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                        "name": "Nine Inch Nails",
+                        "disambiguation": "",
+                        "country": "US",
+                        "type": "Group",
+                        "sort-name": "Nine Inch Nails"
+                      },
+                      "joinphrase": ""
+                    }
+                  ],
+                  "id": "138f7fe7-9119-4ef1-8d70-6572a3ef7b15",
+                  "length": 176000,
+                  "title": "8 Ghosts I",
+                  "video": false,
+                  "disambiguation": ""
+                }
+              },
+              {
+                "title": "9 Ghosts I",
+                "recording": {
+                  "title": "9 Ghosts I",
+                  "video": false,
+                  "disambiguation": "",
+                  "first-release-date": "2008-03-02",
+                  "id": "e89d42b8-3d02-4264-94fc-07ce09da1944",
+                  "artist-credit": [
+                    {
+                      "name": "Nine Inch Nails",
+                      "artist": {
+                        "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                        "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                        "name": "Nine Inch Nails",
+                        "sort-name": "Nine Inch Nails",
+                        "type": "Group",
+                        "country": "US",
+                        "disambiguation": ""
+                      },
+                      "joinphrase": ""
+                    }
+                  ],
+                  "length": 167000
+                },
+                "id": "2527bfc5-4606-3327-960b-3c407d272faa",
+                "artist-credit": [
+                  {
+                    "artist": {
+                      "name": "Nine Inch Nails",
+                      "sort-name": "Nine Inch Nails",
+                      "type": "Group",
+                      "disambiguation": "",
+                      "country": "US",
+                      "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                      "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b"
+                    },
+                    "joinphrase": "",
+                    "name": "Nine Inch Nails"
+                  }
+                ],
+                "length": 167000,
+                "number": "9",
+                "position": 9
+              },
+              {
+                "title": "10 Ghosts II",
+                "id": "41f459bf-ba2d-3e1d-a94b-2eb6afb925bf",
+                "artist-credit": [
+                  {
+                    "artist": {
+                      "name": "Nine Inch Nails",
+                      "disambiguation": "",
+                      "country": "US",
+                      "sort-name": "Nine Inch Nails",
+                      "type": "Group",
+                      "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                      "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b"
+                    },
+                    "joinphrase": "",
+                    "name": "Nine Inch Nails"
+                  }
+                ],
+                "length": 162000,
+                "recording": {
+                  "disambiguation": "",
+                  "title": "10 Ghosts II",
+                  "video": false,
+                  "id": "226f53e6-ec5f-4783-8684-65bc3c85665b",
+                  "length": 162000,
+                  "artist-credit": [
+                    {
+                      "artist": {
+                        "name": "Nine Inch Nails",
+                        "disambiguation": "",
+                        "country": "US",
+                        "type": "Group",
+                        "sort-name": "Nine Inch Nails",
+                        "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                        "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da"
+                      },
+                      "joinphrase": "",
+                      "name": "Nine Inch Nails"
+                    }
+                  ],
+                  "first-release-date": "2008-03-02"
+                },
+                "position": 10,
+                "number": "10"
+              },
+              {
+                "title": "11 Ghosts II",
+                "artist-credit": [
+                  {
+                    "name": "Nine Inch Nails",
+                    "joinphrase": "",
+                    "artist": {
+                      "name": "Nine Inch Nails",
+                      "sort-name": "Nine Inch Nails",
+                      "type": "Group",
+                      "country": "US",
+                      "disambiguation": "",
+                      "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                      "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b"
+                    }
+                  }
+                ],
+                "id": "cdc87f4c-219b-3a85-ad48-19f6ea72e09a",
+                "length": 137000,
+                "recording": {
+                  "artist-credit": [
+                    {
+                      "artist": {
+                        "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                        "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                        "type": "Group",
+                        "sort-name": "Nine Inch Nails",
+                        "country": "US",
+                        "disambiguation": "",
+                        "name": "Nine Inch Nails"
+                      },
+                      "joinphrase": "",
+                      "name": "Nine Inch Nails"
+                    }
+                  ],
+                  "id": "a95eeadf-9c4a-486d-9610-58a41b6f43ed",
+                  "length": 137333,
+                  "first-release-date": "2008-03-02",
+                  "disambiguation": "",
+                  "title": "11 Ghosts II",
+                  "video": false
+                },
+                "position": 11,
+                "number": "11"
+              },
+              {
+                "title": "12 Ghosts II",
+                "recording": {
+                  "disambiguation": "",
+                  "title": "12 Ghosts II",
+                  "video": false,
+                  "artist-credit": [
+                    {
+                      "name": "Nine Inch Nails",
+                      "joinphrase": "",
+                      "artist": {
+                        "name": "Nine Inch Nails",
+                        "sort-name": "Nine Inch Nails",
+                        "type": "Group",
+                        "country": "US",
+                        "disambiguation": "",
+                        "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                        "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b"
+                      }
+                    }
+                  ],
+                  "id": "59772d56-b23e-458a-80ea-63f7469b08f4",
+                  "length": 137000,
+                  "first-release-date": "2008-03-02"
+                },
+                "length": 137000,
+                "artist-credit": [
+                  {
+                    "joinphrase": "",
+                    "artist": {
+                      "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                      "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                      "name": "Nine Inch Nails",
+                      "country": "US",
+                      "disambiguation": "",
+                      "type": "Group",
+                      "sort-name": "Nine Inch Nails"
+                    },
+                    "name": "Nine Inch Nails"
+                  }
+                ],
+                "id": "5d84382b-029a-3faf-b3d4-6270ca76addd",
+                "number": "12",
+                "position": 12
+              },
+              {
+                "title": "13 Ghosts II",
+                "position": 13,
+                "number": "13",
+                "recording": {
+                  "id": "7ba993ec-c7c2-422b-b549-d43f940c6e27",
+                  "artist-credit": [
+                    {
+                      "name": "Nine Inch Nails",
+                      "artist": {
+                        "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                        "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                        "name": "Nine Inch Nails",
+                        "sort-name": "Nine Inch Nails",
+                        "type": "Group",
+                        "disambiguation": "",
+                        "country": "US"
+                      },
+                      "joinphrase": ""
+                    }
+                  ],
+                  "length": 194000,
+                  "first-release-date": "2008-03-02",
+                  "disambiguation": "",
+                  "video": false,
+                  "title": "13 Ghosts II"
+                },
+                "length": 194000,
+                "artist-credit": [
+                  {
+                    "name": "Nine Inch Nails",
+                    "artist": {
+                      "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                      "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                      "sort-name": "Nine Inch Nails",
+                      "type": "Group",
+                      "country": "US",
+                      "disambiguation": "",
+                      "name": "Nine Inch Nails"
+                    },
+                    "joinphrase": ""
+                  }
+                ],
+                "id": "f44cd92d-46dd-3540-ac9c-52430cddfd27"
+              },
+              {
+                "title": "14 Ghosts II",
+                "artist-credit": [
+                  {
+                    "name": "Nine Inch Nails",
+                    "artist": {
+                      "disambiguation": "",
+                      "country": "US",
+                      "sort-name": "Nine Inch Nails",
+                      "type": "Group",
+                      "name": "Nine Inch Nails",
+                      "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                      "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b"
+                    },
+                    "joinphrase": ""
+                  }
+                ],
+                "length": 186000,
+                "id": "a4d419e4-ee64-3263-883f-e6cb521ceaaf",
+                "recording": {
+                  "title": "14 Ghosts II",
+                  "video": false,
+                  "disambiguation": "",
+                  "first-release-date": "2008-03-02",
+                  "artist-credit": [
+                    {
+                      "joinphrase": "",
+                      "artist": {
+                        "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                        "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                        "disambiguation": "",
+                        "country": "US",
+                        "type": "Group",
+                        "sort-name": "Nine Inch Nails",
+                        "name": "Nine Inch Nails"
+                      },
+                      "name": "Nine Inch Nails"
+                    }
+                  ],
+                  "id": "0339f547-4660-4ef7-a9a9-c61205b43c2f",
+                  "length": 186000
+                },
+                "number": "14",
+                "position": 14
+              },
+              {
+                "title": "15 Ghosts II",
+                "artist-credit": [
+                  {
+                    "joinphrase": "",
+                    "artist": {
+                      "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                      "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                      "name": "Nine Inch Nails",
+                      "sort-name": "Nine Inch Nails",
+                      "type": "Group",
+                      "country": "US",
+                      "disambiguation": ""
+                    },
+                    "name": "Nine Inch Nails"
+                  }
+                ],
+                "id": "168cb2db-5626-30c5-b822-dbf2324c2f49",
+                "length": 113000,
+                "recording": {
+                  "id": "2d7f08e1-be1c-4b86-b725-6e675b7b6de0",
+                  "length": 113000,
+                  "artist-credit": [
+                    {
+                      "name": "Nine Inch Nails",
+                      "joinphrase": "",
+                      "artist": {
+                        "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                        "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                        "name": "Nine Inch Nails",
+                        "type": "Group",
+                        "sort-name": "Nine Inch Nails",
+                        "disambiguation": "",
+                        "country": "US"
+                      }
+                    }
+                  ],
+                  "first-release-date": "2008-03-02",
+                  "disambiguation": "",
+                  "video": false,
+                  "title": "15 Ghosts II"
+                },
+                "position": 15,
+                "number": "15"
+              },
+              {
+                "position": 16,
+                "number": "16",
+                "id": "e0b750d2-d1fb-387b-9f78-53c7f53c3c28",
+                "artist-credit": [
+                  {
+                    "artist": {
+                      "name": "Nine Inch Nails",
+                      "sort-name": "Nine Inch Nails",
+                      "type": "Group",
+                      "disambiguation": "",
+                      "country": "US",
+                      "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                      "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b"
+                    },
+                    "joinphrase": "",
+                    "name": "Nine Inch Nails"
+                  }
+                ],
+                "length": 150000,
+                "recording": {
+                  "id": "e0632d22-f355-41dd-ae01-9bcd87aaacf6",
+                  "artist-credit": [
+                    {
+                      "joinphrase": "",
+                      "artist": {
+                        "country": "US",
+                        "disambiguation": "",
+                        "type": "Group",
+                        "sort-name": "Nine Inch Nails",
+                        "name": "Nine Inch Nails",
+                        "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                        "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da"
+                      },
+                      "name": "Nine Inch Nails"
+                    }
+                  ],
+                  "length": 150000,
+                  "first-release-date": "2008-03-02",
+                  "disambiguation": "",
+                  "video": false,
+                  "title": "16 Ghosts II"
+                },
+                "title": "16 Ghosts II"
+              },
+              {
+                "id": "e1673d6e-9f15-3d1e-83d7-8d314d8a72f1",
+                "artist-credit": [
+                  {
+                    "name": "Nine Inch Nails",
+                    "artist": {
+                      "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                      "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                      "name": "Nine Inch Nails",
+                      "disambiguation": "",
+                      "country": "US",
+                      "type": "Group",
+                      "sort-name": "Nine Inch Nails"
+                    },
+                    "joinphrase": ""
+                  }
+                ],
+                "length": 133000,
+                "recording": {
+                  "length": 133000,
+                  "id": "24cab93b-96e0-41fb-adbf-ba946c7c2f06",
+                  "artist-credit": [
+                    {
+                      "artist": {
+                        "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                        "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                        "disambiguation": "",
+                        "country": "US",
+                        "sort-name": "Nine Inch Nails",
+                        "type": "Group",
+                        "name": "Nine Inch Nails"
+                      },
+                      "joinphrase": "",
+                      "name": "Nine Inch Nails"
+                    }
+                  ],
+                  "first-release-date": "2008-03-02",
+                  "disambiguation": "",
+                  "video": false,
+                  "title": "17 Ghosts II"
+                },
+                "number": "17",
+                "position": 17,
+                "title": "17 Ghosts II"
+              },
+              {
+                "title": "18 Ghosts II",
+                "number": "18",
+                "position": 18,
+                "artist-credit": [
+                  {
+                    "name": "Nine Inch Nails",
+                    "artist": {
+                      "name": "Nine Inch Nails",
+                      "country": "US",
+                      "disambiguation": "",
+                      "type": "Group",
+                      "sort-name": "Nine Inch Nails",
+                      "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                      "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da"
+                    },
+                    "joinphrase": ""
+                  }
+                ],
+                "id": "ab280a74-0e8c-3705-9d14-fa6787d07bcc",
+                "length": 323000,
+                "recording": {
+                  "length": 323000,
+                  "id": "1d35585f-0e0b-41bb-89b6-07a9351d77e7",
+                  "artist-credit": [
+                    {
+                      "joinphrase": "",
+                      "artist": {
+                        "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                        "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                        "country": "US",
+                        "disambiguation": "",
+                        "type": "Group",
+                        "sort-name": "Nine Inch Nails",
+                        "name": "Nine Inch Nails"
+                      },
+                      "name": "Nine Inch Nails"
+                    }
+                  ],
+                  "first-release-date": "2008-03-02",
+                  "disambiguation": "",
+                  "video": false,
+                  "title": "18 Ghosts II"
+                }
+              },
+              {
+                "number": "19",
+                "position": 19,
+                "recording": {
+                  "first-release-date": "2008-03-02",
+                  "id": "1668f841-f56b-4dc6-a0b2-482bd30f98d6",
+                  "artist-credit": [
+                    {
+                      "name": "Nine Inch Nails",
+                      "joinphrase": "",
+                      "artist": {
+                        "name": "Nine Inch Nails",
+                        "type": "Group",
+                        "sort-name": "Nine Inch Nails",
+                        "disambiguation": "",
+                        "country": "US",
+                        "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                        "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da"
+                      }
+                    }
+                  ],
+                  "length": 132000,
+                  "title": "19 Ghosts III",
+                  "video": false,
+                  "disambiguation": ""
+                },
+                "artist-credit": [
+                  {
+                    "name": "Nine Inch Nails",
+                    "joinphrase": "",
+                    "artist": {
+                      "type": "Group",
+                      "sort-name": "Nine Inch Nails",
+                      "disambiguation": "",
+                      "country": "US",
+                      "name": "Nine Inch Nails",
+                      "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                      "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da"
+                    }
+                  }
+                ],
+                "id": "addc4ad8-941e-34db-b4c2-56e2abe255c0",
+                "length": 132000,
+                "title": "19 Ghosts III"
+              },
+              {
+                "title": "20 Ghosts III",
+                "recording": {
+                  "disambiguation": "",
+                  "title": "20 Ghosts III",
+                  "video": false,
+                  "length": 219000,
+                  "id": "217438c6-4f6a-480b-a483-b028d03035fb",
+                  "artist-credit": [
+                    {
+                      "name": "Nine Inch Nails",
+                      "artist": {
+                        "name": "Nine Inch Nails",
+                        "country": "US",
+                        "disambiguation": "",
+                        "type": "Group",
+                        "sort-name": "Nine Inch Nails",
+                        "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                        "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da"
+                      },
+                      "joinphrase": ""
+                    }
+                  ],
+                  "first-release-date": "2008-03-02"
+                },
+                "artist-credit": [
+                  {
+                    "name": "Nine Inch Nails",
+                    "joinphrase": "",
+                    "artist": {
+                      "type": "Group",
+                      "sort-name": "Nine Inch Nails",
+                      "country": "US",
+                      "disambiguation": "",
+                      "name": "Nine Inch Nails",
+                      "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                      "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da"
+                    }
+                  }
+                ],
+                "id": "96bbe6c3-4cd3-3f7c-8ffe-d81518da7413",
+                "length": 219000,
+                "number": "20",
+                "position": 20
+              },
+              {
+                "position": 21,
+                "number": "21",
+                "recording": {
+                  "disambiguation": "",
+                  "video": false,
+                  "title": "21 Ghosts III",
+                  "artist-credit": [
+                    {
+                      "name": "Nine Inch Nails",
+                      "artist": {
+                        "country": "US",
+                        "disambiguation": "",
+                        "sort-name": "Nine Inch Nails",
+                        "type": "Group",
+                        "name": "Nine Inch Nails",
+                        "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                        "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b"
+                      },
+                      "joinphrase": ""
+                    }
+                  ],
+                  "id": "888974e2-f43c-48e3-91e2-6a091a414469",
+                  "length": 174000,
+                  "first-release-date": "2008-03-02"
+                },
+                "artist-credit": [
+                  {
+                    "artist": {
+                      "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                      "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                      "disambiguation": "",
+                      "country": "US",
+                      "type": "Group",
+                      "sort-name": "Nine Inch Nails",
+                      "name": "Nine Inch Nails"
+                    },
+                    "joinphrase": "",
+                    "name": "Nine Inch Nails"
+                  }
+                ],
+                "length": 174000,
+                "id": "53d0acdd-a82e-3de0-a832-ea3238afdd9d",
+                "title": "21 Ghosts III"
+              },
+              {
+                "position": 22,
+                "number": "22",
+                "id": "889a5ff0-8a63-3c26-ac6f-c22e4267715a",
+                "artist-credit": [
+                  {
+                    "name": "Nine Inch Nails",
+                    "joinphrase": "",
+                    "artist": {
+                      "disambiguation": "",
+                      "country": "US",
+                      "type": "Group",
+                      "sort-name": "Nine Inch Nails",
+                      "name": "Nine Inch Nails",
+                      "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                      "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da"
+                    }
+                  }
+                ],
+                "length": 151000,
+                "recording": {
+                  "artist-credit": [
+                    {
+                      "name": "Nine Inch Nails",
+                      "joinphrase": "",
+                      "artist": {
+                        "name": "Nine Inch Nails",
+                        "disambiguation": "",
+                        "country": "US",
+                        "type": "Group",
+                        "sort-name": "Nine Inch Nails",
+                        "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                        "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da"
+                      }
+                    }
+                  ],
+                  "id": "c8795f14-8162-4caa-98c2-0d80b1338034",
+                  "length": 151000,
+                  "first-release-date": "2008-03-02",
+                  "disambiguation": "",
+                  "title": "22 Ghosts III",
+                  "video": false
+                },
+                "title": "22 Ghosts III"
+              },
+              {
+                "position": 23,
+                "number": "23",
+                "recording": {
+                  "id": "653bec24-9274-404b-bebd-a0550b30784a",
+                  "artist-credit": [
+                    {
+                      "artist": {
+                        "name": "Nine Inch Nails",
+                        "sort-name": "Nine Inch Nails",
+                        "type": "Group",
+                        "disambiguation": "",
+                        "country": "US",
+                        "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                        "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b"
+                      },
+                      "joinphrase": "",
+                      "name": "Nine Inch Nails"
+                    }
+                  ],
+                  "length": 164000,
+                  "first-release-date": "2008-03-02",
+                  "disambiguation": "",
+                  "title": "23 Ghosts III",
+                  "video": false
+                },
+                "artist-credit": [
+                  {
+                    "name": "Nine Inch Nails",
+                    "artist": {
+                      "name": "Nine Inch Nails",
+                      "type": "Group",
+                      "sort-name": "Nine Inch Nails",
+                      "country": "US",
+                      "disambiguation": "",
+                      "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                      "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da"
+                    },
+                    "joinphrase": ""
+                  }
+                ],
+                "id": "00e050f9-191a-3784-a03b-18d4f140ccfc",
+                "length": 164000,
+                "title": "23 Ghosts III"
+              },
+              {
+                "number": "24",
+                "position": 24,
+                "id": "9bfe3b52-188f-3a4c-97e4-9d0e0b70d825",
+                "artist-credit": [
+                  {
+                    "joinphrase": "",
+                    "artist": {
+                      "disambiguation": "",
+                      "country": "US",
+                      "type": "Group",
+                      "sort-name": "Nine Inch Nails",
+                      "name": "Nine Inch Nails",
+                      "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                      "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da"
+                    },
+                    "name": "Nine Inch Nails"
+                  }
+                ],
+                "length": 159000,
+                "recording": {
+                  "video": false,
+                  "title": "24 Ghosts III",
+                  "disambiguation": "",
+                  "first-release-date": "2008-03-02",
+                  "id": "3fffc4ec-6cf0-4e4c-b1e5-5c988f07bf3e",
+                  "length": 159000,
+                  "artist-credit": [
+                    {
+                      "name": "Nine Inch Nails",
+                      "artist": {
+                        "country": "US",
+                        "disambiguation": "",
+                        "type": "Group",
+                        "sort-name": "Nine Inch Nails",
+                        "name": "Nine Inch Nails",
+                        "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                        "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da"
+                      },
+                      "joinphrase": ""
+                    }
+                  ]
+                },
+                "title": "24 Ghosts III"
+              },
+              {
+                "id": "13029770-311b-3fe9-ab92-009ff485ed05",
+                "artist-credit": [
+                  {
+                    "artist": {
+                      "country": "US",
+                      "disambiguation": "",
+                      "type": "Group",
+                      "sort-name": "Nine Inch Nails",
+                      "name": "Nine Inch Nails",
+                      "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                      "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da"
+                    },
+                    "joinphrase": "",
+                    "name": "Nine Inch Nails"
+                  }
+                ],
+                "length": 119000,
+                "recording": {
+                  "disambiguation": "",
+                  "video": false,
+                  "title": "25 Ghosts III",
+                  "length": 119000,
+                  "id": "68d1bdc5-4af4-4f16-9277-96cb4c909635",
+                  "artist-credit": [
+                    {
+                      "joinphrase": "",
+                      "artist": {
+                        "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                        "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                        "name": "Nine Inch Nails",
+                        "country": "US",
+                        "disambiguation": "",
+                        "sort-name": "Nine Inch Nails",
+                        "type": "Group"
+                      },
+                      "name": "Nine Inch Nails"
+                    }
+                  ],
+                  "first-release-date": "2008-03-02"
+                },
+                "number": "25",
+                "position": 25,
+                "title": "25 Ghosts III"
+              },
+              {
+                "position": 26,
+                "number": "26",
+                "recording": {
+                  "first-release-date": "2008-03-02",
+                  "id": "26f09300-1e78-4f79-aba9-834e705b7e04",
+                  "artist-credit": [
+                    {
+                      "name": "Nine Inch Nails",
+                      "artist": {
+                        "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                        "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                        "name": "Nine Inch Nails",
+                        "type": "Group",
+                        "sort-name": "Nine Inch Nails",
+                        "country": "US",
+                        "disambiguation": ""
+                      },
+                      "joinphrase": ""
+                    }
+                  ],
+                  "length": 146000,
+                  "title": "26 Ghosts III",
+                  "video": false,
+                  "disambiguation": ""
+                },
+                "artist-credit": [
+                  {
+                    "artist": {
+                      "type": "Group",
+                      "sort-name": "Nine Inch Nails",
+                      "country": "US",
+                      "disambiguation": "",
+                      "name": "Nine Inch Nails",
+                      "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                      "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da"
+                    },
+                    "joinphrase": "",
+                    "name": "Nine Inch Nails"
+                  }
+                ],
+                "length": 146000,
+                "id": "12282961-c558-303a-b9a4-7e6d70799fb3",
+                "title": "26 Ghosts III"
+              },
+              {
+                "title": "27 Ghosts III",
+                "position": 27,
+                "number": "27",
+                "recording": {
+                  "first-release-date": "2008-03-02",
+                  "length": 172000,
+                  "id": "0ab398d5-f7af-4839-b42a-e4397cf42809",
+                  "artist-credit": [
+                    {
+                      "name": "Nine Inch Nails",
+                      "artist": {
+                        "name": "Nine Inch Nails",
+                        "disambiguation": "",
+                        "country": "US",
+                        "type": "Group",
+                        "sort-name": "Nine Inch Nails",
+                        "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                        "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da"
+                      },
+                      "joinphrase": ""
+                    }
+                  ],
+                  "title": "27 Ghosts III",
+                  "video": false,
+                  "disambiguation": ""
+                },
+                "id": "2faef467-5850-3558-813e-9941ce1bd337",
+                "artist-credit": [
+                  {
+                    "joinphrase": "",
+                    "artist": {
+                      "sort-name": "Nine Inch Nails",
+                      "type": "Group",
+                      "disambiguation": "",
+                      "country": "US",
+                      "name": "Nine Inch Nails",
+                      "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                      "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b"
+                    },
+                    "name": "Nine Inch Nails"
+                  }
+                ],
+                "length": 172000
+              },
+              {
+                "title": "28 Ghosts IV",
+                "position": 28,
+                "number": "28",
+                "recording": {
+                  "first-release-date": "2008-03-02",
+                  "id": "e491d339-8f23-4941-af6d-d151bd6a3bfd",
+                  "artist-credit": [
+                    {
+                      "name": "Nine Inch Nails",
+                      "joinphrase": "",
+                      "artist": {
+                        "name": "Nine Inch Nails",
+                        "country": "US",
+                        "disambiguation": "",
+                        "type": "Group",
+                        "sort-name": "Nine Inch Nails",
+                        "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                        "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da"
+                      }
+                    }
+                  ],
+                  "length": 322000,
+                  "title": "28 Ghosts IV",
+                  "video": false,
+                  "disambiguation": ""
+                },
+                "id": "e63ebe4d-701e-3e26-b498-9418e922444e",
+                "artist-credit": [
+                  {
+                    "name": "Nine Inch Nails",
+                    "joinphrase": "",
+                    "artist": {
+                      "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                      "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                      "name": "Nine Inch Nails",
+                      "disambiguation": "",
+                      "country": "US",
+                      "type": "Group",
+                      "sort-name": "Nine Inch Nails"
+                    }
+                  }
+                ],
+                "length": 322000
+              },
+              {
+                "title": "29 Ghosts IV",
+                "number": "29",
+                "position": 29,
+                "recording": {
+                  "first-release-date": "2008-03-02",
+                  "length": 175000,
+                  "id": "02f7533f-7d00-4014-ada5-6710c55bff73",
+                  "artist-credit": [
+                    {
+                      "name": "Nine Inch Nails",
+                      "artist": {
+                        "sort-name": "Nine Inch Nails",
+                        "type": "Group",
+                        "country": "US",
+                        "disambiguation": "",
+                        "name": "Nine Inch Nails",
+                        "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                        "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b"
+                      },
+                      "joinphrase": ""
+                    }
+                  ],
+                  "video": false,
+                  "title": "29 Ghosts IV",
+                  "disambiguation": ""
+                },
+                "length": 175000,
+                "artist-credit": [
+                  {
+                    "artist": {
+                      "name": "Nine Inch Nails",
+                      "type": "Group",
+                      "sort-name": "Nine Inch Nails",
+                      "country": "US",
+                      "disambiguation": "",
+                      "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                      "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da"
+                    },
+                    "joinphrase": "",
+                    "name": "Nine Inch Nails"
+                  }
+                ],
+                "id": "105d1e1d-e8ce-392e-8bfb-49289e7e279d"
+              },
+              {
+                "position": 30,
+                "number": "30",
+                "recording": {
+                  "id": "4bda7ccb-c3dd-48e2-9bf3-014b0e127d56",
+                  "length": 179000,
+                  "artist-credit": [
+                    {
+                      "joinphrase": "",
+                      "artist": {
+                        "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                        "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                        "type": "Group",
+                        "sort-name": "Nine Inch Nails",
+                        "country": "US",
+                        "disambiguation": "",
+                        "name": "Nine Inch Nails"
+                      },
+                      "name": "Nine Inch Nails"
+                    }
+                  ],
+                  "first-release-date": "2008-03-02",
+                  "disambiguation": "",
+                  "title": "30 Ghosts IV",
+                  "video": false
+                },
+                "artist-credit": [
+                  {
+                    "joinphrase": "",
+                    "artist": {
+                      "country": "US",
+                      "disambiguation": "",
+                      "sort-name": "Nine Inch Nails",
+                      "type": "Group",
+                      "name": "Nine Inch Nails",
+                      "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                      "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b"
+                    },
+                    "name": "Nine Inch Nails"
+                  }
+                ],
+                "length": 179000,
+                "id": "58d45e72-835f-3993-a7bf-31d6566a2eef",
+                "title": "30 Ghosts IV"
+              },
+              {
+                "position": 31,
+                "number": "31",
+                "artist-credit": [
+                  {
+                    "artist": {
+                      "name": "Nine Inch Nails",
+                      "country": "US",
+                      "disambiguation": "",
+                      "type": "Group",
+                      "sort-name": "Nine Inch Nails",
+                      "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                      "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da"
+                    },
+                    "joinphrase": "",
+                    "name": "Nine Inch Nails"
+                  }
+                ],
+                "length": 146000,
+                "id": "7ba7b3cb-55b3-3aaf-a375-d8e3180cfe9e",
+                "recording": {
+                  "video": false,
+                  "title": "31 Ghosts IV",
+                  "disambiguation": "",
+                  "first-release-date": "2008-03-02",
+                  "artist-credit": [
+                    {
+                      "name": "Nine Inch Nails",
+                      "artist": {
+                        "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                        "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                        "sort-name": "Nine Inch Nails",
+                        "type": "Group",
+                        "country": "US",
+                        "disambiguation": "",
+                        "name": "Nine Inch Nails"
+                      },
+                      "joinphrase": ""
+                    }
+                  ],
+                  "id": "761cc5ef-f91f-45eb-b9e9-66f02c239254",
+                  "length": 146000
+                },
+                "title": "31 Ghosts IV"
+              },
+              {
+                "title": "32 Ghosts IV",
+                "number": "32",
+                "position": 32,
+                "artist-credit": [
+                  {
+                    "artist": {
+                      "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                      "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                      "name": "Nine Inch Nails",
+                      "sort-name": "Nine Inch Nails",
+                      "type": "Group",
+                      "country": "US",
+                      "disambiguation": ""
+                    },
+                    "joinphrase": "",
+                    "name": "Nine Inch Nails"
+                  }
+                ],
+                "id": "badfb4fc-1c1a-3038-8b94-bb048f1c117b",
+                "length": 266000,
+                "recording": {
+                  "length": 266000,
+                  "id": "a44f8ef3-64c4-4818-aa0e-c7f15422f983",
+                  "artist-credit": [
+                    {
+                      "name": "Nine Inch Nails",
+                      "artist": {
+                        "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                        "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                        "country": "US",
+                        "disambiguation": "",
+                        "sort-name": "Nine Inch Nails",
+                        "type": "Group",
+                        "name": "Nine Inch Nails"
+                      },
+                      "joinphrase": ""
+                    }
+                  ],
+                  "first-release-date": "2008-03-02",
+                  "disambiguation": "",
+                  "title": "32 Ghosts IV",
+                  "video": false
+                }
+              },
+              {
+                "number": "33",
+                "position": 33,
+                "recording": {
+                  "disambiguation": "",
+                  "video": false,
+                  "title": "33 Ghosts IV",
+                  "artist-credit": [
+                    {
+                      "name": "Nine Inch Nails",
+                      "artist": {
+                        "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                        "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                        "name": "Nine Inch Nails",
+                        "type": "Group",
+                        "sort-name": "Nine Inch Nails",
+                        "country": "US",
+                        "disambiguation": ""
+                      },
+                      "joinphrase": ""
+                    }
+                  ],
+                  "id": "51234920-358e-4daf-867c-85ed97704acf",
+                  "length": 242000,
+                  "first-release-date": "2008-03-02"
+                },
+                "artist-credit": [
+                  {
+                    "name": "Nine Inch Nails",
+                    "joinphrase": "",
+                    "artist": {
+                      "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                      "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                      "name": "Nine Inch Nails",
+                      "type": "Group",
+                      "sort-name": "Nine Inch Nails",
+                      "disambiguation": "",
+                      "country": "US"
+                    }
+                  }
+                ],
+                "id": "0d8ca8a3-3738-3e72-bb16-9b619c1e7fa2",
+                "length": 242000,
+                "title": "33 Ghosts IV"
+              },
+              {
+                "recording": {
+                  "first-release-date": "2008-03-02",
+                  "artist-credit": [
+                    {
+                      "name": "Nine Inch Nails",
+                      "joinphrase": "",
+                      "artist": {
+                        "country": "US",
+                        "disambiguation": "",
+                        "type": "Group",
+                        "sort-name": "Nine Inch Nails",
+                        "name": "Nine Inch Nails",
+                        "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                        "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da"
+                      }
+                    }
+                  ],
+                  "id": "6f975d58-c074-4fc2-8bfb-34cc7f1a25fd",
+                  "length": 352000,
+                  "video": false,
+                  "title": "34 Ghosts IV",
+                  "disambiguation": ""
+                },
+                "artist-credit": [
+                  {
+                    "artist": {
+                      "name": "Nine Inch Nails",
+                      "type": "Group",
+                      "sort-name": "Nine Inch Nails",
+                      "disambiguation": "",
+                      "country": "US",
+                      "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                      "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da"
+                    },
+                    "joinphrase": "",
+                    "name": "Nine Inch Nails"
+                  }
+                ],
+                "id": "12b391b7-86b2-3997-ae0d-3d4454223af5",
+                "length": 352000,
+                "position": 34,
+                "number": "34",
+                "title": "34 Ghosts IV"
+              },
+              {
+                "title": "35 Ghosts IV",
+                "number": "35",
+                "position": 35,
+                "artist-credit": [
+                  {
+                    "joinphrase": "",
+                    "artist": {
+                      "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                      "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                      "type": "Group",
+                      "sort-name": "Nine Inch Nails",
+                      "country": "US",
+                      "disambiguation": "",
+                      "name": "Nine Inch Nails"
+                    },
+                    "name": "Nine Inch Nails"
+                  }
+                ],
+                "length": 210000,
+                "id": "65953987-1f1d-3bd6-a866-139b1e707fc7",
+                "recording": {
+                  "first-release-date": "2008-03-02",
+                  "id": "6ebbb1de-71db-4ecf-9b90-5554c036b0fc",
+                  "length": 210000,
+                  "artist-credit": [
+                    {
+                      "name": "Nine Inch Nails",
+                      "artist": {
+                        "type": "Group",
+                        "sort-name": "Nine Inch Nails",
+                        "country": "US",
+                        "disambiguation": "",
+                        "name": "Nine Inch Nails",
+                        "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                        "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da"
+                      },
+                      "joinphrase": ""
+                    }
+                  ],
+                  "title": "35 Ghosts IV",
+                  "video": false,
+                  "disambiguation": ""
+                }
+              },
+              {
+                "position": 36,
+                "number": "36",
+                "recording": {
+                  "title": "36 Ghosts IV",
+                  "video": false,
+                  "disambiguation": "",
+                  "first-release-date": "2008-03-02",
+                  "length": 138000,
+                  "id": "e2c0fc50-94fa-4919-8c64-2dbfc9ec1c07",
+                  "artist-credit": [
+                    {
+                      "artist": {
+                        "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                        "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                        "disambiguation": "",
+                        "country": "US",
+                        "sort-name": "Nine Inch Nails",
+                        "type": "Group",
+                        "name": "Nine Inch Nails"
+                      },
+                      "joinphrase": "",
+                      "name": "Nine Inch Nails"
+                    }
+                  ]
+                },
+                "id": "3c38f31a-61fe-3a1e-9575-0c19b8f3976d",
+                "artist-credit": [
+                  {
+                    "name": "Nine Inch Nails",
+                    "joinphrase": "",
+                    "artist": {
+                      "name": "Nine Inch Nails",
+                      "country": "US",
+                      "disambiguation": "",
+                      "sort-name": "Nine Inch Nails",
+                      "type": "Group",
+                      "id": "b7ffd2af-418f-4be2-bdd1-22f8b48613da",
+                      "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b"
+                    }
+                  }
+                ],
+                "length": 139000,
+                "title": "36 Ghosts IV"
+              }
+            ],
+            "title": "",
+            "format-id": "907a28d9-b3b2-3ef6-89a8-7b18d91d4794"
+          }
+        ],
+        "id": "3af7ec8c-3bf4-4e6d-9bb3-1885d22b2b6a"
+      }
+    }
+  }
+}

@@ -141,7 +141,12 @@ function deps(fetch: FetchLike, more: Partial<BookImportDeps> = {}): BookImportD
     qbittorrent: {
       withHashes: async () => [row() as never],
       files: async () =>
-        ['Jekyll/01.mp3', 'Jekyll/02.mp3', 'Jekyll/cover.jpg'].map((name) => ({ name, size: 1 })),
+        ['Jekyll/01.mp3', 'Jekyll/02.mp3', 'Jekyll/cover.jpg'].map((name, index) => ({
+          index,
+          name,
+          size: 1,
+          priority: 1,
+        })),
     },
     abs: new AbsClient({ baseUrl: ABS, token: 'k', fetch }),
     provisioner: new AbsProvisioner({ baseUrl: ABS, provisionKey: 'p', fetch }),
@@ -525,7 +530,7 @@ describe('the import step', () => {
         deps(fetch, {
           qbittorrent: {
             withHashes: async () => rows as never,
-            files: async () => [{ name: 'Jekyll/01.mp3', size: 1 }],
+            files: async () => [{ index: 0, name: 'Jekyll/01.mp3', size: 1, priority: 1 }],
           },
         }),
       );
@@ -547,7 +552,13 @@ describe('the import step', () => {
       deps(fetch, {
         qbittorrent: {
           withHashes: async () => [row({ progress: 0.4 }) as never],
-          files: async () => ['Jekyll/01.mp3', 'Jekyll/02.mp3'].map((name) => ({ name, size: 1 })),
+          files: async () =>
+            ['Jekyll/01.mp3', 'Jekyll/02.mp3'].map((name, index) => ({
+              index,
+              name,
+              size: 1,
+              priority: 1,
+            })),
         },
       }),
     );

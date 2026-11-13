@@ -1,0 +1,25 @@
+{
+  "upstream": "qbittorrent",
+  "upstreamVersion": "v5.3.0",
+  "call": "start-missing",
+  "request": {
+    "method": "POST",
+    "path": "/api/v2/torrents/start",
+    "query": {},
+    "headers": {
+      "accept": "application/json",
+      "authorization": "Bearer <token>",
+      "content-type": "application/x-www-form-urlencoded"
+    },
+    "body": {
+      "text": "hashes=e0ed7aa2fcf3e4b4147a088ee7480e746bed8289"
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "text/plain; charset=UTF-8"
+    },
+    "body": null
+  }
+}

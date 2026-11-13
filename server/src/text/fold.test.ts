@@ -14,6 +14,20 @@ describe('folding text for search', () => {
     expect(searchFold('Straße STRASSE ẞ')).toBe('strasse strasse ss');
   });
 
+  it('[M3.albums] folds every dash to a hyphen, so "Ghosts I–IV" matches a torrent\'s "Ghosts I-IV"', () => {
+    for (const typed of [
+      'Ghosts I–IV',
+      'Ghosts I—IV',
+      'Ghosts I‐IV',
+      'Ghosts I‑IV',
+      'Ghosts I−IV',
+    ]) {
+      expect(searchFold(typed), typed).toBe('ghosts i-iv');
+    }
+    expect(titleKey('Dreams – 2004 Remaster')).toBe(titleKey('Dreams'));
+    expect(searchTokens('Ghosts I–IV')).toEqual(searchTokens('Ghosts I-IV'));
+  });
+
   it('leaves the sign-in fold matching login names as they are spelled: ß and apostrophes stay', () => {
     expect(foldName('Straße')).toBe('straße');
     expect(foldName('O’Brien')).toBe('o’brien');
