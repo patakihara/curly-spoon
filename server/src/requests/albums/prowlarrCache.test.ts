@@ -99,6 +99,35 @@ describe('[M3.albums] how the album search asks Prowlarr', () => {
     expect(second - first).toBeGreaterThanOrEqual(30_000 + PROWLARR_GAP_MS);
   });
 
+  it('[M3.albums] a link is asked in the same queue as the searches, each the gap after the one before', async () => {
+    const clock = fakeClock();
+    const spans: [number, number][] = [];
+    const takes = async <T>(ms: number, answer: T): Promise<T> => {
+      const began = clock.now();
+      clock.advance(ms);
+      spans.push([began, clock.now()]);
+      return answer;
+    };
+    const prowlarr = {
+      musicIndexers: vi.fn(async () => [1, 2]),
+      search: vi.fn(async (query: string) => takes(30_000, [row(query)])),
+      resolve: vi.fn(async () => takes(2_000, { kind: 'magnet' as const, hash: 'a'.repeat(40) })),
+    };
+    const cache = new ProwlarrCache({ db: openDatabase(':memory:'), prowlarr, clock });
+    await Promise.all([
+      cache.search(SLIP),
+      cache.askLink('/1/download?link=a'),
+      cache.askLink('/1/download?link=b'),
+      cache.search(GHOSTS),
+    ]);
+    expect(spans).toHaveLength(4);
+    for (const [index, [began]] of spans.entries()) {
+      if (index === 0) continue;
+      const [, endedBefore] = spans[index - 1]!;
+      expect(began - endedBefore).toBeGreaterThanOrEqual(PROWLARR_GAP_MS);
+    }
+  });
+
   it('[M3.albums] the same query waiting its turn reads what the one before it kept', async () => {
     const clock = fakeClock();
     const prowlarr = timedProwlarr(clock, 30_000);

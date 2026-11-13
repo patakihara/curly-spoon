@@ -1,7 +1,7 @@
 /**
  * How the album search asks Prowlarr: in Audio, on the indexers that list music, one search at a
  * time for the whole server, each starting at least 10 s after the one before it ended, and each
- * answer kept for a day.
+ * answer kept for a day. A release link is asked in the same queue and gap.
  *
  * One search fans out to every indexer at once and takes about 30 s (live), and the sites set their
  * own limits, so a request's retry, a second person asking for the same album, a pick of another
@@ -101,7 +101,7 @@ const keyOf = (ids: readonly number[]) => [...ids].sort((a, b) => a - b).join(',
 
 export class ProwlarrCache {
   private readonly clock: Clock;
-  /** The end of the queue: the turn of the search asked last. */
+  /** The end of the queue: the turn of the search or link asked last. */
   private tail: Promise<unknown> = Promise.resolve();
   /** When the last search ended, so the next starts no sooner than the gap after it. */
   private lastEnded = Number.NEGATIVE_INFINITY;
@@ -149,10 +149,18 @@ export class ProwlarrCache {
   }
 
   /**
-   * Asks `link` with no redirect followed, and keeps its answer: a magnet's hash, or a torrent's
-   * hash, files and web seed. Anything else, a failure included, is kept as null.
+   * Asks `link` with no redirect followed, in the searches' queue and gap since it reaches the same
+   * sites, and keeps its answer: a magnet's hash, or a torrent's hash, files and web seed. Anything
+   * else, a failure included, is kept as null. A link kept while it waited its turn is not asked.
    */
-  async askLink(link: string): Promise<LinkAnswer | null> {
+  askLink(link: string): Promise<LinkAnswer | null> {
+    return this.inTurn(async () => {
+      const meanwhile = this.keptLink(link);
+      return meanwhile === undefined ? this.resolveLink(link) : meanwhile;
+    });
+  }
+
+  private async resolveLink(link: string): Promise<LinkAnswer | null> {
     let answer: LinkAnswer | null = null;
     try {
       const resolved = await this.deps.prowlarr.resolve({ link });
@@ -192,7 +200,7 @@ export class ProwlarrCache {
     return ids;
   }
 
-  /** Runs `work` once every search before it has ended and the gap has passed. */
+  /** Runs `work` once every search and link before it has ended and the gap has passed. */
   private inTurn<T>(work: () => Promise<T>): Promise<T> {
     const turn = this.tail.then(async () => {
       const wait = this.lastEnded + PROWLARR_GAP_MS - this.clock.now();
