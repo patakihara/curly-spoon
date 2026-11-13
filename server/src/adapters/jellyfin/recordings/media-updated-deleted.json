@@ -1,0 +1,31 @@
+{
+  "upstream": "jellyfin",
+  "upstreamVersion": "10.11.11",
+  "call": "media-updated-deleted",
+  "request": {
+    "method": "POST",
+    "path": "/Library/Media/Updated",
+    "query": {},
+    "headers": {
+      "accept": "application/json",
+      "authorization": "<token>",
+      "content-type": "application/json",
+      "user-agent": "node"
+    },
+    "body": {
+      "json": {
+        "Updates": [
+          {
+            "Path": "/data/media/Music/Nine Inch Nails/2008 - The Slip/04 - Discipline.opus",
+            "UpdateType": "Deleted"
+          }
+        ]
+      }
+    }
+  },
+  "response": {
+    "status": 204,
+    "headers": {},
+    "body": null
+  }
+}

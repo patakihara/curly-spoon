@@ -203,10 +203,12 @@ describe('the Jellyfin client', () => {
     expect(ids.length).toBeGreaterThan(1);
   });
 
-  it('[M3.albums/c] files and folders deleted are reported on the recorded route, as Deleted', async () => {
-    const updated = recorded('media-updated');
+  it('[M3.albums/c] a deleted kept file is reported as a live replacement reported it, as Deleted', async () => {
+    const deleted = recorded('media-updated-deleted');
+    const live = deleted.request.body as { json: { Updates: { Path: string }[] } };
+    const paths = live.json.Updates.map((update) => update.Path);
     const bodies: unknown[] = [];
-    const replay = replayFetch([updated]);
+    const replay = replayFetch([deleted]);
     const jf = new JellyfinClient({
       baseUrl: 'http://upstream.invalid',
       token: '<token>',
@@ -215,49 +217,51 @@ describe('the Jellyfin client', () => {
         return replay(url, init);
       },
     });
-    await jf.reportDeleted(['/data/media/Music/A/B/1.opus', '/data/media/Music/A/B']);
-    expect(bodies).toEqual([
-      {
-        Updates: [
-          { Path: '/data/media/Music/A/B/1.opus', UpdateType: 'Deleted' },
-          { Path: '/data/media/Music/A/B', UpdateType: 'Deleted' },
-        ],
-      },
+    await jf.reportDeleted(paths);
+    expect(paths).toEqual([
+      '/data/media/Music/Nine Inch Nails/2008 - The Slip/04 - Discipline.opus',
     ]);
+    expect(bodies).toEqual([live.json]);
+    expect(deleted.response.status).toBe(204);
   });
 
-  it('[M3.albums/c] a person’s state is set with the body the progress recorder’s revert sends, and its answer parsed', async () => {
-    const answer = recorded('jf-userdata').response.body as { json: Record<string, unknown> };
-    const sent: { url: string; method?: string; body: unknown }[] = [];
+  it('[M3.albums/c] a person’s state is set with the body a live replacement sent, and its answer parsed', async () => {
+    const post = recorded('user-data-post');
+    const sent = post.request.body as { json: Record<string, unknown> };
+    const answer = post.response.body as { json: Record<string, unknown> };
     const jf = new JellyfinClient({
       baseUrl: 'http://upstream.invalid',
       token: '<token>',
-      fetch: async (url, init) => {
-        sent.push({ url, method: init?.method, body: JSON.parse(String(init?.body)) });
-        return Response.json(answer.json);
-      },
+      fetch: replayFetch([post]),
     });
-    const saved = await jf.setUserData('i1', {
+    const itemId = post.request.path.split('/')[2]!;
+    const saved = await jf.setUserData(itemId, {
       PlaybackPositionTicks: 0,
-      PlayCount: 3,
-      Played: true,
+      PlayCount: 0,
+      Played: false,
       IsFavorite: true,
-      LastPlayedDate: '2026-11-09T10:00:00.0000000Z',
+    });
+    expect(sent.json).toEqual({
+      PlaybackPositionTicks: 0,
+      PlayCount: 0,
+      Played: false,
+      IsFavorite: true,
     });
     expect(saved.ItemId).toBe(answer.json.ItemId);
-    expect(sent).toEqual([
-      {
-        url: 'http://upstream.invalid/UserItems/i1/UserData',
-        method: 'POST',
-        body: {
-          PlaybackPositionTicks: 0,
-          PlayCount: 3,
-          Played: true,
-          IsFavorite: true,
-          LastPlayedDate: '2026-11-09T10:00:00.0000000Z',
-        },
-      },
-    ]);
+    expect(saved.IsFavorite).toBe(true);
+  });
+
+  it('[M3.albums/c] the kept track’s and the new track’s state read as a live replacement read them', async () => {
+    for (const call of ['user-data-get-kept', 'user-data-get-new']) {
+      const get = recorded(call);
+      const jf = new JellyfinClient({
+        baseUrl: 'http://upstream.invalid',
+        token: '<token>',
+        fetch: replayFetch([get]),
+      });
+      const data = await jf.getUserData(get.request.path.split('/')[2]!);
+      expect(data.IsFavorite).toBe(call === 'user-data-get-kept');
+    }
   });
 
   it('the server version is read without the key', async () => {

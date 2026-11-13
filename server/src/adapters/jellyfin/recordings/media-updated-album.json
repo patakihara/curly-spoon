@@ -1,0 +1,67 @@
+{
+  "upstream": "jellyfin",
+  "upstreamVersion": "10.11.11",
+  "call": "media-updated-album",
+  "request": {
+    "method": "POST",
+    "path": "/Library/Media/Updated",
+    "query": {},
+    "headers": {
+      "accept": "application/json",
+      "authorization": "<token>",
+      "content-type": "application/json",
+      "user-agent": "node"
+    },
+    "body": {
+      "json": {
+        "Updates": [
+          {
+            "Path": "/data/media/Music/Nine Inch Nails/2008 - The Slip/01 - 999,999.flac",
+            "UpdateType": "Created"
+          },
+          {
+            "Path": "/data/media/Music/Nine Inch Nails/2008 - The Slip/02 - 1,000,000.flac",
+            "UpdateType": "Created"
+          },
+          {
+            "Path": "/data/media/Music/Nine Inch Nails/2008 - The Slip/03 - Letting You.flac",
+            "UpdateType": "Created"
+          },
+          {
+            "Path": "/data/media/Music/Nine Inch Nails/2008 - The Slip/04 - Discipline.flac",
+            "UpdateType": "Created"
+          },
+          {
+            "Path": "/data/media/Music/Nine Inch Nails/2008 - The Slip/05 - Echoplex.flac",
+            "UpdateType": "Created"
+          },
+          {
+            "Path": "/data/media/Music/Nine Inch Nails/2008 - The Slip/06 - Head Down.flac",
+            "UpdateType": "Created"
+          },
+          {
+            "Path": "/data/media/Music/Nine Inch Nails/2008 - The Slip/07 - Lights in the Sky.flac",
+            "UpdateType": "Created"
+          },
+          {
+            "Path": "/data/media/Music/Nine Inch Nails/2008 - The Slip/08 - Corona Radiata.flac",
+            "UpdateType": "Created"
+          },
+          {
+            "Path": "/data/media/Music/Nine Inch Nails/2008 - The Slip/09 - The Four of Us Are Dying.flac",
+            "UpdateType": "Created"
+          },
+          {
+            "Path": "/data/media/Music/Nine Inch Nails/2008 - The Slip/10 - Demon Seed.flac",
+            "UpdateType": "Created"
+          }
+        ]
+      }
+    }
+  },
+  "response": {
+    "status": 204,
+    "headers": {},
+    "body": null
+  }
+}
