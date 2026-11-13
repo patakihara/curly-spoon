@@ -26,16 +26,35 @@ export function audioFiles(files: readonly TorrentFile[]): TorrentFile[] {
   return [...byStem.values()].sort((a, b) => a.path.localeCompare(b.path, 'en', { numeric: true }));
 }
 
+/** How many of `edition`'s titles the names of `audio` hold, by their words in order. */
+function titlesHeld(audio: readonly TorrentFile[], edition: Edition): number {
+  const names = audio.map((file) => wordsOf(file.path.split('/').pop()!.replace(AUDIO, '')));
+  return edition.tracks.filter((track) => {
+    const title = wordsOf(track.title);
+    return names.some((name) => holdsRun(name, title));
+  }).length;
+}
+
 /** Whether `files` hold `edition`: its track count in audio, most of its titles in their names. */
 export function fitsEdition(files: readonly TorrentFile[], edition: Edition): boolean {
   const audio = audioFiles(files);
   if (audio.length !== edition.tracks.length || audio.length === 0) return false;
-  const names = audio.map((file) => wordsOf(file.path.split('/').pop()!.replace(AUDIO, '')));
-  const held = edition.tracks.filter((track) => {
-    const title = wordsOf(track.title);
-    return names.some((name) => holdsRun(name, title));
-  }).length;
-  return held >= TITLES_HELD * edition.tracks.length;
+  return titlesHeld(audio, edition) >= TITLES_HELD * edition.tracks.length;
+}
+
+/** Why `files` hold none of `editions`, in words for the log. */
+export function whyNoEdition(files: readonly TorrentFile[], editions: readonly Edition[]): string {
+  if (editions.length === 0) return 'MusicBrainz lists no edition of the album';
+  const audio = audioFiles(files);
+  const sameCount = editions.filter((edition) => edition.tracks.length === audio.length);
+  if (sameCount.length === 0 || audio.length === 0) {
+    const counts = [...new Set(editions.map((edition) => edition.tracks.length))];
+    const tracks = counts.sort((a, b) => a - b).join(', ');
+    return `${audio.length} audio files; the editions have ${tracks} tracks`;
+  }
+  const held = Math.max(...sameCount.map((edition) => titlesHeld(audio, edition)));
+  const needed = Math.ceil(TITLES_HELD * audio.length);
+  return `${audio.length} audio files, as many as an edition’s tracks, but their names hold ${held} of its ${audio.length} titles (${needed} needed)`;
 }
 
 /** The first of `editions` that `files` hold, or null for none. */

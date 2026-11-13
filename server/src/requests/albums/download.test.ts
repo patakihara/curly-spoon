@@ -240,8 +240,20 @@ beforeEach(async () => {
   slip = (await editions.read(ALBUM_GROUPS.slip.group))!.editions[0]!;
 });
 
+/** The errors a download logged, each as its details and message. */
+let logged: { details: Record<string, unknown>; message: string }[];
+beforeEach(() => {
+  logged = [];
+});
+
 const steps = (sim: ReturnType<typeof qbittorrentStandIn>) =>
-  albumDownload({ qbittorrent: sim.qbittorrent, prowlarr: noProwlarr, editions, now: () => clock });
+  albumDownload({
+    qbittorrent: sim.qbittorrent,
+    prowlarr: noProwlarr,
+    editions,
+    now: () => clock,
+    log: { error: (details, message) => logged.push({ details, message }) },
+  });
 
 /** The job with album steps whose search picks `picked`, then `others`. */
 const job = (sim: ReturnType<typeof qbittorrentStandIn>, picked: Release, others: Release[] = []) =>
@@ -388,6 +400,37 @@ describe('[M3.albums] the gate’s edges', () => {
     expect(sim.paths()).not.toContain('torrents/start');
   });
 
+  it('[M3.albums] a refused torrent is logged with its hash and why its files are not the album', async () => {
+    const { sim, download, handle } = await startedDirect(DEBIAN);
+    sim.metadata(DEBIAN, debianFiles());
+    expect(await download.poll(handle)).toEqual({ kind: 'failed', reason: 'wrongRelease' });
+    expect(logged).toEqual([
+      {
+        details: { hash: DEBIAN, why: expect.stringMatching(/^0 audio files; the editions have /) },
+        message: 'the gate refused a torrent',
+      },
+    ]);
+  });
+
+  it('[M3.albums] a refused pack is logged as having no folder that is the album', async () => {
+    const { sim, download, handle } = await startedDirect(PACKED, { pack: true });
+    sim.metadata(
+      PACKED,
+      nineInchNailsPack(slip).filter((file) => !file.path.includes('Ghosts')),
+    );
+    await download.poll(handle);
+    expect(logged.map((one) => one.details)).toEqual([
+      { hash: PACKED, why: 'no folder of the pack is an edition of the album' },
+    ]);
+  });
+
+  it('[M3.albums] a fitting torrent logs nothing', async () => {
+    const { sim, download, handle } = await startedDirect(GHOSTS);
+    sim.metadata(GHOSTS, ghostsFiles());
+    await download.poll(handle);
+    expect(logged).toEqual([]);
+  });
+
   it('[M3.albums] a torrent tagged fit is never gated again', async () => {
     const { sim, download, handle } = await startedDirect(GHOSTS);
     sim.metadata(GHOSTS, ghostsFiles());
@@ -468,8 +511,12 @@ describe('[M3.albums] the gate’s edges', () => {
       prowlarr: noProwlarr,
       editions: gone,
       now: () => clock,
+      log: { error: (details, message) => logged.push({ details, message }) },
     });
     expect(await goneDownload.poll(handle)).toEqual({ kind: 'failed', reason: 'wrongRelease' });
+    expect(logged.map((one) => one.details)).toEqual([
+      { hash: GHOSTS, why: 'MusicBrainz no longer has the release group' },
+    ]);
     expect(sim.paths()).not.toContain('torrents/start');
   });
 });
