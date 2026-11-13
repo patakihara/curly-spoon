@@ -18,6 +18,7 @@ import { rememberTracks } from '../store/streamedTracks.js';
 import { upsertUser } from '../store/users.js';
 import { albumSteps } from './albums/index.js';
 import { musicBrainzOf } from './musicBrainz.js';
+import { prowlarrOf } from './prowlarr.js';
 import { songSteps } from './songs/index.js';
 
 const recorded = (call: string) =>
@@ -89,6 +90,7 @@ describe('[M3.albums] one MusicBrainz client for the whole server', () => {
       now: Date.now,
       people: () => [],
       musicBrainz,
+      prowlarr: prowlarrOf(config, async () => new Response()),
     });
     expect(made).toEqual({ off: 'MUSICBRAINZ_URL' });
   });
@@ -116,6 +118,7 @@ describe('[M3.albums] one MusicBrainz client for the whole server', () => {
       now: clock.now,
       people: () => [],
       musicBrainz,
+      prowlarr: prowlarrOf(config, fetch),
     });
     const songs = songSteps(config, {
       db,

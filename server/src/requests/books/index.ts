@@ -12,7 +12,6 @@ import { AbsProvisioner } from '../../adapters/audiobookshelf/provision.js';
 import { AudnexusClient } from '../../adapters/audnexus/client.js';
 import type { FetchLike } from '../../adapters/http/fetch.js';
 import { publicFetch } from '../../adapters/http/publicFetch.js';
-import { ProwlarrClient } from '../../adapters/prowlarr/client.js';
 import { QbittorrentClient } from '../../adapters/qbittorrent/client.js';
 import type { AppConfig } from '../../config.js';
 import type { JobLog } from '../../jobs/schedule.js';
@@ -20,6 +19,7 @@ import { readSecretFile } from '../../secretFile.js';
 import type { Db } from '../../store/connection.js';
 import { torrentDownload } from '../download/torrent.js';
 import { folderLacking } from '../folder.js';
+import type { SharedProwlarr } from '../prowlarr.js';
 import type { MediumSteps } from '../steps.js';
 import { bookCatalogue, type BookCatalogue } from './catalogue.js';
 import { bookImport } from './import.js';
@@ -33,6 +33,8 @@ export interface BookStepsDeps {
   fetch: FetchLike;
   log: JobLog;
   now: () => number;
+  /** The server's one Prowlarr, which albums share; null when it is not set up or has no key. */
+  prowlarr: SharedProwlarr | null;
 }
 
 /** The steps, or which setting keeps books from being requested. */
@@ -43,7 +45,7 @@ const addressesOf = async (host: string) =>
 
 export function bookSteps(config: AppConfig, deps: BookStepsDeps): BookSteps {
   const { abs, index, books } = config;
-  const { db, fetch, log, now } = deps;
+  const { db, fetch, log, now, prowlarr } = deps;
   if (abs === null) return { off: 'ABS_URL' };
   if (index.absKeyFile === null) return { off: 'ABS_API_KEY_FILE' };
   if (books.prowlarr === null) return { off: 'PROWLARR_URL and PROWLARR_API_KEY_FILE' };
@@ -54,8 +56,8 @@ export function bookSteps(config: AppConfig, deps: BookStepsDeps): BookSteps {
   const lacking = folderLacking(join(mediaDir, 'Books'), 'Books');
   if (lacking !== null) return { off: lacking };
 
+  if (prowlarr === null) return { off: 'a key their files should hold' };
   const secrets = [
-    [books.prowlarr.keyFile, 'PROWLARR_API_KEY'],
     [books.qbittorrent.keyFile, 'QBITTORRENT_API_KEY'],
     [index.absKeyFile, 'ABS_API_KEY'],
     [abs.keyFile, 'ABS_PROVISION_KEY'],
@@ -66,14 +68,8 @@ export function bookSteps(config: AppConfig, deps: BookStepsDeps): BookSteps {
   } catch {
     return { off: 'a key their files should hold' };
   }
-  const [prowlarrKey, qbittorrentKey, absKey, provisionKey] = keys as [
-    string,
-    string,
-    string,
-    string,
-  ];
+  const [qbittorrentKey, absKey, provisionKey] = keys as [string, string, string];
 
-  const prowlarr = new ProwlarrClient({ baseUrl: books.prowlarr.url, apiKey: prowlarrKey, fetch });
   const qbittorrent = new QbittorrentClient({
     baseUrl: books.qbittorrent.url,
     apiKey: qbittorrentKey,

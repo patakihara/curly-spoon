@@ -8,7 +8,8 @@ import type { Clock } from '../../adapters/musicbrainz/client.js';
 import { ProwlarrClient, type ProwlarrRelease } from '../../adapters/prowlarr/client.js';
 import { openDatabase } from '../../store/connection.js';
 import { StepUnavailable } from '../steps.js';
-import { PROWLARR_CACHE_MS, PROWLARR_GAP_MS, ProwlarrCache } from './prowlarrCache.js';
+import { PROWLARR_GAP_MS, SharedProwlarr } from '../prowlarr.js';
+import { PROWLARR_CACHE_MS, ProwlarrCache } from './prowlarrCache.js';
 
 const recordings = join(
   dirname(fileURLToPath(import.meta.url)),
@@ -70,7 +71,10 @@ function timedProwlarr(clock: ReturnType<typeof fakeClock>, takes: number) {
 
 describe('[M3.albums] how the album search asks Prowlarr', () => {
   it('[M3.albums] searches Audio on the music indexers alone, as recorded', async () => {
-    const cache = new ProwlarrCache({ db: openDatabase(':memory:'), prowlarr: replayed() });
+    const cache = new ProwlarrCache({
+      db: openDatabase(':memory:'),
+      prowlarr: new SharedProwlarr(replayed(), fakeClock()),
+    });
     const rows = await cache.search(SLIP);
     expect(rows.length).toBeGreaterThan(0);
     expect(rows.some((one) => /flac/i.test(one.title))).toBe(true);
@@ -80,20 +84,34 @@ describe('[M3.albums] how the album search asks Prowlarr', () => {
     const db = openDatabase(':memory:');
     const clock = fakeClock();
     const prowlarr = timedProwlarr(clock, 30_000);
-    const first = await new ProwlarrCache({ db, prowlarr, clock }).search(SLIP);
+    const first = await new ProwlarrCache({
+      db,
+      prowlarr: new SharedProwlarr(prowlarr, clock),
+      clock,
+    }).search(SLIP);
     clock.advance(PROWLARR_CACHE_MS - 60_000);
-    const again = await new ProwlarrCache({ db, prowlarr, clock }).search(SLIP);
+    const again = await new ProwlarrCache({
+      db,
+      prowlarr: new SharedProwlarr(prowlarr, clock),
+      clock,
+    }).search(SLIP);
     expect(again).toEqual(first);
     expect(prowlarr.search).toHaveBeenCalledTimes(1);
     clock.advance(120_000);
-    await new ProwlarrCache({ db, prowlarr, clock }).search(SLIP);
+    await new ProwlarrCache({ db, prowlarr: new SharedProwlarr(prowlarr, clock), clock }).search(
+      SLIP,
+    );
     expect(prowlarr.search).toHaveBeenCalledTimes(2);
   });
 
   it('[M3.albums] two searches run one at a time, the second 10 s after the first ended', async () => {
     const clock = fakeClock();
     const prowlarr = timedProwlarr(clock, 30_000);
-    const cache = new ProwlarrCache({ db: openDatabase(':memory:'), prowlarr, clock });
+    const cache = new ProwlarrCache({
+      db: openDatabase(':memory:'),
+      prowlarr: new SharedProwlarr(prowlarr, clock),
+      clock,
+    });
     await Promise.all([cache.search(SLIP), cache.search(GHOSTS)]);
     const [first, second] = prowlarr.began as [number, number];
     expect(second - first).toBeGreaterThanOrEqual(30_000 + PROWLARR_GAP_MS);
@@ -119,7 +137,11 @@ describe('[M3.albums] how the album search asks Prowlarr', () => {
         }),
       ),
     };
-    const cache = new ProwlarrCache({ db: openDatabase(':memory:'), prowlarr, clock });
+    const cache = new ProwlarrCache({
+      db: openDatabase(':memory:'),
+      prowlarr: new SharedProwlarr(prowlarr, clock),
+      clock,
+    });
     await Promise.all([
       cache.search(SLIP),
       cache.askLink('/1/download?link=a'),
@@ -137,7 +159,11 @@ describe('[M3.albums] how the album search asks Prowlarr', () => {
   it('[M3.albums] the same query waiting its turn reads what the one before it kept', async () => {
     const clock = fakeClock();
     const prowlarr = timedProwlarr(clock, 30_000);
-    const cache = new ProwlarrCache({ db: openDatabase(':memory:'), prowlarr, clock });
+    const cache = new ProwlarrCache({
+      db: openDatabase(':memory:'),
+      prowlarr: new SharedProwlarr(prowlarr, clock),
+      clock,
+    });
     const [a, b] = await Promise.all([cache.search(SLIP), cache.search(SLIP)]);
     expect(b).toEqual(a);
     expect(prowlarr.search).toHaveBeenCalledTimes(1);
@@ -150,7 +176,11 @@ describe('[M3.albums] how the album search asks Prowlarr', () => {
       prowlarr.began.push(clock.now());
       throw new StepUnavailable('prowlarr: answered 503');
     });
-    const cache = new ProwlarrCache({ db: openDatabase(':memory:'), prowlarr, clock });
+    const cache = new ProwlarrCache({
+      db: openDatabase(':memory:'),
+      prowlarr: new SharedProwlarr(prowlarr, clock),
+      clock,
+    });
     const [failed, found] = await Promise.allSettled([cache.search(SLIP), cache.search(GHOSTS)]);
     expect(failed.status).toBe('rejected');
     expect(found.status).toBe('fulfilled');
@@ -169,16 +199,20 @@ describe('[M3.albums] how the album search asks Prowlarr', () => {
           ? replayFetch([indexers])(url, init)
           : new Response('', { status: 503 }),
     });
-    await expect(new ProwlarrCache({ db, prowlarr: busy }).search(SLIP)).rejects.toBeInstanceOf(
-      StepUnavailable,
-    );
+    await expect(
+      new ProwlarrCache({ db, prowlarr: new SharedProwlarr(busy, fakeClock()) }).search(SLIP),
+    ).rejects.toBeInstanceOf(StepUnavailable);
     expect(db.prepare('SELECT COUNT(*) AS n FROM prowlarr_searches').get()).toEqual({ n: 0 });
   });
 
   it('[M3.albums] reads which indexers list music once a day', async () => {
     const clock = fakeClock();
     const prowlarr = timedProwlarr(clock, 1_000);
-    const cache = new ProwlarrCache({ db: openDatabase(':memory:'), prowlarr, clock });
+    const cache = new ProwlarrCache({
+      db: openDatabase(':memory:'),
+      prowlarr: new SharedProwlarr(prowlarr, clock),
+      clock,
+    });
     await cache.search(SLIP);
     await cache.search(GHOSTS);
     expect(prowlarr.musicIndexers).toHaveBeenCalledTimes(1);
@@ -189,7 +223,11 @@ describe('[M3.albums] how the album search asks Prowlarr', () => {
 
   it('[M3.albums] no kept row holds a key, an address or a tracker', async () => {
     const db = openDatabase(':memory:');
-    const cache = new ProwlarrCache({ db, prowlarr: replayed(), clock: fakeClock() });
+    const cache = new ProwlarrCache({
+      db,
+      prowlarr: new SharedProwlarr(replayed(), fakeClock()),
+      clock: fakeClock(),
+    });
     await cache.search(SLIP);
     await cache.search(GHOSTS);
     const kept = db.prepare<[], { rows: string }>('SELECT rows FROM prowlarr_searches').all();
@@ -219,7 +257,11 @@ describe('[M3.albums] how the album search asks Prowlarr', () => {
         return replay(url, init);
       },
     });
-    const cache = new ProwlarrCache({ db, prowlarr, clock: fakeClock() });
+    const cache = new ProwlarrCache({
+      db,
+      prowlarr: new SharedProwlarr(prowlarr, fakeClock()),
+      clock: fakeClock(),
+    });
     const torrent = '/4/download?link=link-723c0f17e972';
     const magnet = '/1/download?link=link-c10af1640615';
     expect(cache.keptLink(torrent)).toBeUndefined();
@@ -249,7 +291,11 @@ describe('[M3.albums] how the album search asks Prowlarr', () => {
         throw new StepUnavailable('prowlarr: GET /2/download: no answer in 30000 ms');
       }),
     };
-    const cache = new ProwlarrCache({ db, prowlarr, clock: fakeClock() });
+    const cache = new ProwlarrCache({
+      db,
+      prowlarr: new SharedProwlarr(prowlarr, fakeClock()),
+      clock: fakeClock(),
+    });
     expect(await cache.askLink('/2/download?link=a')).toBeNull();
     expect(cache.keptLink('/2/download?link=a')).toBeNull();
   });

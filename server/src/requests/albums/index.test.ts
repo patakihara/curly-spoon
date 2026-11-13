@@ -15,6 +15,7 @@ import { getRequest } from '../../store/requests.js';
 import { createSession } from '../../store/sessions.js';
 import { upsertUser } from '../../store/users.js';
 import { musicBrainzOf } from '../musicBrainz.js';
+import { prowlarrOf } from '../prowlarr.js';
 import { albumSteps } from './index.js';
 
 const KEY = Buffer.alloc(32, 7).toString('base64');
@@ -73,6 +74,7 @@ const stepsWith = (vars: Record<string, string>) => {
     now: Date.now,
     people: () => [],
     musicBrainz: musicBrainzOf(config, noFetch),
+    prowlarr: prowlarrOf(config, noFetch),
   });
 };
 
@@ -88,6 +90,7 @@ describe('[M3.albums] album steps from the configuration', () => {
       db: openDatabase(':memory:'),
       fetch,
       musicBrainz: musicBrainzOf(config, fetch),
+      prowlarr: prowlarrOf(config, fetch),
       log,
       now: Date.now,
       people: () => {

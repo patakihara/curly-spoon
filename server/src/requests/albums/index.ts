@@ -13,7 +13,6 @@ import { CoverArtClient } from '../../adapters/coverart/client.js';
 import type { FetchLike } from '../../adapters/http/fetch.js';
 import { JellyfinClient } from '../../adapters/jellyfin/client.js';
 import type { MusicBrainzClient } from '../../adapters/musicbrainz/client.js';
-import { ProwlarrClient } from '../../adapters/prowlarr/client.js';
 import { QbittorrentClient } from '../../adapters/qbittorrent/client.js';
 import type { AppConfig } from '../../config.js';
 import type { JobLog } from '../../jobs/schedule.js';
@@ -28,6 +27,7 @@ import { albumImport } from './import.js';
 import { ProwlarrCache } from './prowlarrCache.js';
 import type { JellyfinPerson } from './replace.js';
 import { albumSearch } from './search.js';
+import type { SharedProwlarr } from '../prowlarr.js';
 
 export interface AlbumStepsDeps {
   db: Db;
@@ -38,6 +38,8 @@ export interface AlbumStepsDeps {
   people: () => JellyfinPerson[];
   /** The server's one MusicBrainz client, which songs share; null with MusicBrainz switched off. */
   musicBrainz: MusicBrainzClient | null;
+  /** The server's one Prowlarr, which books share; null when it is not set up or has no key. */
+  prowlarr: SharedProwlarr | null;
 }
 
 /** The steps with Search's catalogue, or which setting keeps albums from being requested. */
@@ -45,7 +47,7 @@ export type AlbumSteps = { steps: MediumSteps; catalogue: AlbumCatalogue } | { o
 
 export function albumSteps(config: AppConfig, deps: AlbumStepsDeps): AlbumSteps {
   const { books, jellyfin, songs } = config;
-  const { db, fetch, log, now, people, musicBrainz } = deps;
+  const { db, fetch, log, now, people, musicBrainz, prowlarr } = deps;
   if (books.prowlarr === null) return { off: 'PROWLARR_URL and PROWLARR_API_KEY_FILE' };
   if (books.qbittorrent === null) return { off: 'QBITTORRENT_URL and QBITTORRENT_API_KEY_FILE' };
   if (books.downloadsPath === null) return { off: 'QBITTORRENT_DOWNLOADS_PATH' };
@@ -56,8 +58,8 @@ export function albumSteps(config: AppConfig, deps: AlbumStepsDeps): AlbumSteps 
   const lacking = folderLacking(join(mediaDir, 'Music'), 'Music');
   if (lacking !== null) return { off: lacking };
 
+  if (prowlarr === null) return { off: 'a key their files should hold' };
   const secrets = [
-    [books.prowlarr.keyFile, 'PROWLARR_API_KEY'],
     [books.qbittorrent.keyFile, 'QBITTORRENT_API_KEY'],
     [jellyfin.keyFile, 'JELLYFIN_API_KEY'],
   ] as const;
@@ -67,9 +69,8 @@ export function albumSteps(config: AppConfig, deps: AlbumStepsDeps): AlbumSteps 
   } catch {
     return { off: 'a key their files should hold' };
   }
-  const [prowlarrKey, qbittorrentKey, jellyfinKey] = keys as [string, string, string];
+  const [qbittorrentKey, jellyfinKey] = keys as [string, string];
 
-  const prowlarr = new ProwlarrClient({ baseUrl: books.prowlarr.url, apiKey: prowlarrKey, fetch });
   const qbittorrent = new QbittorrentClient({
     baseUrl: books.qbittorrent.url,
     apiKey: qbittorrentKey,

@@ -25,6 +25,7 @@ import {
   stepsRegistry,
 } from '../steps.js';
 import { AlbumEditions, targetEdition } from './editions.js';
+import { SharedProwlarr } from '../prowlarr.js';
 import { ProwlarrCache } from './prowlarrCache.js';
 import {
   type AlbumFacts,
@@ -108,7 +109,11 @@ const recorded = replayFetch(PROWLARR, { readBytes: standInsBeside(ADAPTERS) });
 function searchOn(db: Db, fetch: FetchLike = recorded) {
   const asked: Asked = { searches: [], links: [] };
   const clock = fakeClock();
-  const prowlarr = new ProwlarrCache({ db, prowlarr: prowlarrOn(fetch, asked), clock });
+  const prowlarr = new ProwlarrCache({
+    db,
+    prowlarr: new SharedProwlarr(prowlarrOn(fetch, asked), clock),
+    clock,
+  });
   const editions = new AlbumEditions({ db, musicBrainz: musicBrainz(), now: clock.now });
   return { search: albumSearch({ db, editions, prowlarr }), asked };
 }

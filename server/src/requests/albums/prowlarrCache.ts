@@ -1,7 +1,7 @@
 /**
- * How the album search asks Prowlarr: in Audio, on the indexers that list music, one search at a
- * time for the whole server, each starting at least 10 s after the one before it ended, and each
- * answer kept for a day. A release link is asked in the same queue and gap.
+ * How the album search asks Prowlarr: in Audio, on the indexers that list music, in the server's
+ * one Prowlarr queue (`../prowlarr.ts`), which books share, and each answer kept for a day. A
+ * release link is asked in the same queue.
  *
  * One search fans out to every indexer at once and takes about 30 s (live), and the sites set their
  * own limits, so a request's retry, a second person asking for the same album, a pick of another
@@ -20,18 +20,14 @@
  */
 import { z } from 'zod';
 import type { Clock } from '../../adapters/musicbrainz/client.js';
-import {
-  AUDIO_CATEGORY,
-  type ProwlarrClient,
-  type ProwlarrRelease,
-} from '../../adapters/prowlarr/client.js';
+import { AUDIO_CATEGORY, type ProwlarrRelease } from '../../adapters/prowlarr/client.js';
 import type { JobLog } from '../../jobs/schedule.js';
 import type { Db } from '../../store/connection.js';
+import type { ProwlarrCalls, SharedProwlarr } from '../prowlarr.js';
 import { type TorrentFile, torrentContents } from '../download/torrentFiles.js';
 import { infoHashFromMagnet } from '../download/torrentId.js';
 
 export const PROWLARR_CACHE_MS = 24 * 60 * 60 * 1000;
-export const PROWLARR_GAP_MS = 10_000;
 const INDEXERS_CACHE_MS = 24 * 60 * 60 * 1000;
 
 const realClock: Clock = {
@@ -91,7 +87,8 @@ function kept(row: ProwlarrRelease): ProwlarrRelease {
 
 export interface ProwlarrCacheDeps {
   db: Db;
-  prowlarr: Pick<ProwlarrClient, 'search' | 'musicIndexers' | 'resolve'>;
+  /** The server's one Prowlarr, whose queue books share. */
+  prowlarr: Pick<SharedProwlarr, 'inTurn' | 'musicIndexers'>;
   clock?: Clock;
   log?: JobLog;
 }
@@ -101,10 +98,6 @@ const keyOf = (ids: readonly number[]) => [...ids].sort((a, b) => a - b).join(',
 
 export class ProwlarrCache {
   private readonly clock: Clock;
-  /** The end of the queue: the turn of the search or link asked last. */
-  private tail: Promise<unknown> = Promise.resolve();
-  /** When the last search ended, so the next starts no sooner than the gap after it. */
-  private lastEnded = Number.NEGATIVE_INFINITY;
   private indexers: { ids: number[]; at: number } | null = null;
 
   constructor(private readonly deps: ProwlarrCacheDeps) {
@@ -118,12 +111,12 @@ export class ProwlarrCache {
     const key = keyOf(indexerIds);
     const known = this.read(query, key);
     if (known !== null) return known;
-    return this.inTurn(async () => {
+    return this.deps.prowlarr.inTurn(async (prowlarr) => {
       const meanwhile = this.read(query, key);
       if (meanwhile !== null) return meanwhile;
-      const rows = (
-        await this.deps.prowlarr.search(query, { categories: [AUDIO_CATEGORY], indexerIds })
-      ).map(kept);
+      const rows = (await prowlarr.search(query, { categories: [AUDIO_CATEGORY], indexerIds })).map(
+        kept,
+      );
       this.write(query, key, rows);
       return rows;
     });
@@ -149,21 +142,24 @@ export class ProwlarrCache {
   }
 
   /**
-   * Asks `link` with no redirect followed, in the searches' queue and gap since it reaches the same
-   * sites, and keeps its answer: a magnet's hash, or a torrent's hash, files and web seed. Anything
+   * Asks `link` with no redirect followed, in the searches' queue since it reaches the same sites,
+   * and keeps its answer: a magnet's hash, or a torrent's hash, files and web seed. Anything
    * else, a failure included, is kept as null. A link kept while it waited its turn is not asked.
    */
   askLink(link: string): Promise<LinkAnswer | null> {
-    return this.inTurn(async () => {
+    return this.deps.prowlarr.inTurn(async (prowlarr) => {
       const meanwhile = this.keptLink(link);
-      return meanwhile === undefined ? this.resolveLink(link) : meanwhile;
+      return meanwhile === undefined ? this.resolveLink(prowlarr, link) : meanwhile;
     });
   }
 
-  private async resolveLink(link: string): Promise<LinkAnswer | null> {
+  private async resolveLink(
+    prowlarr: Pick<ProwlarrCalls, 'resolve'>,
+    link: string,
+  ): Promise<LinkAnswer | null> {
     let answer: LinkAnswer | null = null;
     try {
-      const resolved = await this.deps.prowlarr.resolve({ link });
+      const resolved = await prowlarr.resolve({ link });
       if (resolved.kind === 'magnet') {
         answer = { hash: resolved.hash, files: null, webSeed: false };
       } else {
@@ -198,21 +194,6 @@ export class ProwlarrCache {
     const ids = await this.deps.prowlarr.musicIndexers();
     this.indexers = { ids, at: now };
     return ids;
-  }
-
-  /** Runs `work` once every search and link before it has ended and the gap has passed. */
-  private inTurn<T>(work: () => Promise<T>): Promise<T> {
-    const turn = this.tail.then(async () => {
-      const wait = this.lastEnded + PROWLARR_GAP_MS - this.clock.now();
-      if (wait > 0) await this.clock.sleep(wait);
-      try {
-        return await work();
-      } finally {
-        this.lastEnded = this.clock.now();
-      }
-    });
-    this.tail = turn.catch(() => undefined);
-    return turn;
   }
 
   private read(query: string, key: string): ProwlarrRelease[] | null {

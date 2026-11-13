@@ -26,6 +26,7 @@ import type { AlbumCatalogue } from './requests/albums/catalogue.js';
 import { bookSteps } from './requests/books/index.js';
 import { Wake } from './requests/job.js';
 import { musicBrainzOf } from './requests/musicBrainz.js';
+import { prowlarrOf } from './requests/prowlarr.js';
 import { songSteps } from './requests/songs/index.js';
 import type { BookCatalogue } from './requests/books/catalogue.js';
 import { type MediumSteps, stepsRegistry } from './requests/steps.js';
@@ -135,11 +136,14 @@ export async function assembleServer(
     log: { warn: (details, message) => app.log.warn(details, message) },
   });
 
+  // One Prowlarr, so books and albums ask the indexers' sites one at a time, the gap apart.
+  const prowlarr = prowlarrOf(config, fetch);
   const books = bookSteps(config, {
     db,
     fetch,
     log: { error: (details, message) => app.log.error(details, message) },
     now: Date.now,
+    prowlarr,
   });
 
   // An album's import carries each person's favourites and plays onto its tracks, acting as them.
@@ -159,6 +163,7 @@ export async function assembleServer(
     now: Date.now,
     people: () => jellyfinPeople(db, jellyfinAs),
     musicBrainz,
+    prowlarr,
   });
 
   // Makes no upstream call at start, so a server with no network still starts.
