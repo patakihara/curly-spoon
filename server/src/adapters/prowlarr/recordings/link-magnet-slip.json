@@ -1,0 +1,25 @@
+{
+  "upstream": "prowlarr",
+  "upstreamVersion": "10.0.0.22097",
+  "call": "link-magnet-slip",
+  "request": {
+    "method": "GET",
+    "path": "/5/download",
+    "query": {
+      "apikey": "<token>",
+      "link": "link-4058891ba604"
+    },
+    "headers": {
+      "accept": "*/*",
+      "user-agent": "node"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 301,
+    "headers": {
+      "location": "magnet:?xt=urn:btih:F4E14F1ABE29BC991575A318C4F29D7AC4187757"
+    },
+    "body": null
+  }
+}
