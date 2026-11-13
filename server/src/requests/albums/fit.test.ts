@@ -7,12 +7,28 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { openDatabase } from '../../store/connection.js';
 import type { Edition } from './editions.js';
 import { albumFolder, fittingEdition, inFolder } from './fit.js';
-import { ghostsFiles, nineInchNailsPack, PACK, recordedEditions } from './fixtures/albums.js';
+import {
+  ghostsFiles,
+  nineInchNailsPack,
+  PACK,
+  recordedEditions,
+  slipFiles,
+} from './fixtures/albums.js';
 
 let slip: Edition[];
 let ghosts: Edition[];
 beforeAll(async () => {
   ({ slip, ghosts } = await recordedEditions(openDatabase(':memory:')));
+});
+
+describe('[M3.albums] a real torrent’s files', () => {
+  it('[M3.albums] The Slip’s torrent a live request downloaded fits its ten-track edition, cover and booklet aside', () => {
+    const files = slipFiles();
+    expect(files.length).toBe(12);
+    const edition = fittingEdition(files, slip);
+    expect(edition?.tracks.length).toBe(10);
+    expect(fittingEdition(files, ghosts)).toBeNull();
+  });
 });
 
 describe('[M3.albums] a pack’s album folder', () => {

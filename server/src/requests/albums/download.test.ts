@@ -1,10 +1,12 @@
 /**
  * An album's torrent download and its gate, through the real job, store, qBittorrent client and
  * album editions. qBittorrent is a stand-in that keeps its torrents as recorded rows and files
- * (`info-metadata`'s row, `files`' file), answers each call as the recordings do, and does what the
- * API says a call does. Whether a real add stops at its metadata was not seen live (no torrent was
- * added), so every gate test also runs with the stop ignored: the gate then acts at the first poll
- * that lists files, having fetched a few seconds of bytes.
+ * (`info-metadata`'s row, `album-files`' file), answers each call as the recordings do, and does what
+ * the API says a call does. The add, start and tag answers are a live album request's
+ * (`album-add-stop`, `album-start`, `album-add-tag`); in that run qBittorrent's own log said the
+ * torrent stopped four seconds after the add and resumed at the gate's start. Every gate test also
+ * runs with the stop ignored, a qBittorrent that would not honour it: the gate then acts at the
+ * first poll that lists files, having fetched a few seconds of bytes.
  */
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -99,11 +101,11 @@ function qbittorrentStandIn(opts: { honoursStop?: boolean } = {}) {
           priorities: new Map(),
           stopAtMetadata: form.get('stopCondition') === 'MetadataReceived',
         });
-        return answer('add-magnet', url, init);
+        return answer('album-add-stop', url, init);
       }
       case 'torrents/files': {
         const there = torrents.get(url.searchParams.get('hash') ?? '');
-        const [template] = jsonOf('files');
+        const [template] = jsonOf('album-files');
         const json = (there?.files ?? []).map((file, index) => ({
           ...template,
           index,
@@ -112,7 +114,7 @@ function qbittorrentStandIn(opts: { honoursStop?: boolean } = {}) {
           priority: there?.priorities.get(index) ?? 1,
           progress: 0,
         }));
-        const one = recorded('files');
+        const one = recorded('album-files');
         const query = Object.fromEntries(url.searchParams);
         return replayFetch([
           {
@@ -139,7 +141,11 @@ function qbittorrentStandIn(opts: { honoursStop?: boolean } = {}) {
           const there = torrents.get(hash);
           if (there?.row.state === 'stoppedDL') there.row.state = 'downloading';
         }
-        return answer('start-missing', url, init);
+        return answer(
+          hashes.some((hash) => torrents.has(hash)) ? 'album-start' : 'start-missing',
+          url,
+          init,
+        );
       }
       case 'torrents/addTags': {
         for (const hash of hashes) {
@@ -149,7 +155,11 @@ function qbittorrentStandIn(opts: { honoursStop?: boolean } = {}) {
           if (!tags.includes(form.get('tags') ?? '')) tags.push(form.get('tags') ?? '');
           there.row.tags = tags.join(', ');
         }
-        return answer('add-tag-missing', url, init);
+        return answer(
+          hashes.some((hash) => torrents.has(hash)) ? 'album-add-tag' : 'add-tag-missing',
+          url,
+          init,
+        );
       }
       case 'torrents/delete':
         for (const hash of hashes) torrents.delete(hash);
@@ -181,7 +191,7 @@ function qbittorrentStandIn(opts: { honoursStop?: boolean } = {}) {
     },
     /** A torrent the household added itself, in its own category. */
     household(hash: string, files: TorrentFile[]) {
-      const [template] = jsonOf('info-downloading');
+      const [template] = jsonOf('album-info-downloading');
       torrents.set(hash, {
         row: { ...template, hash, category: 'a-household-category', tags: '' },
         files,
