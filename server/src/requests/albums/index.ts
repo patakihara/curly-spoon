@@ -21,6 +21,7 @@ import type { Db } from '../../store/connection.js';
 import { folderLacking } from '../folder.js';
 import type { MediumSteps } from '../steps.js';
 import { albumCatalogue, type AlbumCatalogue } from './catalogue.js';
+import type { Clone } from './clone.js';
 import { albumDownload } from './download.js';
 import { AlbumEditions } from './editions.js';
 import { albumImport } from './import.js';
@@ -40,6 +41,8 @@ export interface AlbumStepsDeps {
   musicBrainz: MusicBrainzClient | null;
   /** The server's one Prowlarr, which books share; null when it is not set up or has no key. */
   prowlarr: SharedProwlarr | null;
+  /** The clone into staging; only a test passes its own, on a filesystem that cannot clone. */
+  clone?: Clone;
 }
 
 /** The steps with Search's catalogue, or which setting keeps albums from being requested. */
@@ -47,7 +50,7 @@ export type AlbumSteps = { steps: MediumSteps; catalogue: AlbumCatalogue } | { o
 
 export function albumSteps(config: AppConfig, deps: AlbumStepsDeps): AlbumSteps {
   const { books, jellyfin, songs } = config;
-  const { db, fetch, log, now, people, musicBrainz, prowlarr } = deps;
+  const { db, fetch, log, now, people, musicBrainz, prowlarr, clone } = deps;
   if (books.prowlarr === null) return { off: 'PROWLARR_URL and PROWLARR_API_KEY_FILE' };
   if (books.qbittorrent === null) return { off: 'QBITTORRENT_URL and QBITTORRENT_API_KEY_FILE' };
   if (books.downloadsPath === null) return { off: 'QBITTORRENT_DOWNLOADS_PATH' };
@@ -106,6 +109,7 @@ export function albumSteps(config: AppConfig, deps: AlbumStepsDeps): AlbumSteps 
           serverKey: true,
         }),
         people,
+        ...(clone === undefined ? {} : { clone }),
         now,
         log,
       }),
