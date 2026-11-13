@@ -9,7 +9,8 @@
  *    there from the matched release's MusicBrainz lookup: FLAC as Vorbis comments, MP3 as ID3v2.4,
  *    the audio untouched. The torrent's own files are never written, so it goes on seeding.
  * 3. **Place.** Into Music (place.ts), with `cover.jpg`: the torrent's own front image (`cover`,
- *    `folder`, `front`), cloned, else the Cover Art Archive's release front, else its group's.
+ *    `folder`, `front`), cloned, else the Cover Art Archive's release front, else its group's. It
+ *    takes the place of a cover the keep made, never of the household's.
  * 4. **Report.** One `POST /Library/Media/Updated` names every placed file `Created`, as Jellyfin's
  *    own folder monitor would; never a library scan. Until Jellyfin's folder walk lists every track
  *    the import is `waiting`; then the album goes into the index.

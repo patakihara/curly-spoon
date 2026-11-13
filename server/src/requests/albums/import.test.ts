@@ -36,11 +36,13 @@ import { ALBUM_GROUPS } from '../../adapters/record-musicbrainz.js';
 import type { QbitTorrent } from '../../adapters/qbittorrent/schemas.js';
 import { indexedRow } from '../../libraryIndex/store.js';
 import { flacComments, readFlac } from '../../music/flac/blocks.js';
+import { remux } from '../../music/opus/remux.js';
 import { frameStrings, readId3Tag, ufid } from '../../music/id3/frames.js';
 import { openDatabase, type Db } from '../../store/connection.js';
 import { createRequest, getRequest, noteHandle, saveRequest } from '../../store/requests.js';
 import { upsertUser } from '../../store/users.js';
 import { advanceRequests } from '../job.js';
+import { YOUTUBE_MUSIC_ID } from '../songs/tags.js';
 import { type MediumSteps, stepsRegistry } from '../steps.js';
 import { type Clone, reflinkClone } from './clone.js';
 import { ALBUM_STAGING, albumImport, type AlbumImportDeps } from './import.js';
@@ -364,6 +366,42 @@ describe('[M3.albums/c] a downloaded album is imported with Auralis’s tagging'
     await call(importDeps(fetch, { coverArt: { releaseFront, groupFront } }), importing());
     expect(releaseFront).toHaveBeenCalledWith(CD_RELEASE);
     expect(readFileSync(join(music, ALBUM_FOLDER, 'cover.jpg'))).toEqual(front);
+  });
+
+  /** A kept song's file in the album's folder as M3.keep builds it: the clip, its id, its art. */
+  async function keptWithArt(art: Buffer) {
+    mkdirSync(join(music, ALBUM_FOLDER), { recursive: true });
+    const from = await open(join(adapters, 'googlevideo', 'recordings', 'opus-clip.webm'), 'r');
+    const to = await open(join(music, ALBUM_FOLDER, '03 - Letting You.opus'), 'wx');
+    try {
+      await remux(from, to, [{ key: YOUTUBE_MUSIC_ID, value: 'kept-id' }], {
+        mime: 'image/jpeg',
+        data: art,
+      });
+    } finally {
+      await from.close();
+      await to.close();
+    }
+  }
+
+  it('[M3.albums/c] a cover the keep made, its kept song’s art, gives way to the release’s own', async () => {
+    const keepArt = Buffer.from([0xff, 0xd8, 0x6b, 0x65, 0x70, 0x74, 0xff, 0xd9]);
+    await keptWithArt(keepArt);
+    writeFileSync(join(music, ALBUM_FOLDER, 'cover.jpg'), keepArt);
+    const { fetch } = upstreams(() => []);
+    await call(importDeps(fetch), importing());
+    const cover = join(music, ALBUM_FOLDER, 'cover.jpg');
+    expect(readFileSync(cover)).toEqual(readFileSync(join(torrent, 'cover.jpg')));
+    expect(mode(cover)).toBe(0o664);
+  });
+
+  it('[M3.albums/c] a household cover stays, beside a kept song or not', async () => {
+    await keptWithArt(Buffer.from([0xff, 0xd8, 0x6b, 0x65, 0x70, 0x74, 0xff, 0xd9]));
+    const theirs = Buffer.from('the household’s cover');
+    writeFileSync(join(music, ALBUM_FOLDER, 'cover.jpg'), theirs);
+    const { fetch } = upstreams(() => []);
+    await call(importDeps(fetch), importing());
+    expect(readFileSync(join(music, ALBUM_FOLDER, 'cover.jpg'))).toEqual(theirs);
   });
 
   it('[M3.albums/c] nine files fit no edition: wrongRelease, and nothing reaches Music', async () => {
