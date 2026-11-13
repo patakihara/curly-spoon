@@ -670,15 +670,22 @@ describe('[M3.albums/c] kept songs from an album are replaced when it arrives', 
     expect(indexedRow(db, 'jellyfin', lettingYou)?.parentId).toBe(ALBUM_ID);
   });
 
-  it('[M3.albums/c] a kept file without its YOUTUBE_MUSIC_ID is the household’s, and stays with its folder', async () => {
-    await keptSongs();
+  it('[M3.albums/c] a keep the household’s own file answered is not replaced: its file, folder, state and references stay', async () => {
+    const { named } = await keptSongs();
     rmSync(join(music, NAMED_FILE));
     writeFileSync(join(music, NAMED_FILE), 'the household’s own');
+    anaListening();
     const { fetch, state } = jellyfinStandIn();
+    seedStates(state);
     const id = importing();
 
     await importAll(importDeps(fetch), id, state);
 
+    expect(getRequest(db, named)!.result).toEqual(jf(NAMED_TRACK));
+    expect(keptTrack(db, NAMED_ID)).toEqual(jf(NAMED_TRACK));
+    expect(state.posted.map(({ item }) => item)).toEqual([lettingYou]);
+    expect(claimsOf(db, bo)).toEqual([{ ref: jf(OLD_ALBUM_ID), reason: 'requested' }]);
+    expect(indexedRow(db, 'jellyfin', OLD_ALBUM_ID)).toBeDefined();
     expect(readFileSync(join(music, NAMED_FILE), 'utf8')).toBe('the household’s own');
     expect(readdirSync(join(music, NAMED_FOLDER)).sort()).toEqual([
       'Discipline.opus',

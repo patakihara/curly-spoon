@@ -111,7 +111,13 @@ describe('[M3.albums] how the album search asks Prowlarr', () => {
     const prowlarr = {
       musicIndexers: vi.fn(async () => [1, 2]),
       search: vi.fn(async (query: string) => takes(30_000, [row(query)])),
-      resolve: vi.fn(async () => takes(2_000, { kind: 'magnet' as const, hash: 'a'.repeat(40) })),
+      resolve: vi.fn(async () =>
+        takes(2_000, {
+          kind: 'magnet' as const,
+          magnet: `magnet:?xt=urn:btih:${'a'.repeat(40)}`,
+          hash: 'a'.repeat(40),
+        }),
+      ),
     };
     const cache = new ProwlarrCache({ db: openDatabase(':memory:'), prowlarr, clock });
     await Promise.all([

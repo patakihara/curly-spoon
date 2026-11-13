@@ -5,8 +5,10 @@
  * 1. **Find.** Arrived song requests matched to this release group on MusicBrainz, and those kept by
  *    YouTube Music's names alone whose album, first artist and title fold equal to the album's.
  * 2. **Pair** each with one of the album's tracks: by the recording (`MUSICBRAINZ_TRACKID`, which
- *    Jellyfin gives as `MusicBrainzRecording`), else by title and a length within 4 s. A kept song
- *    with no pair stays as it is.
+ *    Jellyfin gives as `MusicBrainzRecording`), else by title and a length within 4 s, and find
+ *    its kept file: the one whose Opus tags carry its request's `YOUTUBE_MUSIC_ID`. A kept song
+ *    with no pair stays as it is, and so does one with no such file: its keep was answered by a
+ *    household file, a track the household still has, so nothing of it moves.
  * 3. **Carry each person's state** in Jellyfin, with their own token: the new track takes either's
  *    favourite and played mark, the larger play count and the later last play. The larger, not the
  *    sum, so it is right whether or not Jellyfin carried any of it over by itself. A Jellyfin user
@@ -15,8 +17,8 @@
  *    album to the new where every track of the old one is replaced, in one transaction. The song's
  *    request then names the new track, so the song plays the lossless file; everyone on it has the
  *    album claimed as added.
- * 5. **Delete the kept file**, only when its Opus tags carry its request's `YOUTUBE_MUSIC_ID`: a
- *    household file a keep was answered by carries none and is never deleted. Then each folder the
+ * 5. **Delete the kept file**, only when its Opus tags still carry its request's `YOUTUBE_MUSIC_ID`.
+ *    Then each folder the
  *    keep made, deepest first, only while what is left is Jellyfin's own (`*.nfo`, `folder.*`,
  *    `backdrop*.*`, `logo.*` and the like) or the keep's `cover.jpg`.
  * 6. **Tell Jellyfin** in one call: each deleted file and folder `Deleted`. Until Jellyfin no longer
@@ -57,6 +59,7 @@ import {
 import { linkedAccounts } from '../../store/upstreamLinks.js';
 import { SongHandle } from '../songs/download.js';
 import { findPlaced, keptIdOf, songPlace } from '../songs/place.js';
+import type { SongMatch } from '../songs/match.js';
 import { SongDetails } from '../songs/search.js';
 import { SongMatchSchema } from '../songs/tags.js';
 
@@ -126,8 +129,8 @@ const Pair = z
     /** The kept track's album, as the index had it when paired. */
     fromAlbum: z.string().nullable(),
     to: z.string(),
-    /** The kept file, once found to delete. */
-    file: z.string().optional(),
+    /** The kept file, as found when paired. */
+    file: z.string(),
   })
   .strict();
 type Pair = z.infer<typeof Pair>;
@@ -168,8 +171,18 @@ export function keptSong(request: StoredRequest) {
   };
 }
 
-/** Each kept song of this album with the album's track it becomes. */
-function pairsOf(deps: ReplaceDeps, input: ReplaceInput): Pair[] {
+/** The kept song's own file, carrying its id; null when a household file answered its keep. */
+async function keptFileOf(deps: ReplaceDeps, match: SongMatch, youtubeMusicId: string) {
+  const place = songPlace(match);
+  for (const at of await everyAlbumFolder(deps.musicDir, place)) {
+    const found = await findPlaced(deps.musicDir, at, place, youtubeMusicId);
+    if (found !== null) return found.relPath;
+  }
+  return null;
+}
+
+/** Each kept song of this album with its own file, and the album's track it becomes. */
+async function pairsOf(deps: ReplaceDeps, input: ReplaceInput): Promise<Pair[]> {
   const { db } = deps;
   const ours = new Set(input.trackIds);
   const tracks = albumTracks(db, input.albumId).filter((row) => ours.has(row.id));
@@ -200,12 +213,15 @@ function pairsOf(deps: ReplaceDeps, input: ReplaceInput): Pair[] {
       to = byTitle();
     }
     if (to === undefined) continue;
+    const file = await keptFileOf(deps, match, kept.youtubeMusicId);
+    if (file === null) continue;
     pairs.push({
       request: request.id,
       youtubeMusicId: kept.youtubeMusicId,
       from: result.id,
       fromAlbum: old?.parentId ?? null,
       to: to.id,
+      file,
     });
   }
   return pairs;
@@ -321,25 +337,14 @@ export function replaceKept(deps: ReplaceDeps) {
       deleting.push(relPath);
       note({ deleting: [...deleting] });
     };
-    const pairs = replacing.pairs.map((pair) => ({ ...pair }));
+    const { pairs } = replacing;
     const folders = new Set<string>();
     for (const pair of pairs) {
       const request = getRequest(db, pair.request);
       const kept = request === null ? null : keptSong(request);
-      if (kept === null) continue;
-      for (const folder of kept.made) folders.add(folder);
-      if (pair.file !== undefined) continue;
-      const place = songPlace(kept.match);
-      for (const at of await everyAlbumFolder(deps.musicDir, place)) {
-        const found = await findPlaced(deps.musicDir, at, place, pair.youtubeMusicId);
-        if (found === null) continue;
-        pair.file = found.relPath;
-        note({ pairs: pairs.map((one) => ({ ...one })) });
-        break;
-      }
+      for (const folder of kept?.made ?? []) folders.add(folder);
     }
     for (const pair of pairs) {
-      if (pair.file === undefined) continue;
       const path = join(deps.musicDir, pair.file);
       if ((await keptIdOf(path)) !== pair.youtubeMusicId) continue;
       noteDeleting(pair.file);
@@ -358,13 +363,13 @@ export function replaceKept(deps: ReplaceDeps) {
     for (const relPath of deleting) {
       if (!(await exists(join(deps.musicDir, relPath)))) deleted.push(relPath);
     }
-    note({ deleted, pairs });
-    return { deleted, pairs };
+    note({ deleted });
+    return { deleted };
   };
 
   /** Step 6: each old album indexed again once Jellyfin lists none of the deleted tracks. */
   const reindex = async (pairs: readonly Pair[], deleted: readonly string[]) => {
-    const gone = pairs.filter((pair) => pair.file !== undefined && deleted.includes(pair.file));
+    const gone = pairs.filter((pair) => deleted.includes(pair.file));
     const goneIds = new Set(gone.map((pair) => pair.from));
     const albums = new Set(
       gone.flatMap((pair) => (pair.fromAlbum === null ? [] : [pair.fromAlbum])),
@@ -387,7 +392,7 @@ export function replaceKept(deps: ReplaceDeps) {
   return async (input: ReplaceInput): Promise<'waiting' | 'done'> => {
     const notes = { ...(getRequest(db, input.requestId)?.handle ?? {}) };
     const noted = Replacing.safeParse(notes.replacing);
-    const replacing: Replacing = noted.success ? noted.data : { pairs: pairsOf(deps, input) };
+    const replacing: Replacing = noted.success ? noted.data : { pairs: await pairsOf(deps, input) };
     const note = (change: Partial<Replacing>) => {
       Object.assign(replacing, change);
       notes.replacing = replacing;
