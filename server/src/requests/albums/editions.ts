@@ -10,7 +10,8 @@
  * the default the work goes ahead on.
  *
  * An album and its editions are kept for a week (`album_editions`), read through by the search, the
- * gate and the import. Reads of one group at once ask MusicBrainz once.
+ * gate and the import; an album with no editions only for a day, as its releases may be added yet
+ * and every request for it fails meanwhile. Reads of one group at once ask MusicBrainz once.
  */
 import { z } from 'zod';
 import type { MusicBrainzClient } from '../../adapters/musicbrainz/client.js';
@@ -18,6 +19,7 @@ import type { GroupRelease, ReleaseGroup } from '../../adapters/musicbrainz/sche
 import type { Db } from '../../store/connection.js';
 
 export const ALBUM_EDITIONS_CACHE_MS = 7 * 24 * 60 * 60 * 1000;
+export const ALBUM_EDITIONS_EMPTY_CACHE_MS = 24 * 60 * 60 * 1000;
 
 /** A medium format that carries video. A DVD-Audio is dropped too: no torrent of one is taken. */
 const VIDEO_FORMAT = /dvd|blu-ray|vhs|vcd|laserdisc|umd|betamax/i;
@@ -213,16 +215,18 @@ export class AlbumEditions {
 
   private kept(groupId: string): Album | null {
     const row = this.deps.db
-      .prepare<[string, number], { release_group: string; editions: string }>(
-        'SELECT release_group, editions FROM album_editions WHERE release_group_id = ? AND at > ?',
+      .prepare<[string, number], { at: number; release_group: string; editions: string }>(
+        `SELECT at, release_group, editions FROM album_editions
+         WHERE release_group_id = ? AND at > ?`,
       )
       .get(groupId, this.now() - ALBUM_EDITIONS_CACHE_MS);
     if (row === undefined) return null;
     const group = groupSchema.safeParse(JSON.parse(row.release_group));
     const editions = editionsSchema.safeParse(JSON.parse(row.editions));
-    return group.success && editions.success
-      ? { group: group.data, editions: editions.data }
-      : null;
+    if (!group.success || !editions.success) return null;
+    const empty = editions.data.length === 0;
+    if (empty && row.at <= this.now() - ALBUM_EDITIONS_EMPTY_CACHE_MS) return null;
+    return { group: group.data, editions: editions.data };
   }
 
   private keep(groupId: string, album: Album): void {

@@ -15,6 +15,7 @@ import { ALBUM_GROUPS } from '../../adapters/record-musicbrainz.js';
 import { openDatabase } from '../../store/connection.js';
 import {
   ALBUM_EDITIONS_CACHE_MS,
+  ALBUM_EDITIONS_EMPTY_CACHE_MS,
   AlbumEditions,
   type Edition,
   foldEditions,
@@ -214,6 +215,31 @@ describe('[M3.albums] the kept editions', () => {
     advance(1);
     await editions.read(slip.group);
     expect(asked).toHaveLength(4);
+  });
+
+  it('[M3.albums] a group with no editions yet is asked again after a day, not a week', async () => {
+    const db = openDatabase(':memory:');
+    let now = 1_000_000;
+    const { musicBrainz } = replayed();
+    let releasesAsked = 0;
+    const editions = new AlbumEditions({
+      db,
+      musicBrainz: {
+        releaseGroup: (id) => musicBrainz.releaseGroup(id),
+        releasesOfGroup: async () => {
+          releasesAsked += 1;
+          return [];
+        },
+      },
+      now: () => now,
+    });
+    expect((await editions.read(slip.group))!.editions).toEqual([]);
+    now += ALBUM_EDITIONS_EMPTY_CACHE_MS - 1;
+    await editions.read(slip.group);
+    expect(releasesAsked).toBe(1);
+    now += 1;
+    await editions.read(slip.group);
+    expect(releasesAsked).toBe(2);
   });
 
   it('[M3.albums] a group that is gone answers null, and its releases are never asked', async () => {
