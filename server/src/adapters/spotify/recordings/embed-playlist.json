@@ -1,0 +1,24 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "embed-playlist",
+  "request": {
+    "method": "GET",
+    "path": "/embed/playlist/37i9dQZF1DX4UtSsGT1Sbe",
+    "query": {},
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "accept-ranges": "bytes",
+      "content-type": "text/html; charset=utf-8"
+    },
+    "body": {
+      "text": "<!DOCTYPE html><html><body><script id=\"__NEXT_DATA__\" type=\"application/json\">{\"props\":{\"pageProps\":{\"state\":{\"data\":{\"entity\":{\"name\":\"All Out 80s\",\"coverArt\":{\"sources\":[{\"height\":null,\"width\":null,\"url\":\"https://i.scdn.co/image/ab67706f000000028c767aab2034bb8fafd33124\"}]},\"trackListLength\":100}},\"settings\":{\"session\":{\"accessToken\":\"<anonymous-token>\",\"accessTokenExpirationTimestampMs\":1794621694689,\"isAnonymous\":true}}}}}}</script></body></html>"
+    }
+  }
+}

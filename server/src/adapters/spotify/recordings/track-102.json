@@ -1,0 +1,42 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-102",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/c3a99210cade4f488197487f0dbb0fcb",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "Poison",
+        "artist": [
+          {
+            "name": "Alice Cooper"
+          }
+        ],
+        "album": {
+          "name": "Trash"
+        },
+        "duration": 269712,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "USSM18900004"
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-063",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/a7dc5b71f22a450f93c32bb340825207",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "Rock the Casbah - Remastered",
+        "artist": [
+          {
+            "name": "The Clash"
+          }
+        ],
+        "album": {
+          "name": "Combat Rock (Remastered)"
+        },
+        "duration": 222437,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "GBARL1200671"
+          }
+        ]
+      }
+    }
+  }
+}

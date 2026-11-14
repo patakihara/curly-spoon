@@ -1,0 +1,42 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-094",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/28ef7a3f22eb48358048514f5030f948",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "Save a Prayer - 2009 Remaster",
+        "artist": [
+          {
+            "name": "Duran Duran"
+          }
+        ],
+        "album": {
+          "name": "Rio (Collector's Edition)"
+        },
+        "duration": 333306,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "GBAYE0901094"
+          }
+        ]
+      }
+    }
+  }
+}

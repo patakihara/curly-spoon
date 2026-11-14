@@ -58,7 +58,8 @@ export interface Finding {
  * podcast's feed, episode enclosures and directory page on Audiobookshelf, and the iTunes
  * namespace a feed declares; the covers and author photos Audible and Audnexus name; YouTube Music's
  * art, the one stream host a scrubbed recording can name, and the Internet Archive, which the Cover
- * Art Archive redirects to, with the one node name a recording keeps.
+ * Art Archive redirects to, with the one node name a recording keeps; and Spotify's image host,
+ * which a public playlist's cover names.
  */
 export const PUBLIC_HOSTS: readonly string[] = [
   'musicbrainz.org',
@@ -73,6 +74,7 @@ export const PUBLIC_HOSTS: readonly string[] = [
   'lh3.googleusercontent.com',
   RECORDED_STREAM_HOST,
   'archive.org',
+  'i.scdn.co',
   RECORDED_ARCHIVE_NODE,
 ];
 /**

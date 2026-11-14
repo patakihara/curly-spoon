@@ -1,0 +1,42 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-062",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/ffff8de2674c4f9ea25a2f2d4856050b",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "Jump - 2015 Remaster",
+        "artist": [
+          {
+            "name": "Van Halen"
+          }
+        ],
+        "album": {
+          "name": "1984 (Remastered)"
+        },
+        "duration": 241599,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "USWB11403680"
+          }
+        ]
+      }
+    }
+  }
+}

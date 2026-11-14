@@ -1,0 +1,42 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-120",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/f2c83936681f4f2d99ebddc82543964f",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "Video Killed The Radio Star",
+        "artist": [
+          {
+            "name": "The Buggles"
+          }
+        ],
+        "album": {
+          "name": "The Age Of Plastic"
+        },
+        "duration": 252773,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "GBAAN7900013"
+          }
+        ]
+      }
+    }
+  }
+}

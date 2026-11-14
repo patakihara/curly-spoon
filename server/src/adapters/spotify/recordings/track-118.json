@@ -1,0 +1,42 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-118",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/d951ec1eeb3849ba9da8deb3720242ed",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "Sunday Bloody Sunday - Remastered 2008",
+        "artist": [
+          {
+            "name": "U2"
+          }
+        ],
+        "album": {
+          "name": "War (Remastered)"
+        },
+        "duration": 279440,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "GBUM70713138"
+          }
+        ]
+      }
+    }
+  }
+}

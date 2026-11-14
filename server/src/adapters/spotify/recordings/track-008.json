@@ -1,0 +1,42 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-008",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/3bc9273536af4d33aab993bcf3eababf",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "Beat It",
+        "artist": [
+          {
+            "name": "Michael Jackson"
+          }
+        ],
+        "album": {
+          "name": "Thriller 25 Super Deluxe Edition"
+        },
+        "duration": 258040,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "USSM19902990"
+          }
+        ]
+      }
+    }
+  }
+}

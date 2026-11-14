@@ -696,3 +696,26 @@ describe('[M3.ytmusic/e] the migration that lets a streamed song sit in a queue'
     db.close();
   });
 });
+
+describe('[M3.spotify] the Spotify tracks migration', () => {
+  it('adds the empty track cache on top of everything before it, and applies once', () => {
+    const db = new Database(':memory:');
+    runMigrations(
+      db,
+      migrations.filter((m) => m.name !== 'spotify_tracks'),
+    );
+    expect(db.prepare("SELECT name FROM sqlite_master WHERE name = 'spotify_tracks'").get()).toBe(
+      undefined,
+    );
+    runMigrations(db);
+    const columns = (
+      db.prepare('PRAGMA table_info(spotify_tracks)').all() as { name: string }[]
+    ).map((c) => c.name);
+    expect(columns).toEqual(['id', 'title', 'artists', 'album', 'duration_ms', 'isrc', 'at']);
+    runMigrations(db);
+    const applied = db
+      .prepare("SELECT COUNT(*) AS n FROM _migrations WHERE name = 'spotify_tracks'")
+      .get();
+    expect(applied).toEqual({ n: 1 });
+  });
+});

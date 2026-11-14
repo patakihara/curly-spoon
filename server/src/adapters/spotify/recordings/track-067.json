@@ -1,0 +1,42 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-067",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/ea2223c517c9409bb32c492631f693f4",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "Don't Stop Believin'",
+        "artist": [
+          {
+            "name": "Journey"
+          }
+        ],
+        "album": {
+          "name": "The Essential Journey"
+        },
+        "duration": 248906,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "USSM18100116"
+          }
+        ]
+      }
+    }
+  }
+}

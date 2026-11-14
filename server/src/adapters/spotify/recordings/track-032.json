@@ -1,0 +1,42 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-032",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/5b3b631919bb4da1b3f97b5677f55f88",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "Fast Car",
+        "artist": [
+          {
+            "name": "Tracy Chapman"
+          }
+        ],
+        "album": {
+          "name": "Tracy Chapman"
+        },
+        "duration": 296800,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "USEE10180719"
+          }
+        ]
+      }
+    }
+  }
+}

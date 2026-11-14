@@ -1,0 +1,42 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-046",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/9cb0a4991f7e4e10b2bd0d4f075fd061",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "Right Here Waiting",
+        "artist": [
+          {
+            "name": "Richard Marx"
+          }
+        ],
+        "album": {
+          "name": "Repeat Offender"
+        },
+        "duration": 264333,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "USEM38900208"
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-058",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/d2d57af3c7b649c9b79d1c55c6a68dc7",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "The Best",
+        "artist": [
+          {
+            "name": "Tina Turner"
+          }
+        ],
+        "album": {
+          "name": "Foreign Affair"
+        },
+        "duration": 329800,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "USCA28900109"
+          }
+        ]
+      }
+    }
+  }
+}

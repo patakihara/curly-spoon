@@ -1,0 +1,42 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-073",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/0e80a70f9e1a4894acb071d688ab883a",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "You Give Love A Bad Name",
+        "artist": [
+          {
+            "name": "Bon Jovi"
+          }
+        ],
+        "album": {
+          "name": "Slippery When Wet"
+        },
+        "duration": 222706,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "USPR39402224"
+          }
+        ]
+      }
+    }
+  }
+}

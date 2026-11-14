@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
@@ -38,6 +38,7 @@ import { AUDIO_CATEGORY, ProwlarrClient } from './prowlarr/client.js';
 import { ALBUM_SEARCHES } from './record-albums.js';
 import { SLIP_GROUP } from './record-albums-live.js';
 import { torrentContents } from '../requests/download/torrentFiles.js';
+import { ANONYMOUS_TOKEN } from './record-spotify.js';
 
 const adapters = dirname(fileURLToPath(import.meta.url));
 
@@ -1706,5 +1707,57 @@ describe("[M3.albums] MusicBrainz's release groups, as recorded", () => {
     expect(cd.media[0]!.tracks).toHaveLength(10);
     const digital = (await client().release(ghosts.digital))!;
     expect(digital.media.flatMap((m) => m.tracks)).toHaveLength(36);
+  });
+});
+
+describe("[M3.spotify] Spotify's signed-out answers, as recorded", () => {
+  const dir = join(adapters, 'spotify', 'recordings');
+  const spotify = readdirSync(dir)
+    .filter((f) => f.endsWith('.json'))
+    .map((f) => recording('spotify', f.replace(/\.json$/, '')));
+  const embed = recording('spotify', 'embed-playlist');
+  const embedText = (embed.response.body as { text: string }).text;
+
+  it('hold no JWT-shaped string and no base64 run of 100 characters or more', () => {
+    for (const r of spotify) {
+      const text = JSON.stringify(r);
+      expect(text, r.call).not.toMatch(/eyJ[\w-]+\.[\w-]+\.[\w-]+/);
+      expect(text, r.call).not.toMatch(/[A-Za-z0-9+/_-]{100,}/);
+      expect(scanRecording(r), r.call).toEqual([]);
+    }
+  });
+
+  it('never keep a request Authorization', () => {
+    for (const r of spotify) expect(r.request.headers, r.call).not.toHaveProperty('authorization');
+  });
+
+  it("keep the embed page's session as the placeholder, anonymous, with its expiry", () => {
+    expect(embedText).toContain(`"accessToken":"${ANONYMOUS_TOKEN}"`);
+    expect(embedText).toContain('"isAnonymous":true');
+    expect(embedText).toMatch(/"accessTokenExpirationTimestampMs":\d{13}/);
+    expect(embedText).not.toMatch(/correlationId|sentry|clientId/i);
+  });
+
+  it("show the embed page's track list stops at 100 while the order holds every track", () => {
+    expect(embedText).toContain('"trackListLength":100');
+    const pages = ['order-page-1', 'order-page-2'].map(
+      (c) => (recording('spotify', c).response.body as { json: { length: number } }).json,
+    );
+    expect(pages.map((p) => p.length)).toEqual([150, 150]);
+    expect(spotify.filter((r) => r.call.startsWith('track-'))).toHaveLength(150);
+  });
+
+  it('keep no correlation or decision id', () => {
+    for (const r of spotify)
+      expect(JSON.stringify(r), r.call).not.toMatch(/decision_id|correlation/i);
+  });
+
+  it("keep the Web API's quota refusal of the anonymous token, with its Retry-After", () => {
+    const busy = recording('spotify', 'webapi-429');
+    expect(busy.response.status).toBe(429);
+    expect(busy.response.headers['retry-after']).toMatch(/^\d+$/);
+    expect(busy.response.body).toEqual({
+      json: { error: { status: 429, message: 'Too many requests', reason: 'QUOTA_EXCEEDED' } },
+    });
   });
 });

@@ -1,0 +1,42 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-012",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/6fa25281b9c9457da15496a0093c5331",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "The Winner Takes It All",
+        "artist": [
+          {
+            "name": "ABBA"
+          }
+        ],
+        "album": {
+          "name": "Super Trouper"
+        },
+        "duration": 294720,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "SEAYD8001020"
+          }
+        ]
+      }
+    }
+  }
+}

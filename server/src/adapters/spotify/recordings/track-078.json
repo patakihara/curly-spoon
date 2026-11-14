@@ -1,0 +1,42 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-078",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/07731ce9aae542f5bed1b82ee3023e38",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "Sacrifice",
+        "artist": [
+          {
+            "name": "Elton John"
+          }
+        ],
+        "album": {
+          "name": "Sleeping With The Past (Remastered with bonus tracks)"
+        },
+        "duration": 304133,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "GBALX8900001"
+          }
+        ]
+      }
+    }
+  }
+}

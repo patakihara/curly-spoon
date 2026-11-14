@@ -1,0 +1,42 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-095",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/64f92a35a53b45f089824b095e7b2f06",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "Danger Zone - From \"Top Gun\" Original Soundtrack",
+        "artist": [
+          {
+            "name": "Kenny Loggins"
+          }
+        ],
+        "album": {
+          "name": "Yesterday, Today, Tomorrow - The Greatest Hits Of Kenny Loggins"
+        },
+        "duration": 215133,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "USSM18600108"
+          }
+        ]
+      }
+    }
+  }
+}

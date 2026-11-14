@@ -1,0 +1,42 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-088",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/39b6c6816b224d0f8706a2391cc26c15",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "Black Velvet",
+        "artist": [
+          {
+            "name": "Alannah Myles"
+          }
+        ],
+        "album": {
+          "name": "Alannah Myles"
+        },
+        "duration": 287440,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "USAT20103053"
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-106",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/6f1db7826f254d59b533aabeca95b3d1",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "Never Too Much",
+        "artist": [
+          {
+            "name": "Luther Vandross"
+          }
+        ],
+        "album": {
+          "name": "Never Too Much"
+        },
+        "duration": 230269,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "USSM18100805"
+          }
+        ]
+      }
+    }
+  }
+}

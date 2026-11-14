@@ -1,0 +1,42 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-007",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/0751a54b955a4c2494b467a651949da3",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "Born in the U.S.A.",
+        "artist": [
+          {
+            "name": "Bruce Springsteen"
+          }
+        ],
+        "album": {
+          "name": "Born In The U.S.A."
+        },
+        "duration": 279786,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "USSM18400406"
+          }
+        ]
+      }
+    }
+  }
+}

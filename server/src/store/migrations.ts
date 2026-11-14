@@ -1056,6 +1056,25 @@ export const migrations: readonly Migration[] = [
       `);
     },
   },
+  {
+    id: 33,
+    name: 'spotify_tracks',
+    up: (db) => {
+      // Each Spotify track an import read, for 30 days, so a re-import or a second person's import
+      // of the same tracks asks Spotify only for the order. artists is JSON; duration_ms is ms.
+      db.exec(`
+        CREATE TABLE spotify_tracks (
+          id          TEXT PRIMARY KEY,
+          title       TEXT NOT NULL,
+          artists     TEXT NOT NULL,
+          album       TEXT,
+          duration_ms INTEGER NOT NULL,
+          isrc        TEXT,
+          at          INTEGER NOT NULL
+        );
+      `);
+    },
+  },
 ];
 
 export function runMigrations(

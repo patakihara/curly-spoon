@@ -1,0 +1,339 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "order-page-1",
+  "request": {
+    "method": "GET",
+    "path": "/playlist/v2/playlist/37i9dQZF1DX4UtSsGT1Sbe",
+    "query": {
+      "from": "0",
+      "length": "100"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "length": 150,
+        "attributes": {
+          "name": "All Out 80s"
+        },
+        "ownerUsername": "spotify",
+        "isUserCreated": false,
+        "contents": {
+          "pos": 0,
+          "truncated": true,
+          "items": [
+            {
+              "uri": "spotify:track:2LlQb7Uoj1kKyGhlkBf9aC"
+            },
+            {
+              "uri": "spotify:track:2WfaOiMkCvy7F5fcp2zZ8L"
+            },
+            {
+              "uri": "spotify:track:37Q5anxoGWYdRsyeXkkNoI"
+            },
+            {
+              "uri": "spotify:track:7wuJGgpTNzbUyn26IOY6rj"
+            },
+            {
+              "uri": "spotify:track:2v7ywbUzCgcVohHaKUcacV"
+            },
+            {
+              "uri": "spotify:track:37ZJ0p5Jm13JPevGcx4SkF"
+            },
+            {
+              "uri": "spotify:track:0dOg1ySSI7NkpAe89Zo0b9"
+            },
+            {
+              "uri": "spotify:track:1OOtq8tRnDM8kG2gqUPjAj"
+            },
+            {
+              "uri": "spotify:track:3HCah9Waf9Jby9gLIWN4MI"
+            },
+            {
+              "uri": "spotify:track:2374M0fQpWi3dLnB54qaLX"
+            },
+            {
+              "uri": "spotify:track:4tcauy2xyIv1q0ckvQmc4H"
+            },
+            {
+              "uri": "spotify:track:3oEkrIfXfSh9zGnE7eBzSV"
+            },
+            {
+              "uri": "spotify:track:5Hyr47BBGpvOfcykSCcaw9"
+            },
+            {
+              "uri": "spotify:track:7arHM2KZ0KzIZXFVDRGClI"
+            },
+            {
+              "uri": "spotify:track:4cgjA7B4fJBHyB9Ya2bu0t"
+            },
+            {
+              "uri": "spotify:track:7Ewz6bJ97vUqk5HdkvguFQ"
+            },
+            {
+              "uri": "spotify:track:1TfqLAPs4K3s2rJMoCokcS"
+            },
+            {
+              "uri": "spotify:track:08mG3Y1vljYA6bvDt4Wqkj"
+            },
+            {
+              "uri": "spotify:track:1JLn8RhQzHz3qDqsChcmBl"
+            },
+            {
+              "uri": "spotify:track:7j74lucZ59vqN67Ipe2ZcY"
+            },
+            {
+              "uri": "spotify:track:5vmRQ3zELMLUQPo2FLQ76x"
+            },
+            {
+              "uri": "spotify:track:2tUBqZG2AbRi7Q0BIrVrEj"
+            },
+            {
+              "uri": "spotify:track:4ByEFOBuLXpCqvO1kw8Wdm"
+            },
+            {
+              "uri": "spotify:track:4RvWPyQ5RL0ao9LPZeSouE"
+            },
+            {
+              "uri": "spotify:track:4S1VYqwfkLit9mKVY3MXoo"
+            },
+            {
+              "uri": "spotify:track:1NCuYqMc8hKMb4cpNTcJbD"
+            },
+            {
+              "uri": "spotify:track:0WQiDwKJclirSYG9v5tayI"
+            },
+            {
+              "uri": "spotify:track:1Hv1VTm8zeOeybub15mA2R"
+            },
+            {
+              "uri": "spotify:track:0GONea6G2XdnHWjNZd6zt3"
+            },
+            {
+              "uri": "spotify:track:5zA8vzDGqPl2AzZkEYQGKh"
+            },
+            {
+              "uri": "spotify:track:18AXbzPzBS8Y3AkgSxzJPb"
+            },
+            {
+              "uri": "spotify:track:2M9ro2krNb7nr7HSprkEgo"
+            },
+            {
+              "uri": "spotify:track:7FwBtcecmlpc1sLySPXeGE"
+            },
+            {
+              "uri": "spotify:track:39shmbIHICJ2Wxnk1fPSdz"
+            },
+            {
+              "uri": "spotify:track:5O4erNlJ74PIF6kGol1ZrC"
+            },
+            {
+              "uri": "spotify:track:3ZZq9396zv8pcn5GYVhxUi"
+            },
+            {
+              "uri": "spotify:track:4w3tQBXhn5345eUXDGBWZG"
+            },
+            {
+              "uri": "spotify:track:3PzsbWSQdLCKDLxn7YZfkM"
+            },
+            {
+              "uri": "spotify:track:3koCCeSaVUyrRo3N2gHrd8"
+            },
+            {
+              "uri": "spotify:track:4o6BgsqLIBViaGVbx5rbRk"
+            },
+            {
+              "uri": "spotify:track:1CgmY8fVN7kstVDZmsdM5k"
+            },
+            {
+              "uri": "spotify:track:2aEuA8PSqLa17Y4hKPj5rr"
+            },
+            {
+              "uri": "spotify:track:2MuWTIM3b0YEAskbeeFE1i"
+            },
+            {
+              "uri": "spotify:track:0odIT9B9BvOCnXfS0e4lB5"
+            },
+            {
+              "uri": "spotify:track:7L3b6iaVhDVjfo52Hbvh9Z"
+            },
+            {
+              "uri": "spotify:track:4LFwNJWoj74Yd71fIr1W8x"
+            },
+            {
+              "uri": "spotify:track:4CoSCPlKNrWli7E5kFtbcl"
+            },
+            {
+              "uri": "spotify:track:63CHa6rmamv9OsehkRD8oz"
+            },
+            {
+              "uri": "spotify:track:5ChkMS8OtdzJeqyybCc9R5"
+            },
+            {
+              "uri": "spotify:track:6JNJERZGJwDVgkmbohBw7u"
+            },
+            {
+              "uri": "spotify:track:3MrRksHupTVEQ7YbA0FsZK"
+            },
+            {
+              "uri": "spotify:track:19Ym5Sg0YyOCa6ao21bdoG"
+            },
+            {
+              "uri": "spotify:track:05wIrZSwuaVWhcv5FfqeH0"
+            },
+            {
+              "uri": "spotify:track:6RNDeRnWsRMjPdNVgupZCs"
+            },
+            {
+              "uri": "spotify:track:1YrnDTqvcnUKxAIeXyaEmU"
+            },
+            {
+              "uri": "spotify:track:2RWFncSWZEhSRRifqiDNVV"
+            },
+            {
+              "uri": "spotify:track:3Cx4yrFaX8CeHwBMReOWXI"
+            },
+            {
+              "uri": "spotify:track:6pPWRBubXOBAHnjl5ZIujB"
+            },
+            {
+              "uri": "spotify:track:7HKez549fwJQDzx3zLjHKC"
+            },
+            {
+              "uri": "spotify:track:54b8qPFqYqIndfdxiLApea"
+            },
+            {
+              "uri": "spotify:track:6WK9dVrRABMkUXFLNlgWFh"
+            },
+            {
+              "uri": "spotify:track:7N3PAbqfTjSEU1edb2tY8j"
+            },
+            {
+              "uri": "spotify:track:56KqaFSGTb7ifpt16t5Y1N"
+            },
+            {
+              "uri": "spotify:track:4JEylZNW8SbO4zUyfVrpb7"
+            },
+            {
+              "uri": "spotify:track:2DjWsDGgL1xNbhnr7f6t5F"
+            },
+            {
+              "uri": "spotify:track:0qi4b1l0eT3jpzeNHeFXDT"
+            },
+            {
+              "uri": "spotify:track:77NNZQSqzLNqh2A9JhLRkg"
+            },
+            {
+              "uri": "spotify:track:6r8k1vznHrzlEKYxL4dZEe"
+            },
+            {
+              "uri": "spotify:track:44aTAUBF0g6sMkMNE8I5kd"
+            },
+            {
+              "uri": "spotify:track:2PFIZFcGry0po3ZfRZkzKc"
+            },
+            {
+              "uri": "spotify:track:2KH16WveTQWT6KOG9Rg6e2"
+            },
+            {
+              "uri": "spotify:track:5dRQUolXAVX3BbCiIxmSsf"
+            },
+            {
+              "uri": "spotify:track:0rmGAIH9LNJewFw7nKzZnc"
+            },
+            {
+              "uri": "spotify:track:6ADSaE87h8Y3lccZlBJdXH"
+            },
+            {
+              "uri": "spotify:track:0J2p4KYdr6Mg4ET6JPlbe1"
+            },
+            {
+              "uri": "spotify:track:3cbV252akVZInSvJk7jAYX"
+            },
+            {
+              "uri": "spotify:track:39lSeqnyjZJejRuaREfyLL"
+            },
+            {
+              "uri": "spotify:track:0e3yhVeNaTfKIWQRw9U9sY"
+            },
+            {
+              "uri": "spotify:track:0qxYx4F3vm1AOnfux6dDxP"
+            },
+            {
+              "uri": "spotify:track:62LJFaYihsdVrrkgUOJC05"
+            },
+            {
+              "uri": "spotify:track:0X1sqQ652p1sceKM2nJlIJ"
+            },
+            {
+              "uri": "spotify:track:36lkJSDyMEZoWTqtRj8Q8q"
+            },
+            {
+              "uri": "spotify:track:5zWZ9iNevP0397xB3jWV2z"
+            },
+            {
+              "uri": "spotify:track:4KFM3A5QF2IMcc6nHsu3Wp"
+            },
+            {
+              "uri": "spotify:track:1eyq8cjUQ2daFthW2PC2GM"
+            },
+            {
+              "uri": "spotify:track:0GTK6TesV108Jj5D3MHsYb"
+            },
+            {
+              "uri": "spotify:track:0Dm43YLUlGdePpSbI1ct8h"
+            },
+            {
+              "uri": "spotify:track:1KU5EHSz04JhGg3rReGJ0N"
+            },
+            {
+              "uri": "spotify:track:7gSQv1OHpkIoAdUiRLdmI6"
+            },
+            {
+              "uri": "spotify:track:37BTh5g05cxBIRYMbw8g2T"
+            },
+            {
+              "uri": "spotify:track:5fnOrhQ4KgT5irGCjIccGH"
+            },
+            {
+              "uri": "spotify:track:15MJ5NThPjj6xhPcts8MiY"
+            },
+            {
+              "uri": "spotify:track:56GbZVwxMdf1DENCluYS8A"
+            },
+            {
+              "uri": "spotify:track:1ff8lsrJ2kuZuofMw81EQo"
+            },
+            {
+              "uri": "spotify:track:34x6hEJgGAOQvmlMql5Ige"
+            },
+            {
+              "uri": "spotify:track:3L7RtEcu1Hw3OXrpnthngx"
+            },
+            {
+              "uri": "spotify:track:4YwbSZaYeYja8Umyt222Qf"
+            },
+            {
+              "uri": "spotify:track:5WwqdeavrQrbeAMDxGawse"
+            },
+            {
+              "uri": "spotify:track:21qnJAMtzC6S5SESuqQLEK"
+            },
+            {
+              "uri": "spotify:track:1GjbTNFImFrjFsNdleDe78"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

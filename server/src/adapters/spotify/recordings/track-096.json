@@ -1,0 +1,42 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-096",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/7b8b9e9da29d4a1584be4a3269381e85",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "Don't You Want Me",
+        "artist": [
+          {
+            "name": "The Human League"
+          }
+        ],
+        "album": {
+          "name": "Dare!"
+        },
+        "duration": 236920,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "GBAAA0200924"
+          }
+        ]
+      }
+    }
+  }
+}

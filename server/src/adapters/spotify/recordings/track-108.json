@@ -1,0 +1,42 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-108",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/2cd8311a69cb454081f49320523717b9",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "Break My Stride",
+        "artist": [
+          {
+            "name": "Matthew Wilder"
+          }
+        ],
+        "album": {
+          "name": "I Don't Speak The Language"
+        },
+        "duration": 184480,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "USSM18300576"
+          }
+        ]
+      }
+    }
+  }
+}

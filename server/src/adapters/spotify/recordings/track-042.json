@@ -1,0 +1,42 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-042",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/475bfc9aee114be693451de5876bcbd1",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "Cheri Cheri Lady",
+        "artist": [
+          {
+            "name": "Modern Talking"
+          }
+        ],
+        "album": {
+          "name": "Let's Talk About Love"
+        },
+        "duration": 226333,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "DEC738500001"
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-126",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/d1510eea15cd4e9db426ddb024db933e",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "If I Could Turn Back Time",
+        "artist": [
+          {
+            "name": "Cher"
+          }
+        ],
+        "album": {
+          "name": "Heart Of Stone"
+        },
+        "duration": 239826,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "USGF18923901"
+          }
+        ]
+      }
+    }
+  }
+}

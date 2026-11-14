@@ -1,0 +1,42 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-116",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/4e9eb1c940d343da83b2c9499fa96a97",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "The Power Of Love",
+        "artist": [
+          {
+            "name": "Huey Lewis & The News"
+          }
+        ],
+        "album": {
+          "name": "Greatest Hits: Huey Lewis And The News"
+        },
+        "duration": 234333,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "USCA20600519"
+          }
+        ]
+      }
+    }
+  }
+}

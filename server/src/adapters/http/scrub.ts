@@ -21,7 +21,8 @@ export const PLACEHOLDER_HOME_USER = 'user';
 /**
  * The only headers a recording keeps, in either direction: a range request's and its answer's
  * among them, the User-Agent a client names itself with to a public service (LRCLIB), and where a
- * redirect points (Prowlarr answers a release's link with a magnet).
+ * redirect points (Prowlarr answers a release's link with a magnet), and how long a busy service
+ * asks to be left (Spotify's 429).
  * `content-length` is not kept: a scrubbed or stand-in body has another length.
  */
 export const KEPT_HEADERS = [
@@ -33,6 +34,7 @@ export const KEPT_HEADERS = [
   'content-range',
   'user-agent',
   'location',
+  'retry-after',
 ] as const;
 /** A query parameter or header name that carries a credential. `auth` spares `author`. A visitor
  * id (`X-Goog-Visitor-Id`) is one. */

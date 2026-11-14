@@ -1,0 +1,42 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-074",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/d88f64ca27c04f1ab39a1e2e5e12ba31",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "With Or Without You",
+        "artist": [
+          {
+            "name": "U2"
+          }
+        ],
+        "album": {
+          "name": "The Joshua Tree (Super Deluxe)"
+        },
+        "duration": 295515,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "GBUM70709792"
+          }
+        ]
+      }
+    }
+  }
+}

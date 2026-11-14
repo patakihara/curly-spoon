@@ -1,0 +1,42 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-070",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/5d1907ff74ff4a9e989694298722c98c",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "Hysteria",
+        "artist": [
+          {
+            "name": "Def Leppard"
+          }
+        ],
+        "album": {
+          "name": "Hysteria"
+        },
+        "duration": 354636,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "GBF088700612"
+          }
+        ]
+      }
+    }
+  }
+}

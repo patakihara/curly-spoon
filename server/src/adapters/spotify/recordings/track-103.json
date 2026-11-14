@@ -1,0 +1,42 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-103",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/8da54c5d353f4881a736c6e1da04701f",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "It's My Life - 1997 Remaster",
+        "artist": [
+          {
+            "name": "Talk Talk"
+          }
+        ],
+        "album": {
+          "name": "It's My Life"
+        },
+        "duration": 232400,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "GBAYE9700491"
+          }
+        ]
+      }
+    }
+  }
+}

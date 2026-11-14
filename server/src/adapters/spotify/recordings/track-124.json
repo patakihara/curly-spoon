@@ -1,0 +1,42 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-124",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/dc5f13848edd41709d786ca79613f229",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "Stuck On You",
+        "artist": [
+          {
+            "name": "Lionel Richie"
+          }
+        ],
+        "album": {
+          "name": "Can't Slow Down"
+        },
+        "duration": 192066,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "USMO18390015"
+          }
+        ]
+      }
+    }
+  }
+}

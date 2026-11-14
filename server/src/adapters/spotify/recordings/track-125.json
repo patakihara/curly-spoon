@@ -1,0 +1,42 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-125",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/419f68c6d11b4c94bc501531597892b3",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "Like a Virgin",
+        "artist": [
+          {
+            "name": "Madonna"
+          }
+        ],
+        "album": {
+          "name": "Like a Virgin"
+        },
+        "duration": 218626,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "USWB10002748"
+          }
+        ]
+      }
+    }
+  }
+}

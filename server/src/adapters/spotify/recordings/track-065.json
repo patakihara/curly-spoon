@@ -1,0 +1,42 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-065",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/568d5cc893214fc4b81b74a9a948bcf3",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "Baby Can I Hold You",
+        "artist": [
+          {
+            "name": "Tracy Chapman"
+          }
+        ],
+        "album": {
+          "name": "Tracy Chapman"
+        },
+        "duration": 193120,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "USEE10180931"
+          }
+        ]
+      }
+    }
+  }
+}

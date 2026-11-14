@@ -1,0 +1,42 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-150",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/d3778b2090664815b466a7ee7ca45c83",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "You Got It",
+        "artist": [
+          {
+            "name": "Roy Orbison"
+          }
+        ],
+        "album": {
+          "name": "Mystery Girl"
+        },
+        "duration": 210266,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "USLIC0701008"
+          }
+        ]
+      }
+    }
+  }
+}
