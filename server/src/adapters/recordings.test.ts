@@ -36,6 +36,7 @@ import { StepUnavailable } from '../requests/steps.js';
 import { ABS_PROGRESS_CALLS, JELLYFIN_PROGRESS_CALLS, TEST_BOOKMARK } from './record-progress.js';
 import { AUDIO_CATEGORY, ProwlarrClient } from './prowlarr/client.js';
 import { ALBUM_SEARCHES } from './record-albums.js';
+import { SLIP_GROUP } from './record-albums-live.js';
 import { torrentContents } from '../requests/download/torrentFiles.js';
 
 const adapters = dirname(fileURLToPath(import.meta.url));
@@ -977,6 +978,7 @@ describe("[M3.albums] Prowlarr's music calls, as recorded", () => {
     ...ALBUM_SEARCHES.map(([call]) => [call, 200] as const),
     ['torrent-ghosts-ia', 200],
     ['link-magnet-music', 301],
+    ['link-magnet-slip', 301],
   ] as const;
   const all = () => calls.map(([call]) => recording('prowlarr', call));
   const client = () =>
@@ -1080,6 +1082,21 @@ describe("[M3.albums] Prowlarr's music calls, as recorded", () => {
       link: `${asked.request.path}?link=${asked.request.query.link}`,
     });
     expect(answer).toMatchObject({ kind: 'magnet', hash: expect.stringMatching(/^[0-9a-f]{40}$/) });
+  });
+
+  it('[M3.albums] the row a live request picked answered a magnet whose hash is the torrent qBittorrent was given', async () => {
+    const asked = recording('prowlarr', 'link-magnet-slip');
+    const added = recording('qbittorrent', 'album-add-stop');
+    const answer = await client().resolve({
+      link: `${asked.request.path}?link=${asked.request.query.link}`,
+    });
+    const form = new URLSearchParams((added.request.body as { text: string }).text);
+    expect(answer).toMatchObject({
+      kind: 'magnet',
+      hash: 'f4e14f1abe29bc991575a318c4f29d7ac4187757',
+    });
+    expect(form.get('urls')?.toLowerCase()).toBe(`magnet:?xt=urn:btih:${answer.hash}`);
+    expect(form.get('stopCondition')).toBe('MetadataReceived');
   });
 });
 
@@ -1483,6 +1500,28 @@ describe("[M3.keep] the Cover Art Archive's front cover, as recorded", () => {
     const cover = await covers().releaseFront(release);
     expect(cover?.mime).toBe('image/jpeg');
     expect(cover!.bytes.subarray(0, 2)).toEqual(Buffer.from([0xff, 0xd8]));
+  });
+
+  it('[M3.albums] a release group’s front is asked by the group, which redirects to its release’s image on archive.org', async () => {
+    const group = recording('coverart', 'rg-front-slip');
+    expect(group.response.status).toBe(307);
+    expect(new URL(group.response.headers.location!).hostname).toBe('archive.org');
+    const image = calls[2]!;
+    const asked: string[] = [];
+    const cover = await new CoverArtClient({
+      baseUrl: 'http://upstream.invalid',
+      fetch: async (url, init) => {
+        asked.push(url);
+        const one =
+          asked.length === 1
+            ? group
+            : { ...image, request: { ...image.request, path: new URL(url).pathname } };
+        return replayFetch([one], { readBytes: standInsBeside(adapters) })(url, init);
+      },
+    }).groupFront(SLIP_GROUP);
+    expect(new URL(asked[0]!).pathname).toBe(`/release-group/${SLIP_GROUP}/front-500`);
+    expect(asked[1]).toBe(group.response.headers.location);
+    expect(cover?.mime).toBe('image/jpeg');
   });
 
   it('[M3.keep] a redirect to any other host is refused, never followed', async () => {

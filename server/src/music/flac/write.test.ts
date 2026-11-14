@@ -11,6 +11,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { TagsRefused, trackComments, type TrackTags } from '../tags.js';
 import { BLOCK, flacComments, flacPictures, type FlacFile, readFlac } from './blocks.js';
 import { writeFlacTags } from './write.js';
+import type { CloneRange, RangeClone } from '../audio/cloneRange.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const ALBUM = join(here, '..', '..', 'requests', 'albums', 'fixtures', 'the-slip');
@@ -81,18 +82,43 @@ describe('[M3.albums] a FLAC’s tags', () => {
     expect(after.subarray(after.length - audio.length).equals(audio)).toBe(true);
   });
 
-  it('[M3.albums] rewrite a file with no padding, giving it 8 KiB, the audio byte for byte the same', async () => {
+  it('[M3.albums] rewrite a file with no padding, giving it 8 KiB or more so its audio starts at the same offset modulo 4 KiB, the audio byte for byte the same', async () => {
     const path = copy(UNPADDED);
     const audio = await audioOf(path);
-    expect(padding(await read(path))).toEqual([]);
+    const before = await read(path);
+    expect(padding(before)).toEqual([]);
     expect(await writeFlacTags(path, trackComments({ ...tags, title: 'Letting You' }))).toBe(
       'rewritten',
     );
     const flac = await read(path);
-    expect(padding(flac)).toEqual([8192]);
+    expect(padding(flac)[0]).toBeGreaterThanOrEqual(8192);
+    expect(padding(flac)[0]).toBeLessThan(8192 + 4096);
+    expect(flac.audioStart % 4096).toBe(before.audioStart % 4096);
     expect(flac.blocks.at(-1)?.type).toBe(BLOCK.PADDING);
     expect(readFileSync(path).subarray(flac.audioStart).equals(audio)).toBe(true);
     expect(flacComments(flac)!.comments).toContainEqual({ key: 'TITLE', value: 'Letting You' });
+  });
+
+  it('[M3.albums] rewritten, ask the audio from its first 4 KiB boundary on to be cloned, not copied', async () => {
+    const path = copy(UNPADDED);
+    const { audioStart } = await read(path);
+    const size = readFileSync(path).length;
+    const asked: CloneRange[] = [];
+    const clone: RangeClone = async (from, _to, range) => {
+      expect(from).toBe(path);
+      asked.push(range);
+      return false;
+    };
+    await writeFlacTags(path, trackComments(tags), clone);
+    const boundary = Math.ceil(audioStart / 4096) * 4096;
+    const after = await read(path);
+    expect(asked).toEqual([
+      {
+        sourceOffset: boundary,
+        length: size - boundary,
+        targetOffset: after.audioStart + boundary - audioStart,
+      },
+    ]);
   });
 
   it('[M3.albums] keep the file’s other keys and vendor, and replace its old MusicBrainz ids', async () => {

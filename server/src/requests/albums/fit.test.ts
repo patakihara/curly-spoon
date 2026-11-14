@@ -6,13 +6,52 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { openDatabase } from '../../store/connection.js';
 import type { Edition } from './editions.js';
-import { albumFolder, fittingEdition, inFolder } from './fit.js';
-import { ghostsFiles, nineInchNailsPack, PACK, recordedEditions } from './fixtures/albums.js';
+import { albumFolder, fittingEdition, inFolder, whyNoEdition } from './fit.js';
+import {
+  ghostsFiles,
+  nineInchNailsPack,
+  PACK,
+  recordedEditions,
+  slipFiles,
+} from './fixtures/albums.js';
 
 let slip: Edition[];
 let ghosts: Edition[];
 beforeAll(async () => {
   ({ slip, ghosts } = await recordedEditions(openDatabase(':memory:')));
+});
+
+describe('[M3.albums] a real torrent’s files', () => {
+  it('[M3.albums] The Slip’s torrent a live request downloaded fits its ten-track edition, cover and booklet aside', () => {
+    const files = slipFiles();
+    expect(files.length).toBe(12);
+    const edition = fittingEdition(files, slip);
+    expect(edition?.tracks.length).toBe(10);
+    expect(fittingEdition(files, ghosts)).toBeNull();
+  });
+});
+
+describe('[M3.albums] why a torrent’s files are no edition', () => {
+  it('[M3.albums] names how many audio files it holds and how many tracks the editions have', () => {
+    const files = slipFiles().filter((file) => !file.path.endsWith('999,999.flac'));
+    expect(fittingEdition(files, slip)).toBeNull();
+    expect(whyNoEdition(files, slip)).toBe('9 audio files; the editions have 10 tracks');
+  });
+
+  it('[M3.albums] names how few titles the names hold when the count is an edition’s', () => {
+    let n = 0;
+    const files = slipFiles().map((file) =>
+      file.path.endsWith('.flac') ? { ...file, path: `The Slip/Track ${(n += 1)}.flac` } : file,
+    );
+    expect(fittingEdition(files, slip)).toBeNull();
+    expect(whyNoEdition(files, slip)).toBe(
+      '10 audio files, as many as an edition’s tracks, but their names hold 0 of its 10 titles (7 needed)',
+    );
+  });
+
+  it('[M3.albums] says so when MusicBrainz lists no edition', () => {
+    expect(whyNoEdition(slipFiles(), [])).toBe('MusicBrainz lists no edition of the album');
+  });
 });
 
 describe('[M3.albums] a pack’s album folder', () => {

@@ -10,6 +10,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { TagsRefused, type TrackTags } from '../tags.js';
 import { frameStrings, type Id3Frame, readId3Tag, ufid } from './frames.js';
 import { writeId3Tags } from './write.js';
+import type { CloneRange, RangeClone } from '../audio/cloneRange.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const ALBUM = join(here, '..', '..', 'requests', 'albums', 'fixtures', 'the-slip');
@@ -147,13 +148,37 @@ describe('[M3.albums] an MP3’s tags', () => {
     expect(pictures.map((f) => f.body)).toEqual([apic]);
   });
 
-  it('[M3.albums] rewrite a file with no tag, giving it 8 KiB of padding, the audio byte for byte the same', async () => {
+  it('[M3.albums] rewrite a file with no tag, giving it 8 KiB of padding or more so its audio starts on a 4 KiB boundary, the audio byte for byte the same', async () => {
     const path = write(audio);
     expect(await writeId3Tags(path, tags)).toBe('rewritten');
     const after = readFileSync(path);
     const tag = readId3Tag(after)!;
     expect(after.subarray(tag.length).equals(audio)).toBe(true);
+    expect(tag.length % 4096).toBe(0);
     expect(after.subarray(tag.length - 8192, tag.length).equals(Buffer.alloc(8192))).toBe(true);
+  });
+
+  it('[M3.albums] rewritten, start the audio at the same offset modulo 4 KiB and ask the aligned rest to be cloned', async () => {
+    const small = v23Tag([v23('TIT2', Buffer.from('\0old', 'latin1'))], 0);
+    const path = write(Buffer.concat([small, audio]));
+    const asked: CloneRange[] = [];
+    const clone: RangeClone = async (from, _to, range) => {
+      expect(from).toBe(path);
+      asked.push(range);
+      return false;
+    };
+    await writeId3Tags(path, tags, clone);
+    const after = readFileSync(path);
+    const tagLength = readId3Tag(after)!.length;
+    expect(tagLength % 4096).toBe(small.length % 4096);
+    const boundary = Math.ceil(small.length / 4096) * 4096;
+    expect(asked).toEqual([
+      {
+        sourceOffset: boundary,
+        length: small.length + audio.length - boundary,
+        targetOffset: tagLength + boundary - small.length,
+      },
+    ]);
   });
 
   it('[M3.albums] rewrite a file whose tag is too small, the audio byte for byte the same', async () => {

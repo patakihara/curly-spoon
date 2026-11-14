@@ -10,10 +10,12 @@
  * the import's next phase. Each path is noted before its link, as each folder is before it is made,
  * so a try cut short is finished by the next one under the key.
  *
- * `cover.jpg` goes beside the files only where the folder has none. A placing that fails takes away
- * the folders it made, each only while empty.
+ * `cover.jpg` goes beside the files where the folder has none, or where the one there is the keep's:
+ * the art a kept song beside it carries (the keep writes `cover.jpg` only into a folder it made, from
+ * the song's own art), which gives way to the release's. Any other cover is the household's and
+ * stays. A placing that fails takes away the folders it made, each only while empty.
  */
-import { chmod, link, lstat } from 'node:fs/promises';
+import { chmod, link, lstat, readdir, readFile, rename } from 'node:fs/promises';
 import { join, posix } from 'node:path';
 import { trackFields } from '../../music/audio/fields.js';
 import {
@@ -25,7 +27,7 @@ import {
   makeFolders,
   unmakeFolders,
 } from '../../music/folders.js';
-import { keptIdOf } from '../songs/place.js';
+import { keptIdOf, keptTagsOf } from '../songs/place.js';
 import { AlbumRefused } from './refused.js';
 
 /** One track's tagged file in staging, and where it goes. */
@@ -93,6 +95,17 @@ async function linkNew(from: string, to: string): Promise<boolean> {
   }
 }
 
+/** Whether the folder's `cover.jpg` is the keep's: the art of a kept song beside it. */
+async function keepsCover(albumDir: string): Promise<boolean> {
+  const cover = await readFile(join(albumDir, COVER_FILE)).catch(() => null);
+  if (cover === null) return false;
+  for (const name of await readdir(albumDir)) {
+    if (!/\.opus$/i.test(name)) continue;
+    if ((await keptTagsOf(join(albumDir, name)))?.picture?.data.equals(cover)) return true;
+  }
+  return false;
+}
+
 export async function placeAlbum(input: PlaceAlbumInput): Promise<PlacedAlbum> {
   const { musicDir, folders, tracks, cover, made, placing, signal } = input;
   const stop = () => {
@@ -129,7 +142,9 @@ export async function placeAlbum(input: PlaceAlbumInput): Promise<PlacedAlbum> {
     }
     if (cover !== null) {
       await chmod(cover, FILE_MODE);
-      await linkNew(cover, join(musicDir, folders.artist, folders.album, COVER_FILE));
+      const albumDir = join(musicDir, folders.artist, folders.album);
+      const to = join(albumDir, COVER_FILE);
+      if (!(await linkNew(cover, to)) && (await keepsCover(albumDir))) await rename(cover, to);
     }
     return placed;
   } catch (error) {

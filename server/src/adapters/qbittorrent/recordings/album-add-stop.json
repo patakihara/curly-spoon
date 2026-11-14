@@ -1,0 +1,35 @@
+{
+  "upstream": "qbittorrent",
+  "upstreamVersion": "v5.3.0",
+  "call": "album-add-stop",
+  "request": {
+    "method": "POST",
+    "path": "/api/v2/torrents/add",
+    "query": {},
+    "headers": {
+      "accept": "application/json",
+      "authorization": "<token>",
+      "content-type": "application/x-www-form-urlencoded",
+      "user-agent": "node"
+    },
+    "body": {
+      "text": "urls=magnet%3A%3Fxt%3Durn%3Abtih%3AF4E14F1ABE29BC991575A318C4F29D7AC4187757&category=auralis-music&tags=auralis-7e663b34-3ceb-43c1-b769-9c524c572867&stopCondition=MetadataReceived"
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body": {
+      "json": {
+        "added_torrent_ids": [
+          "f4e14f1abe29bc991575a318c4f29d7ac4187757"
+        ],
+        "failure_count": 0,
+        "pending_count": 0,
+        "success_count": 1
+      }
+    }
+  }
+}

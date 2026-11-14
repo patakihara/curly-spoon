@@ -45,6 +45,9 @@ RUN mkdir -p /opt/yt-dlp/${YTDLP_VERSION} && cd /opt/yt-dlp/${YTDLP_VERSION} \
 
 FROM node:${NODE_VERSION} AS final
 RUN addgroup -S auralis && adduser -S auralis -G auralis
+# python3 for one call Node cannot make: the FICLONERANGE ioctl that keeps a tagged album's audio
+# sharing the torrent's disk blocks (server/src/music/audio/cloneRange.ts).
+RUN apk add --no-cache python3
 WORKDIR /app
 
 COPY --from=prod-deps --chown=auralis:auralis /app/node_modules ./node_modules

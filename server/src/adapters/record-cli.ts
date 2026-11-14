@@ -101,6 +101,10 @@
  * which Jellyfin ignores and which does not exist (record-musicbrainz.ts); `--no-report` leaves
  * that report out. It needs only JELLYFIN_API_KEY.
  *
+ * `--only albums-live --log <file> --pick <call=line,..>` turns the lines named of a live album
+ * run's proxy log into recordings of qBittorrent, Prowlarr and Jellyfin, and asks the Cover Art
+ * Archive for The Slip's release-group front (record-albums-live.ts). Nothing goes on stdin.
+ *
  * `--dry-run` makes the same calls but writes into a fresh temporary folder instead of the
  * committed recordings, and says where.
  */
@@ -126,6 +130,7 @@ import { UNDO_UNCONFIRMED } from './record-finished.js';
 import { recordLists } from './record-lists.js';
 import { recordLyrics } from './record-lyrics.js';
 import { recordAlbums, recordAlbumsQbit } from './record-albums.js';
+import { recordAlbumsLive } from './record-albums-live.js';
 import { recordBooks } from './record-books.js';
 import { recordQbit } from './record-qbit.js';
 import { recordExtractor } from './record-extractor.js';
@@ -168,7 +173,7 @@ Records Audiobookshelf's and Jellyfin's calls into server/src/adapters/*/recordi
                      the track to mark if the test user has played nothing
   --only <name>      record only abs, jellyfin, index, play, episode, jfplay, progress,
                      sessions, shell, lyrics, lists, played, books, albums, shelf, qbit, ytmusic,
-                     extractor, musicbrainz, albums-musicbrainz, albums-qbit, coverart or
+                     extractor, musicbrainz, albums-musicbrainz, albums-qbit, albums-live, coverart or
                      keep; or
                      oidc, a sign-in and its links
   --lrclib <url>     LRCLIB's base URL, for --only lyrics
@@ -191,6 +196,8 @@ Records Audiobookshelf's and Jellyfin's calls into server/src/adapters/*/recordi
   --index-page <n>   the page of two the index calls record, from 0 (default ${INDEX_PAGE})
   --oidc <url>       the sign-on's issuer, for --only oidc
   --oidc-version <v> the sign-on's version, for --only oidc
+  --log <file>       for --only albums-live, the live run's proxy log
+  --pick <c=n,..>    for --only albums-live, each recording's name and its log line, from 1
   --no-report        for --only keep, the reads alone: Jellyfin is told of no file
   --dry-run          write into a temporary folder, not the committed recordings
   --help             show this
@@ -720,6 +727,8 @@ export async function runRecord(io: RecordIo): Promise<number> {
       'oidc-version': { type: 'string' },
       'dry-run': { type: 'boolean', default: false },
       'no-report': { type: 'boolean', default: false },
+      log: { type: 'string' },
+      pick: { type: 'string' },
       help: { type: 'boolean', default: false },
     },
   });
@@ -754,13 +763,14 @@ export async function runRecord(io: RecordIo): Promise<number> {
       'musicbrainz',
       'albums-musicbrainz',
       'albums-qbit',
+      'albums-live',
       'coverart',
       'keep',
       'oidc',
     ].includes(only)
   ) {
     io.err(
-      `--only is abs, jellyfin, index, play, episode, jfplay, progress, sessions, shell, lyrics, lists, played, household, books, albums, shelf, qbit, ytmusic, extractor, github, musicbrainz, albums-musicbrainz, albums-qbit, coverart, keep or oidc, not ${only}`,
+      `--only is abs, jellyfin, index, play, episode, jfplay, progress, sessions, shell, lyrics, lists, played, household, books, albums, shelf, qbit, ytmusic, extractor, github, musicbrainz, albums-musicbrainz, albums-qbit, albums-live, coverart, keep or oidc, not ${only}`,
     );
     return 2;
   }
@@ -791,6 +801,7 @@ export async function runRecord(io: RecordIo): Promise<number> {
   if (only === 'musicbrainz') return runMusicBrainz(io, root);
   if (only === 'albums-musicbrainz') return runAlbumGroups(io, root);
   if (only === 'albums-qbit') return runAlbumsQbit(io, values, parseKeys(io.stdin), root);
+  if (only === 'albums-live') return runAlbumsLive(io, values, root);
   if (only === 'coverart') return runCoverArt(io, root);
   if (only === 'keep') return runKeep(io, values, parseKeys(io.stdin), root);
   const wantIndex = only === undefined || only === 'index';
@@ -1347,6 +1358,34 @@ async function runAlbumGroups(io: RecordIo, root: string): Promise<number> {
     out: io.out,
     root,
     musicBrainzUrl: MUSICBRAINZ_URL,
+  });
+  return scanWritten(io, written, []);
+}
+
+async function runAlbumsLive(
+  io: RecordIo,
+  values: Record<string, string | boolean | undefined>,
+  root: string,
+): Promise<number> {
+  if (typeof values.log !== 'string' || typeof values.pick !== 'string') {
+    io.err(`--only albums-live needs --log and --pick\n\n${USAGE}`);
+    return 2;
+  }
+  const picks = values.pick.split(',').map((one) => {
+    const [call = '', line = ''] = one.split('=');
+    return { call, line: Number(line) };
+  });
+  if (picks.some(({ call, line }) => call === '' || !Number.isInteger(line) || line < 1)) {
+    io.err(`--pick is call=line,.. with lines from 1, not ${values.pick}`);
+    return 2;
+  }
+  const { written } = await recordAlbumsLive({
+    fetch: io.fetch,
+    out: io.out,
+    root,
+    log: readFileSync(values.log, 'utf8'),
+    picks,
+    coverArtUrl: COVERART_URL,
   });
   return scanWritten(io, written, []);
 }

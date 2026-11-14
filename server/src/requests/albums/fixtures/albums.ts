@@ -1,6 +1,7 @@
 /**
  * The recorded albums the album download's tests run on: The Slip's and Ghosts I–IV's editions from
- * MusicBrainz's recordings, Ghosts' files from the Internet Archive's recorded torrent, and a pack
+ * MusicBrainz's recordings, Ghosts' files from the Internet Archive's recorded torrent, The Slip's
+ * from the torrent a live request downloaded, and a pack
  * laid out from those. Tests only.
  */
 import { readFileSync } from 'node:fs';
@@ -25,6 +26,16 @@ export const ghostsFiles = (): TorrentFile[] =>
   torrentContents(
     readFileSync(join(ADAPTERS, 'prowlarr', 'recordings', 'torrent-ghosts-ia.torrent')),
   )!.files;
+
+/** The Slip as the torrent a live request downloaded lists it (qBittorrent's recorded files). */
+export const slipFiles = (): TorrentFile[] =>
+  (
+    recordingSchema.parse(
+      JSON.parse(
+        readFileSync(join(ADAPTERS, 'qbittorrent', 'recordings', 'album-files.json'), 'utf8'),
+      ),
+    ).response.body as { json: { name: string; size: number }[] }
+  ).json.map((file) => ({ path: file.name, size: file.size }));
 
 /** The album editions on the recordings, kept in `db`. */
 export function recordedAlbumEditions(db: Db): AlbumEditions {

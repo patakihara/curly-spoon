@@ -1,0 +1,112 @@
+{
+  "upstream": "qbittorrent",
+  "upstreamVersion": "v5.3.0",
+  "call": "album-files",
+  "request": {
+    "method": "GET",
+    "path": "/api/v2/torrents/files",
+    "query": {
+      "hash": "f4e14f1abe29bc991575a318c4f29d7ac4187757"
+    },
+    "headers": {
+      "accept": "application/json",
+      "authorization": "<token>",
+      "user-agent": "node"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body": {
+      "json": [
+        {
+          "index": 0,
+          "name": "Nine Inch Nails - The Slip - Flac/01 999,999.flac",
+          "priority": 1,
+          "progress": 0.045509341303393756,
+          "size": 5760224
+        },
+        {
+          "index": 1,
+          "name": "Nine Inch Nails - The Slip - Flac/02 1,000,000.flac",
+          "priority": 1,
+          "progress": 0.04195508144401509,
+          "size": 31241031
+        },
+        {
+          "index": 2,
+          "name": "Nine Inch Nails - The Slip - Flac/03 Letting You.flac",
+          "priority": 1,
+          "progress": 0.0237924024201236,
+          "size": 30841400
+        },
+        {
+          "index": 3,
+          "name": "Nine Inch Nails - The Slip - Flac/04 Discipline.flac",
+          "priority": 1,
+          "progress": 0.3334368365138879,
+          "size": 33821827
+        },
+        {
+          "index": 4,
+          "name": "Nine Inch Nails - The Slip - Flac/05 Echoplex.flac",
+          "priority": 1,
+          "progress": 0.3942715522291864,
+          "size": 28710116
+        },
+        {
+          "index": 5,
+          "name": "Nine Inch Nails - The Slip - Flac/06 Head Down.flac",
+          "priority": 1,
+          "progress": 0.15499183882135317,
+          "size": 30444132
+        },
+        {
+          "index": 6,
+          "name": "Nine Inch Nails - The Slip - Flac/07 Lights in the Sky.flac",
+          "priority": 1,
+          "progress": 0,
+          "size": 10765748
+        },
+        {
+          "index": 7,
+          "name": "Nine Inch Nails - The Slip - Flac/08 Corona Radiata.flac",
+          "priority": 1,
+          "progress": 0.24216954013317724,
+          "size": 27485327
+        },
+        {
+          "index": 8,
+          "name": "Nine Inch Nails - The Slip - Flac/09 The Four of Us are Dying.flac",
+          "priority": 1,
+          "progress": 0.027658694053689953,
+          "size": 24727234
+        },
+        {
+          "index": 9,
+          "name": "Nine Inch Nails - The Slip - Flac/10 Demon Seed.flac",
+          "priority": 1,
+          "progress": 0.10949665862296133,
+          "size": 38305315
+        },
+        {
+          "index": 10,
+          "name": "Nine Inch Nails - The Slip - Flac/cover.jpg",
+          "priority": 1,
+          "progress": 0,
+          "size": 478434
+        },
+        {
+          "index": 11,
+          "name": "Nine Inch Nails - The Slip - Flac/theslip.pdf",
+          "priority": 1,
+          "progress": 0.13619681370613443,
+          "size": 7698976
+        }
+      ]
+    }
+  }
+}

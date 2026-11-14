@@ -28,7 +28,7 @@ import {
   yearOf,
 } from '../../music/folders.js';
 import { oggPackets } from '../../music/opus/ogg.js';
-import { readOpusTagsPacket } from '../../music/opus/remux.js';
+import { type OpusTags, readOpusTagsPacket } from '../../music/opus/remux.js';
 import type { SongMatch } from './match.js';
 import { YOUTUBE_MUSIC_ID } from './tags.js';
 
@@ -90,6 +90,13 @@ export function songPlace(match: SongMatch): SongPlace {
 
 /** The `YOUTUBE_MUSIC_ID` an Ogg Opus file carries, or null for any other file. */
 export async function keptIdOf(path: string): Promise<string | null> {
+  return (await keptTagsOf(path))?.id ?? null;
+}
+
+/** A kept song's id and the art its tags carry; null for a file that is not a kept song's. */
+export async function keptTagsOf(
+  path: string,
+): Promise<{ id: string; picture: OpusTags['picture'] } | null> {
   let file;
   try {
     file = await open(path, 'r');
@@ -101,7 +108,8 @@ export async function keptIdOf(path: string): Promise<string | null> {
     for await (const packet of oggPackets(file)) {
       if (index++ === 0) continue;
       const tags = readOpusTagsPacket(packet.data);
-      return tags.comments.find(({ key }) => key === YOUTUBE_MUSIC_ID)?.value ?? null;
+      const id = tags.comments.find(({ key }) => key === YOUTUBE_MUSIC_ID)?.value;
+      return id === undefined ? null : { id, picture: tags.picture };
     }
     return null;
   } catch {

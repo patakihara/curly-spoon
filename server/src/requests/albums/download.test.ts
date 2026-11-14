@@ -1,10 +1,12 @@
 /**
  * An album's torrent download and its gate, through the real job, store, qBittorrent client and
  * album editions. qBittorrent is a stand-in that keeps its torrents as recorded rows and files
- * (`info-metadata`'s row, `files`' file), answers each call as the recordings do, and does what the
- * API says a call does. Whether a real add stops at its metadata was not seen live (no torrent was
- * added), so every gate test also runs with the stop ignored: the gate then acts at the first poll
- * that lists files, having fetched a few seconds of bytes.
+ * (`info-metadata`'s row, `album-files`' file), answers each call as the recordings do, and does what
+ * the API says a call does. The add, start and tag answers are a live album request's
+ * (`album-add-stop`, `album-start`, `album-add-tag`); in that run qBittorrent's own log said the
+ * torrent stopped four seconds after the add and resumed at the gate's start. Every gate test also
+ * runs with the stop ignored, a qBittorrent that would not honour it: the gate then acts at the
+ * first poll that lists files, having fetched a few seconds of bytes.
  */
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -99,11 +101,11 @@ function qbittorrentStandIn(opts: { honoursStop?: boolean } = {}) {
           priorities: new Map(),
           stopAtMetadata: form.get('stopCondition') === 'MetadataReceived',
         });
-        return answer('add-magnet', url, init);
+        return answer('album-add-stop', url, init);
       }
       case 'torrents/files': {
         const there = torrents.get(url.searchParams.get('hash') ?? '');
-        const [template] = jsonOf('files');
+        const [template] = jsonOf('album-files');
         const json = (there?.files ?? []).map((file, index) => ({
           ...template,
           index,
@@ -112,7 +114,7 @@ function qbittorrentStandIn(opts: { honoursStop?: boolean } = {}) {
           priority: there?.priorities.get(index) ?? 1,
           progress: 0,
         }));
-        const one = recorded('files');
+        const one = recorded('album-files');
         const query = Object.fromEntries(url.searchParams);
         return replayFetch([
           {
@@ -139,7 +141,11 @@ function qbittorrentStandIn(opts: { honoursStop?: boolean } = {}) {
           const there = torrents.get(hash);
           if (there?.row.state === 'stoppedDL') there.row.state = 'downloading';
         }
-        return answer('start-missing', url, init);
+        return answer(
+          hashes.some((hash) => torrents.has(hash)) ? 'album-start' : 'start-missing',
+          url,
+          init,
+        );
       }
       case 'torrents/addTags': {
         for (const hash of hashes) {
@@ -149,7 +155,11 @@ function qbittorrentStandIn(opts: { honoursStop?: boolean } = {}) {
           if (!tags.includes(form.get('tags') ?? '')) tags.push(form.get('tags') ?? '');
           there.row.tags = tags.join(', ');
         }
-        return answer('add-tag-missing', url, init);
+        return answer(
+          hashes.some((hash) => torrents.has(hash)) ? 'album-add-tag' : 'add-tag-missing',
+          url,
+          init,
+        );
       }
       case 'torrents/delete':
         for (const hash of hashes) torrents.delete(hash);
@@ -181,7 +191,7 @@ function qbittorrentStandIn(opts: { honoursStop?: boolean } = {}) {
     },
     /** A torrent the household added itself, in its own category. */
     household(hash: string, files: TorrentFile[]) {
-      const [template] = jsonOf('info-downloading');
+      const [template] = jsonOf('album-info-downloading');
       torrents.set(hash, {
         row: { ...template, hash, category: 'a-household-category', tags: '' },
         files,
@@ -230,8 +240,20 @@ beforeEach(async () => {
   slip = (await editions.read(ALBUM_GROUPS.slip.group))!.editions[0]!;
 });
 
+/** The errors a download logged, each as its details and message. */
+let logged: { details: Record<string, unknown>; message: string }[];
+beforeEach(() => {
+  logged = [];
+});
+
 const steps = (sim: ReturnType<typeof qbittorrentStandIn>) =>
-  albumDownload({ qbittorrent: sim.qbittorrent, prowlarr: noProwlarr, editions, now: () => clock });
+  albumDownload({
+    qbittorrent: sim.qbittorrent,
+    prowlarr: noProwlarr,
+    editions,
+    now: () => clock,
+    log: { error: (details, message) => logged.push({ details, message }) },
+  });
 
 /** The job with album steps whose search picks `picked`, then `others`. */
 const job = (sim: ReturnType<typeof qbittorrentStandIn>, picked: Release, others: Release[] = []) =>
@@ -378,6 +400,37 @@ describe('[M3.albums] the gate’s edges', () => {
     expect(sim.paths()).not.toContain('torrents/start');
   });
 
+  it('[M3.albums] a refused torrent is logged with its hash and why its files are not the album', async () => {
+    const { sim, download, handle } = await startedDirect(DEBIAN);
+    sim.metadata(DEBIAN, debianFiles());
+    expect(await download.poll(handle)).toEqual({ kind: 'failed', reason: 'wrongRelease' });
+    expect(logged).toEqual([
+      {
+        details: { hash: DEBIAN, why: expect.stringMatching(/^0 audio files; the editions have /) },
+        message: 'the gate refused a torrent',
+      },
+    ]);
+  });
+
+  it('[M3.albums] a refused pack is logged as having no folder that is the album', async () => {
+    const { sim, download, handle } = await startedDirect(PACKED, { pack: true });
+    sim.metadata(
+      PACKED,
+      nineInchNailsPack(slip).filter((file) => !file.path.includes('Ghosts')),
+    );
+    await download.poll(handle);
+    expect(logged.map((one) => one.details)).toEqual([
+      { hash: PACKED, why: 'no folder of the pack is an edition of the album' },
+    ]);
+  });
+
+  it('[M3.albums] a fitting torrent logs nothing', async () => {
+    const { sim, download, handle } = await startedDirect(GHOSTS);
+    sim.metadata(GHOSTS, ghostsFiles());
+    await download.poll(handle);
+    expect(logged).toEqual([]);
+  });
+
   it('[M3.albums] a torrent tagged fit is never gated again', async () => {
     const { sim, download, handle } = await startedDirect(GHOSTS);
     sim.metadata(GHOSTS, ghostsFiles());
@@ -458,8 +511,12 @@ describe('[M3.albums] the gate’s edges', () => {
       prowlarr: noProwlarr,
       editions: gone,
       now: () => clock,
+      log: { error: (details, message) => logged.push({ details, message }) },
     });
     expect(await goneDownload.poll(handle)).toEqual({ kind: 'failed', reason: 'wrongRelease' });
+    expect(logged.map((one) => one.details)).toEqual([
+      { hash: GHOSTS, why: 'MusicBrainz no longer has the release group' },
+    ]);
     expect(sim.paths()).not.toContain('torrents/start');
   });
 });

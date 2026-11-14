@@ -2,8 +2,9 @@
  * How an album's file gets from the torrent into staging: a clone, `copyFile` with
  * `COPYFILE_FICLONE_FORCE`, which on btrfs makes a file sharing the torrent's disk blocks until one
  * side is written (proved live inside the container, from Downloads to `.auralis-albums`). Tagging
- * the clone writes only the blocks it changes, and the torrent's own file, still seeding, is never
- * touched. A filesystem that cannot clone refuses (`EOPNOTSUPP`, `EXDEV`): the import fails, and
+ * the clone writes only the blocks it changes, or, when the tags outgrow the file's padding,
+ * rewrites it with the audio cloned again from the first 4 KiB boundary on (music/audio/rewrite.ts),
+ * so the audio stays shared. The torrent's own file, still seeding, is never touched. A filesystem that cannot clone refuses (`EOPNOTSUPP`, `EXDEV`): the import fails, and
  * never falls back to a plain copy, which would double the album on disk.
  */
 import { constants, copyFile } from 'node:fs/promises';

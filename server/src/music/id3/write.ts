@@ -3,11 +3,14 @@
  * (`TCON`, `APIC`, `COMM`, `USLT`, other `TXXX`) stay; the frames Auralis writes, and every old
  * MusicBrainz frame, give way. When the new tag fits where the old one stood, it is written there,
  * padded to the old one's length, and the file keeps its size; else (or with no tag) the file is
- * rewritten with 8 KiB of padding. The audio frames and an ID3v1 tag at the end are never touched.
+ * rewritten with 8 KiB of padding or a little more, so its audio starts at the same offset modulo
+ * 4 KiB and keeps sharing the source's disk blocks (audio/rewrite.ts). The audio frames and an
+ * ID3v1 tag at the end are never touched.
  */
 import { type FileHandle, open } from 'node:fs/promises';
 import { firstMpegFrame } from '../audio/duration.js';
-import { REWRITE_PADDING, rewrite, type TagWrite, writeInPlace } from '../audio/rewrite.js';
+import type { RangeClone } from '../audio/cloneRange.js';
+import { rewrite, rewritePadding, type TagWrite, writeInPlace } from '../audio/rewrite.js';
 import { type TrackTags, TagsRefused } from '../tags.js';
 import { id3Frames, id3v24Tag, id3v2Length, readId3Tag, replacedFrame } from './frames.js';
 
@@ -23,9 +26,14 @@ async function readOld(file: FileHandle) {
 
 /**
  * Tags the MP3 at `path` with `tags`. Throws `TagsRefused`, the file untouched, when no MPEG audio
- * follows its tag or its tag cannot be carried over (unsynchronised, cut short).
+ * follows its tag or its tag cannot be carried over (unsynchronised, cut short). A rewrite clones
+ * its audio with `clone` (only a test passes its own).
  */
-export async function writeId3Tags(path: string, tags: TrackTags): Promise<TagWrite> {
+export async function writeId3Tags(
+  path: string,
+  tags: TrackTags,
+  clone?: RangeClone,
+): Promise<TagWrite> {
   const file = await open(path, 'r');
   let old;
   try {
@@ -43,6 +51,7 @@ export async function writeId3Tags(path: string, tags: TrackTags): Promise<TagWr
     await writeInPlace(path, 0, id3v24Tag(frames, old.length - bare.length));
     return 'inPlace';
   }
-  await rewrite(path, id3v24Tag(frames, REWRITE_PADDING), old?.length ?? 0);
+  const from = old?.length ?? 0;
+  await rewrite(path, id3v24Tag(frames, rewritePadding(bare.length, from)), from, clone);
   return 'rewritten';
 }

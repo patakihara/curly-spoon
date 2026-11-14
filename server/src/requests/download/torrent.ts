@@ -11,7 +11,9 @@
  *
  * A medium may gate a download (`gate`): asked to stop at its metadata (`stopAtMetadata`), a
  * torrent of ours whose files are listed and that does not carry `auralis-fit` has its files
- * checked. Files that are not the release asked for fail `wrongRelease`. Files that are have any
+ * checked. Files that are not the release asked for fail `wrongRelease`, and the log says which
+ * torrent and why (the request keeps no reason beyond `wrongRelease`, and its handle gives way to
+ * the next release's). Files that are have any
  * the gate sets aside put at priority 0, then the torrent is started, then tagged `auralis-fit`;
  * a start lost on the way leaves no tag, so the next poll does it all again, harmlessly. The gate
  * reads the file list and not the state, so a qBittorrent that ignores the stop is gated the same,
@@ -77,7 +79,7 @@ const detailsSchema: z.ZodType<ProwlarrDetails> = z.object({
 export const FIT_TAG = 'auralis-fit';
 
 /** Whether a torrent's files are the release asked for, and if so which to fetch none of. */
-export type GateVerdict = { kind: 'fits'; setAside: number[] } | { kind: 'wrong' };
+export type GateVerdict = { kind: 'fits'; setAside: number[] } | { kind: 'wrong'; why: string };
 
 export interface TorrentGate {
   /** What the handle keeps for the gate, beside the hash, key and time of the add. */
@@ -151,7 +153,10 @@ export function torrentDownload({
     const files = await qbittorrent.files(row.hash);
     if (files.length === 0) return null;
     const verdict = await gate.check(handle, files);
-    if (verdict.kind === 'wrong') return { kind: 'failed', reason: 'wrongRelease' };
+    if (verdict.kind === 'wrong') {
+      log?.error({ hash: row.hash, why: verdict.why }, 'the gate refused a torrent');
+      return { kind: 'failed', reason: 'wrongRelease' };
+    }
     if (verdict.setAside.length > 0) {
       await qbittorrent.setFilePriority(row.hash, verdict.setAside, 0);
     }

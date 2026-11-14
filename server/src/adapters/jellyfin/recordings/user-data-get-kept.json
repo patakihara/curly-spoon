@@ -1,0 +1,32 @@
+{
+  "upstream": "jellyfin",
+  "upstreamVersion": "10.11.11",
+  "call": "user-data-get-kept",
+  "request": {
+    "method": "GET",
+    "path": "/UserItems/ce40b613cfe7fe856f53031237f8f5b8/UserData",
+    "query": {},
+    "headers": {
+      "accept": "application/json",
+      "authorization": "<token>",
+      "user-agent": "node"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "PlaybackPositionTicks": 0,
+        "PlayCount": 0,
+        "IsFavorite": true,
+        "Played": false,
+        "Key": "<token>",
+        "ItemId": "ce40b613cfe7fe856f53031237f8f5b8"
+      }
+    }
+  }
+}

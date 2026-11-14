@@ -1,0 +1,44 @@
+{
+  "upstream": "qbittorrent",
+  "upstreamVersion": "v5.3.0",
+  "call": "album-info-downloading",
+  "request": {
+    "method": "GET",
+    "path": "/api/v2/torrents/info",
+    "query": {
+      "hashes": "f4e14f1abe29bc991575a318c4f29d7ac4187757"
+    },
+    "headers": {
+      "accept": "application/json",
+      "authorization": "<token>",
+      "user-agent": "node"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body": {
+      "json": [
+        {
+          "added_on": 1794542673,
+          "amount_left": 265692244,
+          "category": "auralis-music",
+          "completed": 4587520,
+          "dlspeed": 95076,
+          "downloaded": 4565503,
+          "hash": "f4e14f1abe29bc991575a318c4f29d7ac4187757",
+          "last_activity": 1794542760,
+          "num_seeds": 2,
+          "progress": 0.01697322778482225,
+          "save_path": "/data/Downloads",
+          "size": 270279764,
+          "state": "downloading",
+          "tags": "auralis-7e663b34-3ceb-43c1-b769-9c524c572867, auralis-fit"
+        }
+      ]
+    }
+  }
+}

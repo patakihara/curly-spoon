@@ -3,11 +3,13 @@
  * (`GENRE`, `REPLAYGAIN_*`, `LYRICS`) and its vendor stay; the keys Auralis writes, and every old
  * MusicBrainz key, give way. Every other block (pictures, seek table, cue sheet) stays as it was.
  * When the new blocks fit where the old ones and their padding stood, they are written in place and
- * the file keeps its size; else the file is rewritten with 8 KiB of padding. Either way the audio
- * frames are never touched.
+ * the file keeps its size; else the file is rewritten with 8 KiB of padding or a little more, so its
+ * audio starts at the same offset modulo 4 KiB and keeps sharing the source's disk blocks
+ * (audio/rewrite.ts). Either way the audio frames are never touched.
  */
 import { open } from 'node:fs/promises';
-import { REWRITE_PADDING, rewrite, type TagWrite, writeInPlace } from '../audio/rewrite.js';
+import type { RangeClone } from '../audio/cloneRange.js';
+import { rewrite, rewritePadding, type TagWrite, writeInPlace } from '../audio/rewrite.js';
 import { replacedComment } from '../tags.js';
 import { type VorbisComment, vorbisCommentBody } from '../vorbis.js';
 import { BLOCK, blockBytes, MAX_BLOCK, flacComments, type FlacFile, readFlac } from './blocks.js';
@@ -32,11 +34,12 @@ function metadata(blocks: readonly { type: number; body: Buffer }[], padding: nu
 
 /**
  * Tags the FLAC at `path` with `comments`. Throws `TagsRefused`, the file untouched, when it is not
- * FLAC or is cut short.
+ * FLAC or is cut short. A rewrite clones its audio with `clone` (only a test passes its own).
  */
 export async function writeFlacTags(
   path: string,
   comments: readonly VorbisComment[],
+  clone?: RangeClone,
 ): Promise<TagWrite> {
   const flac = await readPath(path);
   const old = flacComments(flac);
@@ -65,12 +68,9 @@ export async function writeFlacTags(
     await writeInPlace(path, flac.start + 4, metadata(blocks, room - needed - 4));
     return 'inPlace';
   }
-  const head = await readPrefix(path, flac.start);
-  await rewrite(
-    path,
-    Buffer.concat([head, Buffer.from('fLaC', 'latin1'), metadata(blocks, REWRITE_PADDING)]),
-    flac.audioStart,
-  );
+  const head = Buffer.concat([await readPrefix(path, flac.start), Buffer.from('fLaC', 'latin1')]);
+  const padding = rewritePadding(head.length + needed + 4, flac.audioStart);
+  await rewrite(path, Buffer.concat([head, metadata(blocks, padding)]), flac.audioStart, clone);
   return 'rewritten';
 }
 
