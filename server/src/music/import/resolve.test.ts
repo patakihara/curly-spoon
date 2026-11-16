@@ -2,6 +2,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import { z } from 'zod';
 import { type Recording, recordingSchema } from '../../adapters/http/recording.js';
 import {
   RECORDED_PLAYLIST,
@@ -38,6 +39,14 @@ const RECORDED_MATCHED = 145;
  * Night Long's single version, of which only the album and 12" lengths are listed.
  */
 const RECORDED_UNMATCHED = [15, 28, 55, 63, 129];
+/** The YouTube Music id each place of the recorded playlist resolves to, null where unmatched. */
+const RECORDED_PICKS = z
+  .array(z.string().nullable())
+  .parse(
+    JSON.parse(
+      readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'recorded-picks.json'), 'utf8'),
+    ),
+  );
 
 function setUp() {
   const db = openDatabase(':memory:');
@@ -85,6 +94,12 @@ describe('[M3.spotify/a] a recorded public Spotify playlist, resolved on YouTube
     }
     expect(out).toHaveLength(150);
     expect(out.filter((r) => r.unmatched === null)).toHaveLength(RECORDED_MATCHED);
+  });
+
+  it('[M3.spotify/a] gives each recorded track the YouTube Music id its rules pick', async () => {
+    const { out } = await resolveAll();
+    expect(out.map((r) => r.youtubeId)).toEqual(RECORDED_PICKS);
+    expect(RECORDED_PICKS.flatMap((id, n) => (id === null ? [n] : []))).toEqual(RECORDED_UNMATCHED);
   });
 
   it('[M3.spotify/a] reports the unmatched ones with what Spotify names and the nearest row', async () => {
