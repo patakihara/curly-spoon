@@ -68,6 +68,7 @@ import {
 } from './requests.js';
 import {
   SearchAlbumParams,
+  SearchPlaylistParams,
   SearchBookParams,
   SearchQuery,
   SearchResults,
@@ -639,6 +640,19 @@ export const searchAlbumArt = {
   stream: 'image',
 } as const satisfies Route;
 
+export const searchPlaylistArt = {
+  method: 'GET',
+  path: '/api/search/playlists/{image}/art',
+  operationId: 'getSearchPlaylistArt',
+  summary: "The cover of a Spotify playlist a pasted link named, from Spotify's image host",
+  responseDescription: 'The image, as Spotify holds it.',
+  response: ImageBytes,
+  access: 'member',
+  params: SearchPlaylistParams,
+  query: ArtQuery,
+  stream: 'image',
+} as const satisfies Route;
+
 export const getLyrics = {
   method: 'GET',
   path: '/api/lyrics/{ref}',
@@ -820,6 +834,7 @@ export const routes: readonly Route[] = [
   getSearch,
   searchBookArt,
   searchAlbumArt,
+  searchPlaylistArt,
   getLyrics,
   listLists,
   createList,

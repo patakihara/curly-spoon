@@ -16,6 +16,7 @@
  */
 import type { Clock } from '../musicbrainz/client.js';
 import { AdapterError, type FetchLike, requestJson } from '../http/fetch.js';
+import { readCapped } from '../http/publicFetch.js';
 import {
   type EmbedPage,
   embedPageSchema,
@@ -27,6 +28,8 @@ import {
 
 export const SPOTIFY_EMBED_URL = 'https://open.spotify.com';
 export const SPOTIFY_SPCLIENT_URL = 'https://spclient.wg.spotify.com';
+/** Where a playlist's cover is, `<host>/image/<image id>`. */
+export const SPOTIFY_IMAGE_URL = 'https://i.scdn.co';
 
 /** The least time from one call's end to the next one's start. */
 export const SPOTIFY_GAP_MS = 1_000;
@@ -45,6 +48,7 @@ const SPOTIFY_LIMIT_MS = 15_000;
 /** The embed page was 84 to 154 KB (live). */
 const EMBED_MAX_BYTES = 2 * 1024 * 1024;
 const JSON_MAX_BYTES = 2 * 1024 * 1024;
+const COVER_MAX_BYTES = 2 * 1024 * 1024;
 
 export type SpotifyErrorCode = 'playlist_not_found' | 'spotify_unavailable';
 
@@ -79,9 +83,17 @@ export interface SpotifyTrackCache {
   put(id: string, track: SpotifyTrack): void;
 }
 
+/** A cover's bytes and their image type. */
+export interface SpotifyCover {
+  mime: string;
+  bytes: Buffer;
+}
+
 export interface SpotifyClientOptions {
   embedUrl: string;
   spclientUrl: string;
+  /** Spotify's image host; `SPOTIFY_IMAGE_URL` when absent. */
+  imageUrl?: string;
   fetch: FetchLike;
   clock?: Clock;
   cache?: SpotifyTrackCache;
@@ -134,6 +146,51 @@ export class SpotifyClient {
   async playlistHeader(id: string): Promise<{ name: string; cover: string | null }> {
     const page = await this.embed(id);
     return { name: page.name, cover: page.cover };
+  }
+
+  /**
+   * The playlist's name, cover and how many entries it holds, from its embed page and the first
+   * page of its order: two calls.
+   */
+  async playlistSummary(
+    id: string,
+  ): Promise<{ name: string; cover: string | null; length: number }> {
+    const header = await this.playlistHeader(id);
+    const page = await this.orderPage(id, 0);
+    return { ...header, length: page.length };
+  }
+
+  /** The cover with this image id from Spotify's image host, or null when it has none (404). */
+  async cover(imageId: string, signal?: AbortSignal): Promise<SpotifyCover | null> {
+    const url = new URL(`image/${imageId}`, base(this.opts.imageUrl ?? SPOTIFY_IMAGE_URL));
+    const call = 'GET /image';
+    const limit = AbortSignal.timeout(SPOTIFY_LIMIT_MS);
+    let response: Response;
+    try {
+      response = await this.opts.fetch(url.toString(), {
+        redirect: 'error',
+        signal: signal === undefined ? limit : AbortSignal.any([signal, limit]),
+      });
+    } catch (cause) {
+      const kind = limit.aborted ? 'timeout' : 'network';
+      throw new AdapterError(kind, call, 'the request failed', undefined, { cause });
+    }
+    if (response.status === 404) {
+      await response.body?.cancel();
+      return null;
+    }
+    if (!response.ok) {
+      await response.body?.cancel();
+      throw new AdapterError('status', call, `answered ${response.status}`, response.status);
+    }
+    const mime = (response.headers.get('content-type') ?? '').split(';')[0]!.trim();
+    if (!mime.startsWith('image/')) {
+      await response.body?.cancel();
+      throw new AdapterError('parse', call, 'the answer is not an image');
+    }
+    const bytes = await readCapped(response, COVER_MAX_BYTES);
+    if (bytes === null) throw new AdapterError('parse', call, 'the cover is too big');
+    return { mime, bytes: Buffer.from(bytes) };
   }
 
   /** The playlist's name, cover and every entry in its order, a page of 100 at a time. */

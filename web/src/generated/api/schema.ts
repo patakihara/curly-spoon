@@ -675,6 +675,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/search/playlists/{image}/art": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The cover of a Spotify playlist a pasted link named, from Spotify's image host */
+        get: operations["getSearchPlaylistArt"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        /** The cover of a Spotify playlist a pasted link named, from Spotify's image host */
+        head: operations["getSearchPlaylistArtHead"];
+        patch?: never;
+        trace?: never;
+    };
     "/api/lyrics/{ref}": {
         parameters: {
             query?: never;
@@ -1362,6 +1380,12 @@ export interface components {
             art: string | null;
             availability: components["schemas"]["Availability"];
         };
+        SearchPlaylist: {
+            from: string;
+            name: string;
+            count: number;
+            art: string | null;
+        };
         /** @enum {string} */
         StreamingState: "ok" | "unavailable";
         SearchResults: {
@@ -1370,6 +1394,7 @@ export interface components {
             books: components["schemas"]["SearchBook"][];
             albums: components["schemas"]["SearchAlbum"][];
             songs: components["schemas"]["SearchSong"][];
+            playlists: components["schemas"]["SearchPlaylist"][];
             streaming: components["schemas"]["StreamingState"];
             hasRequests: boolean;
         };
@@ -3796,6 +3821,100 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description The image, as the archive holds it. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The request does not parse, or was refused. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No session. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Without the role this route needs, or sent from another site. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    getSearchPlaylistArt: {
+        parameters: {
+            query?: {
+                size?: components["schemas"]["ArtSize"];
+            };
+            header?: never;
+            path: {
+                image: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The image, as Spotify holds it. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/*": string;
+                };
+            };
+            /** @description The request does not parse, or was refused. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description No session. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Without the role this route needs, or sent from another site. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getSearchPlaylistArtHead: {
+        parameters: {
+            query?: {
+                size?: components["schemas"]["ArtSize"];
+            };
+            header?: never;
+            path: {
+                image: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The image, as Spotify holds it. */
             200: {
                 headers: {
                     [name: string]: unknown;

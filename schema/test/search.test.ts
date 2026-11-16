@@ -50,6 +50,7 @@ describe('a search', () => {
       books: [],
       albums: [],
       songs: [],
+      playlists: [],
       streaming: 'ok',
       results: [
         {
@@ -200,6 +201,7 @@ describe('a song outside the library', () => {
       books: [],
       albums: [],
       songs: [song],
+      playlists: [],
       hasRequests: false,
     };
     expect(SearchResults.parse({ ...answer, streaming: 'unavailable' }).streaming).toBe(
@@ -207,5 +209,36 @@ describe('a song outside the library', () => {
     );
     expect(SearchResults.safeParse(answer).success).toBe(false);
     expect(SearchResults.safeParse({ ...answer, streaming: 'maybe' }).success).toBe(false);
+  });
+});
+
+describe('[M3.spotify] a pasted Spotify playlist link', () => {
+  const answer = {
+    query: 'https://open.spotify.com/playlist/37i9dQZF1DX4UtSsGT1Sbe',
+    results: [],
+    books: [],
+    albums: [],
+    songs: [],
+    streaming: 'ok',
+    hasRequests: false,
+  };
+  const playlist = {
+    from: 'https://open.spotify.com/playlist/37i9dQZF1DX4UtSsGT1Sbe',
+    name: 'All Out 80s',
+    count: 150,
+    art: '/api/search/playlists/ab67706f000000028c767aab2034bb8fafd33124/art',
+  };
+
+  it('answers its playlist row, with its name, its song count, its cover and the link to import', () => {
+    expect(SearchResults.parse({ ...answer, playlists: [playlist] }).playlists).toEqual([playlist]);
+    expect(
+      SearchResults.parse({ ...answer, playlists: [{ ...playlist, art: null }] }),
+    ).toBeTruthy();
+  });
+
+  it('lists playlists in every answer, and a cover only through this server', () => {
+    expect(SearchResults.safeParse(answer).success).toBe(false);
+    const elsewhere = { ...playlist, art: 'https://i.scdn.co/image/ab67' };
+    expect(SearchResults.safeParse({ ...answer, playlists: [elsewhere] }).success).toBe(false);
   });
 });

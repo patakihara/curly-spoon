@@ -2653,6 +2653,33 @@
           "availability"
         ]
       },
+      "SearchPlaylist": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "art": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "from",
+          "name",
+          "count",
+          "art"
+        ]
+      },
       "StreamingState": {
         "type": "string",
         "enum": [
@@ -2690,6 +2717,12 @@
               "$ref": "#/components/schemas/SearchSong"
             }
           },
+          "playlists": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SearchPlaylist"
+            }
+          },
           "streaming": {
             "$ref": "#/components/schemas/StreamingState"
           },
@@ -2703,6 +2736,7 @@
           "books",
           "albums",
           "songs",
+          "playlists",
           "streaming",
           "hasRequests"
         ]
@@ -6255,6 +6289,127 @@
         "responses": {
           "200": {
             "description": "The image, as the archive holds it."
+          },
+          "400": {
+            "description": "The request does not parse, or was refused."
+          },
+          "401": {
+            "description": "No session."
+          },
+          "403": {
+            "description": "Without the role this route needs, or sent from another site."
+          }
+        }
+      }
+    },
+    "/api/search/playlists/{image}/art": {
+      "get": {
+        "summary": "The cover of a Spotify playlist a pasted link named, from Spotify's image host",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "operationId": "getSearchPlaylistArt",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{40}$"
+            },
+            "required": true,
+            "name": "image",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "$ref": "#/components/schemas/ArtSize"
+            },
+            "required": false,
+            "name": "size",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The image, as Spotify holds it.",
+            "content": {
+              "image/*": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request does not parse, or was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Without the role this route needs, or sent from another site.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "head": {
+        "summary": "The cover of a Spotify playlist a pasted link named, from Spotify's image host",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "operationId": "getSearchPlaylistArtHead",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{40}$"
+            },
+            "required": true,
+            "name": "image",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "$ref": "#/components/schemas/ArtSize"
+            },
+            "required": false,
+            "name": "size",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The image, as Spotify holds it."
           },
           "400": {
             "description": "The request does not parse, or was refused."

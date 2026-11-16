@@ -1032,6 +1032,14 @@ data class SearchParent(
 )
 
 @Serializable
+data class SearchPlaylist(
+    val from: String,
+    val name: String,
+    val count: Long,
+    val art: String?,
+)
+
+@Serializable
 data class SearchResult(
     val ref: MediaRef,
     val kind: SearchKind,
@@ -1053,6 +1061,7 @@ data class SearchResults(
     val books: List<SearchBook>,
     val albums: List<SearchAlbum>,
     val songs: List<SearchSong>,
+    val playlists: List<SearchPlaylist>,
     val streaming: StreamingState,
     val hasRequests: Boolean,
 )

@@ -147,6 +147,7 @@ describe('what search reads from the API', () => {
       books: [],
       albums: [],
       songs: [],
+      playlists: [],
       streaming: 'ok',
       hasRequests: false,
     });
@@ -156,6 +157,7 @@ describe('what search reads from the API', () => {
       books: [],
       albums: [],
       songs: [],
+      playlists: [],
       streaming: 'ok',
       hasRequests: false,
     });

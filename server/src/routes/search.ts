@@ -16,6 +16,10 @@
  * under way; a kept song is the library's own track. While streaming is unavailable it lists none and
  * says so, and asks nothing. The top songs are readied ahead of their tap, after the answer's rows
  * are known and without waiting on it.
+ *
+ * A search for a Spotify playlist link searches nothing else and keeps no recent search: it answers
+ * that playlist's row alone, while playlists can be imported (search/playlists.ts), and its cover
+ * by Spotify image id.
  */
 import {
   getSearch,
@@ -23,12 +27,14 @@ import {
   mediaRefKey,
   searchAlbumArt,
   searchBookArt,
+  searchPlaylistArt,
   type SearchAlbum,
   type SearchSong,
   type SearchBook,
   type SearchKind,
 } from '@auralis/schema';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
+import { spotifyPlaylistId } from '../adapters/spotify/link.js';
 import { personalView } from '../library/personal.js';
 import { songRows } from '../music/catalogue.js';
 import type { Music } from '../music/index.js';
@@ -36,6 +42,7 @@ import { albumRows, type AlbumCatalogue } from '../requests/albums/catalogue.js'
 import { bookRows, type BookCatalogue } from '../requests/books/catalogue.js';
 import { clientGone, Refusal, serve, serveStream } from '../route.js';
 import { librarySource } from '../search/library.js';
+import { playlistRows, type SpotifyPlaylistSource } from '../search/playlists.js';
 import { rank, type SearchSource } from '../search/sources.js';
 import { suggest } from '../search/suggest.js';
 import type { Db } from '../store/connection.js';
@@ -57,11 +64,22 @@ export function searchRoutes(
     catalogue?: BookCatalogue;
     albumCatalogue?: AlbumCatalogue;
     music?: Music | null;
+    /** Spotify, while a playlist can be imported: `importable` says whether it can now. */
+    spotify?: { source: SpotifyPlaylistSource; importable: () => boolean } | null;
   },
 ): void {
   const { db, now, catalogue, albumCatalogue } = options;
   const music = options.music ?? null;
+  const spotify = options.spotify ?? null;
   const sources: readonly SearchSource[] = [librarySource(db)];
+  const playlists =
+    spotify === null
+      ? null
+      : playlistRows({
+          spotify: spotify.source,
+          now,
+          log: { warn: (details, message) => app.log.warn(details, message) },
+        });
 
   /** The rows for this search; none for a search of other kinds, or when anything goes wrong. */
   const books = async (
@@ -130,6 +148,21 @@ export function searchRoutes(
   serve(app, getSearch, async (request, reply, _body, { query }) => {
     const user = signedIn(request);
     const gone = clientGone(reply);
+    const playlist = spotifyPlaylistId(query.q);
+    if (playlist !== null) {
+      const importable = playlists !== null && spotify?.importable() === true;
+      return {
+        query: query.q,
+        hasRequests: requestsListed(db, user.id).length > 0,
+        results: [],
+        books: [],
+        albums: [],
+        songs: [],
+        playlists: importable ? await playlists.row(playlist, gone) : [],
+        streaming:
+          music === null || music.state.available ? ('ok' as const) : ('unavailable' as const),
+      };
+    }
     const asked = query.kinds === undefined ? { q: query.q } : { q: query.q, kinds: query.kinds };
     const [lists, found, foundAlbums, streamed] = await Promise.all([
       Promise.all(sources.map((source) => source.search(asked, gone))),
@@ -154,6 +187,7 @@ export function searchRoutes(
       books: found,
       albums: foundAlbums,
       songs: streamed,
+      playlists: [],
       streaming:
         music === null || music.state.available ? ('ok' as const) : ('unavailable' as const),
       results: results.map((result) => {
@@ -190,6 +224,29 @@ export function searchRoutes(
       status: 200,
       headers: {
         'content-type': art.type,
+        'content-length': String(art.bytes.byteLength),
+        'cache-control': ART_CACHE,
+      },
+      body: new Blob([art.bytes]).stream(),
+    };
+  });
+
+  serveStream(app, searchPlaylistArt, async (request, { params, signal }) => {
+    signedIn(request);
+    let art = null;
+    try {
+      art = (await spotify?.source.cover(params.image, signal)) ?? null;
+    } catch (err) {
+      request.log.warn(
+        { err: err instanceof Error ? err.message : 'unknown' },
+        'no playlist cover',
+      );
+    }
+    if (art === null) throw new Refusal(404, 'not_found');
+    return {
+      status: 200,
+      headers: {
+        'content-type': art.mime,
         'content-length': String(art.bytes.byteLength),
         'cache-control': ART_CACHE,
       },

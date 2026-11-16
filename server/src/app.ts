@@ -39,6 +39,7 @@ import { AutoKeep } from './music/autoKeep.js';
 import { requestRoutes } from './routes/requests.js';
 import { MOST_LIVE_REQUESTS } from './store/requests.js';
 import { searchRoutes } from './routes/search.js';
+import type { SpotifyPlaylistSource } from './search/playlists.js';
 import { sessionRoutes } from './routes/sessions.js';
 import { settingsRoutes } from './routes/settings.js';
 import { setupRoutes } from './routes/setup.js';
@@ -99,7 +100,8 @@ export interface BuildAppOptions {
    * when absent, or with neither `music` nor a search.
    */
   spotifyImport?: {
-    spotify: SpotifyReader;
+    /** With a summary and covers, a pasted playlist link in Search answers its row. */
+    spotify: SpotifyReader & Partial<SpotifyPlaylistSource>;
     search?: (query: string) => Promise<YtSong[]>;
     available?: () => boolean;
     clock?: Clock;
@@ -305,12 +307,13 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     music: options.music ?? null,
     albumRequests: requestDeps.steps.has('album'),
   });
+  const imports = listImports(options, app);
   listRoutes(app, {
     db,
     upstreams,
     sessions,
     now: options.now ?? Date.now,
-    imports: listImports(options, app),
+    imports,
   });
   feedRoutes(app, { db, upstreams, now: options.now ?? Date.now });
   const lyrics =
@@ -322,10 +325,18 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
       now: options.now ?? Date.now,
     });
   lyricsRoutes(app, { db, upstreams, lyrics });
+  const spotify = options.spotifyImport?.spotify;
+  const playlistSummary = spotify?.playlistSummary?.bind(spotify);
+  const cover = spotify?.cover?.bind(spotify);
   searchRoutes(app, {
     db,
     now: options.now ?? Date.now,
     music: options.music ?? null,
+    // A playlist row is listed only while importing could take its tap.
+    spotify:
+      imports === null || playlistSummary === undefined || cover === undefined
+        ? null
+        : { source: { playlistSummary, cover }, importable: imports.available },
     // A row nothing could take the tap of is not listed.
     ...(options.bookCatalogue !== undefined && options.requests?.steps.has('book') === true
       ? { catalogue: options.bookCatalogue }

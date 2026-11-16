@@ -116,6 +116,7 @@ describe('[M3.requests] the way to Requests from Search', () => {
       books: [],
       albums: [],
       songs: [],
+      playlists: [],
       streaming: 'ok',
       hasRequests,
     });
@@ -147,6 +148,7 @@ describe('search’s data', () => {
       books: [],
       albums: [],
       songs: [],
+      playlists: [],
       streaming: 'ok',
       hasRequests: false,
       results: [
@@ -168,6 +170,7 @@ describe('search’s data', () => {
       books: [],
       albums: [],
       songs: [],
+      playlists: [],
       streaming: 'ok',
       hasRequests: false,
       results: [
@@ -193,6 +196,7 @@ describe('search’s data', () => {
         books: [],
         albums: [],
         songs: [],
+        playlists: [],
         streaming: 'ok',
         hasRequests: false,
       }),
@@ -301,6 +305,7 @@ describe('what search asks of the server', () => {
               books: [],
               albums: [],
               songs: [],
+              playlists: [],
               streaming: 'ok',
               hasRequests: false,
             };
@@ -452,6 +457,7 @@ describe('[M3.books] a book the library lacks, in Search', () => {
       books,
       albums: [],
       songs: [],
+      playlists: [],
       streaming: 'ok',
       hasRequests: false,
     });
@@ -576,6 +582,7 @@ describe('[M3.ytmusic] songs from outside the library', () => {
     books: [],
     albums: [],
     songs: [song],
+    playlists: [],
     streaming: 'ok',
     hasRequests: false,
     ...over,
@@ -730,6 +737,7 @@ describe('[M3.keep] keeping a song from YouTube Music', () => {
     books: [],
     albums: [],
     songs,
+    playlists: [],
     streaming: 'ok',
     hasRequests: false,
   });
@@ -862,6 +870,7 @@ describe('[M3.albums] an album the library lacks, in Search', () => {
       books: [],
       albums,
       songs: [],
+      playlists: [],
       streaming: 'ok',
       hasRequests: false,
     });
