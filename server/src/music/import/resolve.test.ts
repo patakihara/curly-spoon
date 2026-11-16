@@ -13,7 +13,7 @@ import type { YtSong } from '../../adapters/ytmusic/client.js';
 import { openDatabase } from '../../store/connection.js';
 import { streamedTrack } from '../../store/streamedTracks.js';
 import { titleKey } from '../../text/fold.js';
-import { failedRule, matchSpotifyTrack, nameQuery } from './match.js';
+import { failedRule, matchSpotifyTrack, nameQuery, withinLength } from './match.js';
 import {
   IMPORT_SEARCH_GAP_MS,
   pacedSearch,
@@ -30,10 +30,14 @@ const read = (dir: string): Recording[] =>
 const spotifyRecordings = read(join(adapters, 'spotify', 'recordings'));
 const ytRecordings = read(join(adapters, 'spotify', 'recordings', 'ytmusic'));
 
-/** What the recorder printed for the recorded playlist (All Out 80s, 150 places): 137 matched. */
-const RECORDED_MATCHED = 137;
-/** The places it printed as unmatched, each `noMatch`. */
-const RECORDED_UNMATCHED = [12, 15, 28, 32, 55, 63, 75, 91, 94, 95, 110, 116, 129];
+/** The recorded playlist (All Out 80s, 150 places) under the rules: 145 matched. */
+const RECORDED_MATCHED = 145;
+/**
+ * The places left unmatched, each `noMatch`: Bryan Adams' re-recorded `Classic Version` rows for
+ * Heaven, Summer Of '69 and Run To You; Caribbean Queen's single edit (222 s for 244 s); and All
+ * Night Long's single version, of which only the album and 12" lengths are listed.
+ */
+const RECORDED_UNMATCHED = [15, 28, 55, 63, 129];
 
 function setUp() {
   const db = openDatabase(':memory:');
@@ -96,7 +100,7 @@ describe('[M3.spotify/a] a recorded public Spotify playlist, resolved on YouTube
     }
   });
 
-  it('[M3.spotify/a] asks the ISRC only after the name query found no match', async () => {
+  it('[M3.spotify/a] asks the ISRC only after the name query found no match, or only a remaster', async () => {
     const { queries, playlist, spotify } = await resolveAll();
     const yt = replayedYtMusic(ytRecordings);
     const expected: string[] = [];
@@ -105,10 +109,25 @@ describe('[M3.spotify/a] a recorded public Spotify playlist, resolved on YouTube
       const track = (await spotify.track(entry.id))!;
       const byName = matchSpotifyTrack(track, await yt.search(nameQuery(track)));
       expected.push(nameQuery(track));
-      if (byName.match === null && track.isrc !== null) expected.push(track.isrc);
+      const close = byName.match !== null && withinLength(track, byName.match);
+      if (!close && track.isrc !== null) expected.push(track.isrc);
     }
     expect(queries).toEqual(expected);
     expect(queries.length).toBeGreaterThan(playlist.entries.length);
+  });
+
+  it("[M3.spotify/a] the ISRC's row within 4 s wins over the name query's remaster", async () => {
+    // Your Love: the name query's row is Play Deep at 217 s, the ISRC's is Super Hits at 222 s.
+    const { deps } = setUp();
+    const track = await trackAt(71);
+    const byName = matchSpotifyTrack(
+      track,
+      await replayedYtMusic(ytRecordings).search(nameQuery(track)),
+    );
+    expect(byName.match?.duration).toBe(217);
+    const { youtubeId } = await resolveTrack(deps, 'track71', track);
+    expect(youtubeId).not.toBe(byName.match?.id);
+    expect(streamedTrack(deps.db, youtubeId!)?.album).toBe(track.album);
   });
 
   it('[M3.spotify/a] writes each match to streamed_tracks, so it may stream', async () => {
@@ -176,11 +195,66 @@ describe('[M3.spotify/a] the match rules, on recorded rows', () => {
     expect(failedRule(track, { ...onAlbum, duration: onAlbum.duration + 3 })).toBe('artist');
   });
 
+  it('[M3.spotify/a] a title with a soundtrack note is the same title as its bracketed row', async () => {
+    // Holding Out for a Hero, Take My Breath Away, Danger Zone.
+    for (const position of [12, 91, 94]) {
+      const { track, rows } = await rowsFor(position);
+      expect(track.title).toMatch(/ - .*from /i);
+      expect(rows.some((row) => failedRule(track, row) === null)).toBe(true);
+    }
+  });
+
+  it('[M3.spotify/a] by the same first artist and title, a remaster may be up to 15 s or 8% longer or shorter', async () => {
+    // Dancing In the Dark (240 s for 245.3 s), Gloria (296 s for 289.9 s).
+    for (const position of [32, 116]) {
+      const { track, rows } = await rowsFor(position);
+      expect(Math.abs(rows[0]!.duration * 1000 - track.durationMs)).toBeGreaterThan(4_000);
+      expect(failedRule(track, rows[0]!)).toBe(null);
+    }
+    const { track, rows } = await rowsFor(32);
+    const at = (seconds: number) => ({
+      ...rows[0]!,
+      duration: Math.round(track.durationMs / 1000) + seconds,
+    });
+    expect(failedRule(track, at(15))).toBe(null);
+    expect(failedRule(track, at(-15))).toBe(null);
+    expect(failedRule(track, at(21))).toBe('length');
+    expect(failedRule(track, at(19))).toBe(null); // 8% of 245.3 s is 19.6 s
+    expect(failedRule(track, { ...at(10), artists: ['Patti Scialfa', 'Bruce Springsteen'] })).toBe(
+      'length',
+    );
+  });
+
+  it('[M3.spotify/a] a row named as another take keeps the 4 s rule', async () => {
+    // Heaven (Classic Version), Bryan Adams' re-recording: 264 s for 243.4 s.
+    const { track, rows } = await rowsFor(15);
+    const classic = rows.find((row) => /classic version/i.test(row.title))!;
+    expect(failedRule(track, classic)).toBe('length');
+    const near = { ...classic, duration: Math.round(track.durationMs / 1000) + 10 };
+    expect(failedRule(track, near)).toBe('length');
+    expect(failedRule(track, { ...near, title: `${track.title} (Live)` })).toBe('length');
+    expect(failedRule(track, { ...near, title: `${track.title} (2012 Remaster)` })).toBe(null);
+  });
+
+  it("[M3.spotify/a] a row within 4 s ranks over a remaster further off, even on the track's album", async () => {
+    const { track, rows } = await rowsFor(32);
+    const exact = Math.round(track.durationMs / 1000);
+    const loose = { ...rows[0]!, id: 'looseLOOSE0', album: track.album, duration: exact + 10 };
+    const close = { ...rows[0]!, id: 'closeCLOSE0', album: 'Greatest Hits', duration: exact + 1 };
+    expect(matchSpotifyTrack(track, [loose, close]).match?.id).toBe('closeCLOSE0');
+  });
+
   it('[M3.spotify/a] a row more than 4 s longer or shorter is not the track', async () => {
     const { track, rows } = await rowsFor(0);
     const exact = { ...rows[0]!, duration: Math.round(track.durationMs / 1000) };
     expect(failedRule(track, { ...exact, duration: exact.duration + 3 })).toBe(null);
-    expect(failedRule(track, { ...exact, duration: exact.duration + 6 })).toBe('length');
+    expect(
+      failedRule(track, {
+        ...exact,
+        artists: ['Someone Else', ...exact.artists],
+        duration: exact.duration + 6,
+      }),
+    ).toBe('length');
   });
 
   it("[M3.spotify/a] of the passing rows, the track's album wins, then ATV, then the nearer length, then YouTube Music's order", async () => {

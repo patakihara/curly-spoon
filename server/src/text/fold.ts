@@ -31,6 +31,10 @@ export function searchFold(text: string): string {
 const BRACKETED = /\s*[([{][^)\]}]*[)\]}]/g;
 /** A dash's edition: "Song - 2002 Remaster", "Song - Radio Edit". */
 const EDITION = /\s+-\s+.*(?:remaster|version|edit|mono|stereo|mix|live).*$/i;
+/** An ellipsis, typed as three dots or one character, and the spaces around it. */
+const ELLIPSIS = /\s*(?:\.\.\.|…)\s*/g;
+/** A dash's soundtrack note: "Song - From "Top Gun"", "Song - Love Theme from the Motion Picture". */
+const SOUNDTRACK = /\s+-\s+(?:[^-]*\s)?from\s+(?:["“”]|the\s).*$/i;
 
 /**
  * A song's title as written, its brackets and its dash's edition dropped, case and apostrophes
@@ -40,9 +44,17 @@ export function plainTitle(title: string): string {
   return title.replace(BRACKETED, '').replace(EDITION, '').replace(/\s+/g, ' ').trim();
 }
 
-/** A song's title for comparing: folded for search, its brackets and its dash's edition dropped. */
+/**
+ * A song's title for comparing: folded for search, its brackets, its dash's edition and its dash's
+ * soundtrack note dropped, and an ellipsis always followed by one space.
+ */
 export function titleKey(title: string): string {
-  return searchFold(title).replace(BRACKETED, '').replace(EDITION, '').trim();
+  return searchFold(title)
+    .replace(BRACKETED, '')
+    .replace(SOUNDTRACK, '')
+    .replace(EDITION, '')
+    .replace(ELLIPSIS, '... ')
+    .trim();
 }
 
 /**

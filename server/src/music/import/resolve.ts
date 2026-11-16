@@ -2,8 +2,9 @@
  * A Spotify playlist's entries resolved, in order, each to a YouTube Music song or an unmatched
  * entry with its reason and place (`resolveEntries`).
  *
- * - A track is searched by its name and first artist (`nameQuery`); only when that finds no match
- *   and the track has an ISRC is the ISRC searched alone. No third query.
+ * - A track is searched by its name and first artist (`nameQuery`); only when that finds no match,
+ *   or only a remaster more than 4 s off, and the track has an ISRC is the ISRC searched alone. A
+ *   row within 4 s from the ISRC wins over the name query's remaster. No third query.
  * - A match's row is written to `streamed_tracks`, as search writes it, so it may stream.
  * - What a track resolved to is kept in `spotify_matches`: a match 30 days, no match 7 days. A
  *   kept track asks nothing.
@@ -21,7 +22,7 @@ import type { SpotifyTrack } from '../../adapters/spotify/schemas.js';
 import type { YtSong } from '../../adapters/ytmusic/client.js';
 import type { Db } from '../../store/connection.js';
 import { rememberTracks, streamedTrack } from '../../store/streamedTracks.js';
-import { matchSpotifyTrack, nameQuery, type NearRow } from './match.js';
+import { matchSpotifyTrack, nameQuery, type NearRow, withinLength } from './match.js';
 
 /** The least time from one import search's end to the next one's start. */
 export const IMPORT_SEARCH_GAP_MS = 2_000;
@@ -135,6 +136,13 @@ function keep(db: Db, now: number, id: string, found: Kept): void {
   })();
 }
 
+function matched({ db, clock }: ResolveDeps, id: string, row: YtSong) {
+  rememberTracks(db, [row], clock.now());
+  const result = { youtubeId: row.id };
+  keep(db, clock.now(), id, result);
+  return result;
+}
+
 /** One Spotify track resolved: kept, or searched by name, then by ISRC. */
 export async function resolveTrack(deps: ResolveDeps, id: string, track: SpotifyTrack) {
   const { db, clock } = deps;
@@ -142,17 +150,20 @@ export async function resolveTrack(deps: ResolveDeps, id: string, track: Spotify
   if (known) return known;
   const queries = [nameQuery(track), ...(track.isrc === null ? [] : [track.isrc])];
   let near: NearRow | null = null;
+  let remaster: YtSong | null = null;
   for (const [n, query] of queries.entries()) {
     const found = matchSpotifyTrack(track, await deps.search(query));
-    if (found.match !== null) {
-      rememberTracks(db, [found.match], clock.now());
-      const result = { youtubeId: found.match.id };
-      keep(db, clock.now(), id, result);
-      return result;
+    if (found.match !== null && (remaster === null || withinLength(track, found.match))) {
+      if (!withinLength(track, found.match) && n < queries.length - 1) {
+        remaster = found.match;
+        continue;
+      }
+      return matched(deps, id, found.match);
     }
     // The name query's nearest row says more than the ISRC's, unless it found none.
-    if (n === 0 || near === null) near = found.near;
+    if (found.match === null && (n === 0 || near === null)) near = found.near;
   }
+  if (remaster !== null) return matched(deps, id, remaster);
   const result = { youtubeId: null, near };
   keep(db, clock.now(), id, result);
   return result;
