@@ -9,5 +9,5 @@ Option C: never re-import over an edited playlist; import it again as a new one.
 
 When you import a public Spotify playlist, Auralis copies its songs into one of your playlists,
 each matched on YouTube Music. Spotify playlists change, so you can import one again later.
-Work goes ahead on the default, and nothing about it is irreversible: the playlist can be
-imported again.
+On the default, a re-import drops songs you added by hand, and only re-adding them by hand
+undoes that. Until you answer, re-importing stays allowed on the default.

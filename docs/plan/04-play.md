@@ -12,11 +12,11 @@ The rule: **the server works out how to play something; the clients just play th
 ### What each player does
 
 - **Gapless across files.** A multi-file book or an album is one plan. Web keeps two audio elements, preloading the next track about 20&nbsp;s before the end; Android hands ExoPlayer the whole plan as a playlist. Chapters are positions on one timeline, so they cross file boundaries.
-- **Dirty-streamed tracks** (YouTube Music) are resolved by the server when the plan is built and passed through the same range proxy, untranscoded, so seeking and the lock screen behave alike. The next queued track is resolved and fetched ahead in ranged chunks into a small capped cache, so there's no gap. A streamed play feeds the taste profile like a Jellyfin play.
+- **Dirty-streamed tracks** (YouTube Music) are resolved by the server when the plan is built and passed through the same range proxy, untranscoded, so seeking and the lock screen behave alike. The next queued track is resolved and fetched ahead in ranged chunks into a small capped cache: no gap. A streamed play feeds the taste profile like a Jellyfin play.
 - **Episodes don't wait for files.** One still a stub, or unstubbed, plays from its feed enclosure through the range proxy.
 - **Transcode, made to work.** A transcode proxies Audiobookshelf's `/hls/` playlist and segments, played with `hls.js` on web and Media3's HLS module on Android. Downloads always use the original files.
 - **Controls on both platforms:** speed (pitch preserved), sleep timer (including "end of chapter"), bookmarks synced to Audiobookshelf, next/previous, shuffle and repeat for music; spoken: skip back/forward, next/previous only at episode/chapter start/end. Lock screen and notification controls match.
-- **SponsorBlock, live.** On a YouTube channel's episode, players also skip segments submitted after the cut.
+- **SponsorBlock, live.** On a YouTube channel's episode, players skip segments submitted after the cut.
 
 ### Queues and autoplay
 
@@ -47,5 +47,5 @@ The rule: **the server works out how to play something; the clients just play th
 ### Lists that aren't queues
 
 - **Listening lists** (books, and limited-run podcasts): ticked through, finished items crossed off. Below, recommendations for what to add next, filterable by type.
-- **Playlists**: episodes or songs you pick, or a public Spotify playlist imported in order, listing the songs YouTube Music lacks. **Digests**: a rule over shows: unplayed episodes of the last 14 days. _The Digest_ covers every subscription; a custom digest, a group you name. Each digest plays oldest or newest first; played episodes leave. Finishing or skipping one marks it played, but the play is ignored: autoplay and Up next keep your place in the show. Playing a digest saves the spoken queue and plays the digest's instead; once it runs out, nothing autoplays. Playing the saved queue's current episode, or its next if that finished, restores it; playing the digest, or an episode from its page, restores the digest's queue.
+- **Playlists**: episodes or songs you pick, never both, or a public Spotify playlist imported in order, listing the songs YouTube Music lacks; a song playlist plays on the music queue. **Digests**: a rule over shows: unplayed episodes of the last 14 days. _The Digest_ covers every subscription; a custom digest, a group you name. Each digest plays oldest or newest first; played episodes leave. Finishing or skipping one marks it played; autoplay and Up next still keep your place in the show. Playing a digest saves the spoken queue and plays the digest's instead; once it runs out, nothing autoplays. Playing the saved queue's current episode, or its next if that finished, restores it; playing the digest, or an episode from its page, restores the digest's queue.
 - **Later**: alternating two books: an editable generated spoken queue that interleaves their chapters, skipping each chapter's intro where chapter metadata allows.
