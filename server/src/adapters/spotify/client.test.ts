@@ -9,6 +9,7 @@ import { openDatabase } from '../../store/connection.js';
 import { spotifyTrackCache } from '../../store/spotifyTracks.js';
 import {
   SPOTIFY_BUSY_WAIT_MS,
+  SPOTIFY_RETRY_AFTER_MOST_MS,
   SPOTIFY_GAP_MS,
   SPOTIFY_TOKEN_MARGIN_MS,
   SpotifyClient,
@@ -239,8 +240,11 @@ describe('[M3.spotify] the Spotify reader, on recorded answers', () => {
 
 describe('[M3.spotify] a busy Spotify, from the recorded 429', () => {
   const busy = byCall('webapi-429');
-  /** Serves the recorded 429 for the order `times` times, then the recordings. */
-  function busyFor(times: number): FetchLike {
+  /**
+   * Serves the recorded 429 for the order `times` times, then the recordings; its `Retry-After`
+   * as recorded, or as `retryAfter` names.
+   */
+  function busyFor(times: number, retryAfter?: string): FetchLike {
     const replay = replayFetch(spotifyRecordings);
     let left = times;
     return async (url, init) => {
@@ -248,20 +252,30 @@ describe('[M3.spotify] a busy Spotify, from the recorded 429', () => {
         left -= 1;
         return new Response(JSON.stringify((busy.response.body as { json: unknown }).json), {
           status: busy.response.status,
-          headers: busy.response.headers,
+          headers: {
+            ...busy.response.headers,
+            ...(retryAfter === undefined ? {} : { 'retry-after': retryAfter }),
+          },
         });
       }
       return replay(url, init);
     };
   }
 
-  it('waits for Retry-After and goes on, holding rather than failing', async () => {
-    const { client, clock, lines } = setUp({ fetch: busyFor(2) });
+  it('waits for a Retry-After of up to 60 s and goes on, holding rather than failing', async () => {
+    const { client, clock, lines } = setUp({ fetch: busyFor(2, '60') });
     const playlist = await client.playlist(ID);
     expect(playlist.entries).toHaveLength(150);
-    const retryAfter = Number(busy.response.headers['retry-after']) * 1000;
-    expect(clock.slept.filter((ms) => ms === retryAfter)).toHaveLength(2);
+    expect(clock.slept.filter((ms) => ms === 60_000)).toHaveLength(2);
     expect(lines).toHaveLength(2);
+  });
+
+  it('stops with spotify_unavailable at once when Retry-After is over 60 s, as recorded', async () => {
+    expect(Number(busy.response.headers['retry-after'])).toBeGreaterThan(60);
+    const { client, clock } = setUp({ fetch: busyFor(1) });
+    const error = await client.playlist(ID).catch((e: unknown) => e);
+    expect(error).toMatchObject({ code: 'spotify_unavailable' });
+    expect(Math.max(0, ...clock.slept)).toBeLessThanOrEqual(SPOTIFY_RETRY_AFTER_MOST_MS);
   });
 
   it('waits 60 s when no Retry-After is named', async () => {
@@ -277,7 +291,7 @@ describe('[M3.spotify] a busy Spotify, from the recorded 429', () => {
   });
 
   it('stops with spotify_unavailable at the third 429 in a row', async () => {
-    const { client } = setUp({ fetch: busyFor(3) });
+    const { client } = setUp({ fetch: busyFor(3, '5') });
     const error = await client.playlist(ID).catch((e: unknown) => e);
     expect(error).toMatchObject({ code: 'spotify_unavailable' });
   });

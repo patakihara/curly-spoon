@@ -35,6 +35,8 @@ export const SPOTIFY_IMAGE_URL = 'https://i.scdn.co';
 export const SPOTIFY_GAP_MS = 1_000;
 /** The wait after a 429 that names no `Retry-After`. */
 export const SPOTIFY_BUSY_WAIT_MS = 60_000;
+/** The longest `Retry-After` waited for; a longer one stops the reading as `spotify_unavailable`. */
+export const SPOTIFY_RETRY_AFTER_MOST_MS = 60_000;
 /** How many 429s in a row stop the reading. */
 export const SPOTIFY_BUSY_LIMIT = 3;
 /** A token with less than this left is fetched again first. */
@@ -253,7 +255,10 @@ export class SpotifyClient {
     return this.ask(url, { authorization: `Bearer ${token}` }, schema, JSON_MAX_BYTES);
   }
 
-  /** One call in the queue: a 404 is `playlist_not_found`, a 429 waits, three stop. */
+  /**
+   * One call in the queue: a 404 is `playlist_not_found`, a 429 waits its `Retry-After` of up to
+   * `SPOTIFY_RETRY_AFTER_MOST_MS`, and a longer one, or the third in a row, stops.
+   */
   private ask<T>(
     url: string,
     headers: Record<string, string>,
@@ -287,6 +292,11 @@ export class SpotifyClient {
             this.#retryAfter !== null && Number.isFinite(seconds) && seconds >= 0
               ? seconds * 1000
               : SPOTIFY_BUSY_WAIT_MS;
+          if (pause > SPOTIFY_RETRY_AFTER_MOST_MS) {
+            this.#busyInARow = 0;
+            this.opts.log?.(`Spotify is busy (429) for ${Math.ceil(pause / 1000)} s; stopping`);
+            throw new SpotifyError('spotify_unavailable', 503);
+          }
           this.opts.log?.(`Spotify is busy (429); asking again in ${Math.ceil(pause / 1000)} s`);
           await this.clock.sleep(pause);
         } finally {
