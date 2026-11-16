@@ -5,7 +5,8 @@ import { describe, expect, it } from 'vitest';
 import { AdapterError, type FetchLike } from '../http/fetch.js';
 import { type Recording, recordingSchema } from '../http/recording.js';
 import { replayFetch } from '../http/replay.js';
-import { FEED_MAX_BYTES, parseFeed, readFeed } from './client.js';
+import type { FeedFetch } from '../http/publicFetch.js';
+import { FEED_MAX_BYTES, parseFeed, readFeed, readNamedFeed } from './client.js';
 
 const ADAPTERS = fileURLToPath(new URL('../', import.meta.url));
 
@@ -94,6 +95,7 @@ describe('reading a show’s feed', () => {
     const item = '<item><guid>g</guid><pubDate>Fri, 08 Sep 2023 04:00:00 +0000</pubDate></item>';
     for (const bad of ['<item>hello</item>', '<item></item>']) {
       expect(parseFeed(rss(`<itunes:type>serial</itunes:type>${bad}${item}`))).toEqual({
+        title: null,
         order: 'serial',
         episodes: [
           { guid: 'g', enclosureUrl: null, publishedAt: Date.parse('2023-09-08T04:00:00Z') },
@@ -126,5 +128,40 @@ describe('reading a show’s feed', () => {
       throw new Error('fetched');
     };
     await expect(readFeed(never, 'file:///etc/passwd')).rejects.toThrow(/http/);
+  });
+});
+
+describe('[M3.podcasts] reading a feed a client named', () => {
+  const answering =
+    (body: string | Uint8Array, url = 'https://feeds.invalid/a.rss'): FeedFetch =>
+    async () => ({ response: new Response(body, { status: 200 }), url });
+
+  it('gives the channel title and the address after permanent redirects', async () => {
+    const read = await readNamedFeed(
+      answering(rss('<title> Salt &amp; Signal </title>'), 'https://feeds.invalid/moved.rss'),
+      'https://feeds.invalid/a.rss',
+    );
+    expect(read.feed.title).toBe('Salt & Signal');
+    expect(read.url).toBe('https://feeds.invalid/moved.rss');
+  });
+
+  it('refuses a feed past the byte cap, and one that is not RSS', async () => {
+    const huge = rss(`<title>${'x'.repeat(FEED_MAX_BYTES)}</title>`);
+    await expect(
+      readNamedFeed(answering(huge), 'https://feeds.invalid/a.rss'),
+    ).rejects.toMatchObject({ kind: 'parse' });
+    await expect(
+      readNamedFeed(answering('<html></html>'), 'https://feeds.invalid/a.rss'),
+    ).rejects.toMatchObject({ kind: 'parse' });
+  });
+
+  it('fails as a timeout when the feed takes longer than its limit', async () => {
+    const stalls: FeedFetch = (_, init) =>
+      new Promise((_, reject) =>
+        init?.signal?.addEventListener('abort', () => reject(init.signal?.reason)),
+      );
+    await expect(
+      readNamedFeed(stalls, 'https://feeds.invalid/a.rss', { timeoutMs: 20 }),
+    ).rejects.toMatchObject({ kind: 'timeout' });
   });
 });

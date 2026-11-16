@@ -11,9 +11,13 @@
 import { XMLParser } from 'fast-xml-parser';
 import { z } from 'zod';
 import { AdapterError, type FetchLike, requestJson } from '../http/fetch.js';
+import { type FeedFetch, readCapped } from '../http/publicFetch.js';
 
 /** A feed larger than this is refused rather than read. */
 export const FEED_MAX_BYTES = 4 * 1024 * 1024;
+
+/** A feed a client named that takes longer than this, every hop and the body together, fails. */
+export const FEED_TIMEOUT_MS = 15_000;
 
 export type EpisodeOrder = 'serial' | 'episodic';
 
@@ -25,6 +29,8 @@ export interface FeedEpisode {
 }
 
 export interface Feed {
+  /** The channel's title; null when it has none. */
+  title: string | null;
   order: EpisodeOrder | null;
   episodes: FeedEpisode[];
 }
@@ -71,6 +77,7 @@ const feedSchema = z
   .object({
     rss: z.object({
       channel: z.object({
+        title: textOf,
         'itunes:type': textOf,
         // An item that is not an element (`<item>hello</item>`, `<item></item>`) is skipped;
         // the rest of the feed still reads.
@@ -81,6 +88,7 @@ const feedSchema = z
   .transform(({ rss: { channel } }): Feed => {
     const type = channel['itunes:type']?.toLowerCase();
     return {
+      title: present(channel.title),
       order: type === 'serial' || type === 'episodic' ? type : null,
       episodes: channel.item.filter((e): e is FeedEpisode => e !== null),
     };
@@ -107,5 +115,39 @@ export async function readFeed(fetch: FetchLike, url: string): Promise<Feed> {
     return parseFeed(xml);
   } catch (cause) {
     throw new AdapterError('parse', `GET ${pathname}`, 'not an RSS feed', undefined, { cause });
+  }
+}
+
+/**
+ * Reads a feed address a client named, through `feedFetch`: at most `FEED_MAX_BYTES`, within
+ * `FEED_TIMEOUT_MS`. Gives the feed and its address after permanent redirects.
+ */
+export async function readNamedFeed(
+  fetch: FeedFetch,
+  url: string,
+  { timeoutMs = FEED_TIMEOUT_MS }: { timeoutMs?: number } = {},
+): Promise<{ feed: Feed; url: string }> {
+  const call = 'GET feed';
+  const signal = AbortSignal.timeout(timeoutMs);
+  let read: { bytes: Uint8Array | null; url: string; status: number };
+  try {
+    const { response, url: named } = await fetch(url, {
+      headers: { accept: 'application/rss+xml, application/xml' },
+      signal,
+    });
+    const bytes = response.ok ? await readCapped(response, FEED_MAX_BYTES) : new Uint8Array();
+    read = { bytes, url: named, status: response.status };
+  } catch (cause) {
+    if (signal.aborted) throw new AdapterError('timeout', call, 'timed out', undefined, { cause });
+    throw cause;
+  }
+  if (read.status < 200 || read.status > 299) {
+    throw new AdapterError('status', call, `answered ${read.status}`, read.status);
+  }
+  if (read.bytes === null) throw new AdapterError('parse', call, 'past the byte cap');
+  try {
+    return { feed: parseFeed(new TextDecoder().decode(read.bytes)), url: read.url };
+  } catch (cause) {
+    throw new AdapterError('parse', call, 'not an RSS feed', undefined, { cause });
   }
 }
