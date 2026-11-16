@@ -112,9 +112,19 @@ export function queueImport(
   ).run(i.listId, i.userId, i.playlistId, now);
 }
 
-/** The import queued again from its start, the list's songs cleared: a re-import. */
+/**
+ * The import queued again: a stopped one goes on from where it stopped, its songs and report
+ * kept; a finished one starts over, the list's songs cleared (a re-import).
+ */
 export function requeueImport(db: Db, listId: string, now: number): void {
   db.transaction(() => {
+    if (importOf(db, listId)?.state === 'stopped') {
+      db.prepare(
+        `UPDATE list_imports SET state = 'reading', stopped = NULL, imported_at = ?
+         WHERE list_id = ?`,
+      ).run(now, listId);
+      return;
+    }
     db.prepare('DELETE FROM list_items WHERE list_id = ?').run(listId);
     db.prepare(
       `UPDATE list_imports SET state = 'reading', stopped = NULL, done = 0, total = 0,

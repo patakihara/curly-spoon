@@ -307,14 +307,15 @@ describe('[M3.spotify] importing a public Spotify playlist', { timeout: 30_000 }
     ]);
   });
 
-  it('stops, never fails, when Spotify keeps refusing, and runs again from there', async () => {
+  it('stops, never fails, when Spotify keeps refusing, and runs again from where it stopped', async () => {
     const real = replayedSpotify(spotifyRecordings);
+    let read = 0;
     let refusing = true;
     const flaky: SpotifyReader = {
       playlistHeader: (id) => real.playlistHeader(id),
       playlist: (id) => real.playlist(id),
       track: async (id) => {
-        if (refusing) throw new SpotifyError('spotify_unavailable', 503);
+        if (refusing && ++read > 30) throw new SpotifyError('spotify_unavailable', 503);
         return real.track(id);
       },
     };
@@ -322,11 +323,20 @@ describe('[M3.spotify] importing a public Spotify playlist', { timeout: 30_000 }
     const { id } = s.ok(await importIt(s), ListDetail);
     const stopped = await finished(s, id);
     expect(stopped.import).toMatchObject({ state: 'stopped', stopped: 'spotify_unavailable' });
+    const kept = stopped.items.length;
+    expect(kept).toBeGreaterThan(20);
+    const searched = s.u.calls.searches;
     refusing = false;
-    s.ok(await s.call('POST', `/lists/${id}/import`), ListDetail);
+    const again = s.ok(await s.call('POST', `/lists/${id}/import`), ListDetail);
+    expect(again.items).toHaveLength(kept);
+    expect(again.import).toMatchObject({ state: 'reading', done: stopped.import!.done });
     const list = await finished(s, id);
-    expect(list.import).toMatchObject({ state: 'done', stopped: null });
+    expect(list.import).toMatchObject({ state: 'done', stopped: null, done: want.total });
     expect(s.refs(list.items)).toEqual(want.songs);
+    expect(list.import!.unmatched.map((u) => u.position)).toEqual(want.unmatched);
+    // The places handled before the stop were not searched again.
+    expect(searched).toBeGreaterThan(0);
+    expect(s.u.calls.searches).toBe(want.searches);
   });
 
   it('a playlist that is gone is 404 playlist_not_found, and no list is made', async () => {

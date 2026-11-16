@@ -10,6 +10,7 @@ import { spotifyTrackCache } from '../../store/spotifyTracks.js';
 import {
   SPOTIFY_BUSY_WAIT_MS,
   SPOTIFY_RETRY_AFTER_MOST_MS,
+  SPOTIFY_RETRY_WAITS_MS,
   SPOTIFY_GAP_MS,
   SPOTIFY_TOKEN_MARGIN_MS,
   SpotifyClient,
@@ -294,6 +295,57 @@ describe('[M3.spotify] a busy Spotify, from the recorded 429', () => {
     const { client } = setUp({ fetch: busyFor(3, '5') });
     const error = await client.playlist(ID).catch((e: unknown) => e);
     expect(error).toMatchObject({ code: 'spotify_unavailable' });
+  });
+});
+
+describe('[M3.spotify] a passing Spotify failure, asked again', () => {
+  /** The recordings, the order's first `times` answers given by `fail`. */
+  function failingFor(times: number, fail: () => Promise<Response>): FetchLike {
+    const replay = replayFetch(spotifyRecordings);
+    let left = times;
+    return async (url, init) => {
+      if (url.includes('/playlist/v2/') && left > 0) {
+        left -= 1;
+        return fail();
+      }
+      return replay(url, init);
+    };
+  }
+
+  it('asks again after a 5xx or a lost connection, waiting longer each time', async () => {
+    let n = 0;
+    const fail = async () =>
+      n++ === 0 ? new Response('{}', { status: 502 }) : Promise.reject(new TypeError('reset'));
+    const { client, clock } = setUp({ fetch: failingFor(2, fail) });
+    const playlist = await client.playlist(ID);
+    expect(playlist.entries).toHaveLength(150);
+    expect(clock.slept.filter((ms) => SPOTIFY_RETRY_WAITS_MS.includes(ms))).toEqual(
+      SPOTIFY_RETRY_WAITS_MS.slice(0, 2),
+    );
+  });
+
+  it('gives up once every wait is spent', async () => {
+    const tries = SPOTIFY_RETRY_WAITS_MS.length + 1;
+    const fail = async () => new Response('{}', { status: 503 });
+    const { client, asked } = setUp({ fetch: failingFor(tries, fail) });
+    const error = await client.playlist(ID).catch((e: unknown) => e);
+    expect(error).toMatchObject({ kind: 'status', status: 503 });
+    expect(asked.filter((a) => a.path.startsWith('/playlist/v2/'))).toHaveLength(tries);
+  });
+
+  it('a 401 for a token ended early fetches the embed page again, once, and goes on', async () => {
+    const fail = async () => new Response('{}', { status: 401 });
+    const { client, asked } = setUp({ fetch: failingFor(1, fail) });
+    const playlist = await client.playlist(ID);
+    expect(playlist.entries).toHaveLength(150);
+    expect(asked.filter((a) => a.path.startsWith('/embed/'))).toHaveLength(2);
+  });
+
+  it('a second 401 in a row is not asked again', async () => {
+    const fail = async () => new Response('{}', { status: 401 });
+    const { client } = setUp({ fetch: failingFor(2, fail) });
+    const error = await client.playlist(ID).catch((e: unknown) => e);
+    expect(error).toMatchObject({ kind: 'status', status: 401 });
   });
 });
 

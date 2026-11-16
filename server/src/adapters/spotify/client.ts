@@ -37,6 +37,8 @@ export const SPOTIFY_GAP_MS = 1_000;
 export const SPOTIFY_BUSY_WAIT_MS = 60_000;
 /** The longest `Retry-After` waited for; a longer one stops the reading as `spotify_unavailable`. */
 export const SPOTIFY_RETRY_AFTER_MOST_MS = 60_000;
+/** The waits before each new ask after a 5xx, a timeout or a lost connection; then it fails. */
+export const SPOTIFY_RETRY_WAITS_MS = [2_000, 5_000, 15_000];
 /** How many 429s in a row stop the reading. */
 export const SPOTIFY_BUSY_LIMIT = 3;
 /** A token with less than this left is fetched again first. */
@@ -251,13 +253,27 @@ export class SpotifyClient {
     if (session.expiresAt - this.clock.now() < SPOTIFY_TOKEN_MARGIN_MS) {
       await this.embed(session.playlistId);
     }
-    const token = this.#session?.token ?? '';
-    return this.ask(url, { authorization: `Bearer ${token}` }, schema, JSON_MAX_BYTES);
+    const asked = () =>
+      this.ask(
+        url,
+        { authorization: `Bearer ${this.#session?.token ?? ''}` },
+        schema,
+        JSON_MAX_BYTES,
+      );
+    try {
+      return await asked();
+    } catch (error) {
+      // A token can end before its stated time: a 401 fetches a new one, once.
+      if (!(error instanceof AdapterError) || error.status !== 401) throw error;
+      await this.embed(session.playlistId);
+      return asked();
+    }
   }
 
   /**
    * One call in the queue: a 404 is `playlist_not_found`, a 429 waits its `Retry-After` of up to
-   * `SPOTIFY_RETRY_AFTER_MOST_MS`, and a longer one, or the third in a row, stops.
+   * `SPOTIFY_RETRY_AFTER_MOST_MS`, and a longer one, or the third in a row, stops. A 5xx, a timeout
+   * or a lost connection is asked again after each of `SPOTIFY_RETRY_WAITS_MS`, then fails.
    */
   private ask<T>(
     url: string,
@@ -266,6 +282,7 @@ export class SpotifyClient {
     maxBytes: number,
   ): Promise<T> {
     const run = async (): Promise<T> => {
+      let failed = 0;
       for (;;) {
         const wait = this.#lastEnded + SPOTIFY_GAP_MS - this.clock.now();
         if (wait > 0) await this.clock.sleep(wait);
@@ -279,7 +296,21 @@ export class SpotifyClient {
           this.#busyInARow = 0;
           return answer;
         } catch (error) {
-          if (!(error instanceof AdapterError) || error.kind !== 'status') throw error;
+          if (!(error instanceof AdapterError)) throw error;
+          const passing =
+            error.kind === 'network' ||
+            error.kind === 'timeout' ||
+            (error.kind === 'status' && (error.status ?? 0) >= 500);
+          const retryWait = SPOTIFY_RETRY_WAITS_MS[failed];
+          if (passing && retryWait !== undefined) {
+            failed += 1;
+            this.opts.log?.(
+              `Spotify failed (${error.kind}); asking again in ${retryWait / 1000} s`,
+            );
+            await this.clock.sleep(retryWait);
+            continue;
+          }
+          if (error.kind !== 'status') throw error;
           if (error.status === 404) throw new SpotifyError('playlist_not_found', 404);
           if (error.status !== 429) throw error;
           this.#busyInARow += 1;

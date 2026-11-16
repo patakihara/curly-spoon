@@ -8,7 +8,9 @@
  * The reader's refusals stop the import, never fail the server: `playlist_not_found` and
  * `spotify_unavailable` as themselves, any other Spotify failure as `spotify_unavailable`, and
  * YouTube Music streaming off, or its search failing, as `medium_unavailable`. A stopped import
- * runs again from where it stopped when asked to. Nothing upstream is asked while none is queued.
+ * asked to run again goes on from where it stopped, keeping the songs it added; a finished one
+ * asked again starts over (lists/import/state.ts `requeueImport`). Nothing upstream is asked while
+ * none is queued.
  */
 import type { ListImportStop } from '@auralis/schema';
 import type { Clock } from '../../adapters/musicbrainz/client.js';
