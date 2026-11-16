@@ -17,7 +17,7 @@ const HOMES = [
     id: 'music',
     person: 'Artist',
     searches: 'Search your music and requests',
-    binds: ['library', 'sort', 'tabs'],
+    binds: ['library', 'lists', 'sort', 'tabs'],
   },
   {
     id: 'books',
@@ -185,7 +185,7 @@ describe('a card on a library home', () => {
     Author: 'author',
   };
   const OPENS: Record<string, (item: { sub: string }, of: string[]) => string> = {
-    music: () => 'album',
+    music: (_, of) => (of.at(-1) === 'lists' ? 'playlist' : 'album'),
     books: () => 'book',
     podcasts: (_, of) => (of.at(-1) === 'lists' ? 'list' : 'show'),
     browse: (item) => KIND[item.sub.split(' · ')[0]!]!,

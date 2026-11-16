@@ -364,6 +364,8 @@ export function searchData(answer: SearchResults, page: SearchData): SearchData 
     library: rows(true),
     outside: {
       ...page.outside,
+      // A pasted playlist's row is not mapped yet (M3.spotify part G): never the canvas's sample.
+      playlist: [],
       household: rows(false),
       books: answer.books.map(bookRowOf),
       albums: answer.albums.map(albumRowOf),

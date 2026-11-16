@@ -165,7 +165,6 @@ fun MusicPage(navController: NavController, actions: PageActions) {
                             Section(
                                 SectionProps(
                                     platform = Platform.MOBILE,
-                                    last = true,
                                     children = {
                                         LayoutGrid(
                                             LayoutGridProps(
@@ -253,6 +252,56 @@ fun MusicPage(navController: NavController, actions: PageActions) {
                                                             },
                                                             status = "Downloading · 64%",
                                                             tone = MediaCardTone.PROGRESS,
+                                                        ),
+                                                    )
+                                                },
+                                            ),
+                                        )
+                                    },
+                                ),
+                            )
+                            Section(
+                                SectionProps(
+                                    title = "Playlists",
+                                    platform = Platform.MOBILE,
+                                    last = true,
+                                    children = {
+                                        LayoutGrid(
+                                            LayoutGridProps(
+                                                platform = Platform.MOBILE,
+                                                children = {
+                                                    MediaCard(
+                                                        MediaCardProps(
+                                                            title = "Late walks",
+                                                            sub = "Playlist · 8 songs",
+                                                            platform = Platform.MOBILE,
+                                                            width = "100%",
+                                                            covers = listOf(
+                                                                "/art/deep-inertia.jpg",
+                                                                "/art/salt-and-static.jpg",
+                                                                "/art/golden-scars.jpg",
+                                                                "/art/paper-lanterns.jpg",
+                                                            ),
+                                                            onClick = {
+                                                                navController.navigate(Route.Playlist(ref = "late-walks"))
+                                                            },
+                                                        ),
+                                                    )
+                                                    MediaCard(
+                                                        MediaCardProps(
+                                                            title = "Salt Road Drive",
+                                                            sub = "From Spotify · 142 songs",
+                                                            platform = Platform.MOBILE,
+                                                            width = "100%",
+                                                            covers = listOf(
+                                                                "/art/escapes-and-moons.jpg",
+                                                                "/art/fragments-of-the-wind.jpg",
+                                                                "/art/between-lines-of-light.jpg",
+                                                                "/art/shadows-and-sighs.jpg",
+                                                            ),
+                                                            onClick = {
+                                                                navController.navigate(Route.Playlist(ref = "salt-road-drive"))
+                                                            },
                                                         ),
                                                     )
                                                 },

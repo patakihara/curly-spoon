@@ -43,7 +43,7 @@ export default function Music({ data }) {
               trailing={<ViewToggle value="grid" />}
             />
           </Section>
-          <Section last>
+          <Section>
             <LayoutGrid>
               <Each of={data.library} as="item">
                 <MediaCard
@@ -54,6 +54,19 @@ export default function Music({ data }) {
                   status={item.status}
                   tone={item.tone}
                   onClick={<Open page="album" ref={item.ref} />}
+                />
+              </Each>
+            </LayoutGrid>
+          </Section>
+          <Section title="Playlists" last>
+            <LayoutGrid>
+              <Each of={data.lists} as="list">
+                <MediaCard
+                  width="100%"
+                  title={list.title}
+                  sub={list.sub}
+                  covers={list.covers}
+                  onClick={<Open page="playlist" ref={list.ref} />}
                 />
               </Each>
             </LayoutGrid>

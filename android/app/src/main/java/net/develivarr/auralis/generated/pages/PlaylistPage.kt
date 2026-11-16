@@ -5,6 +5,8 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavController
 import net.develivarr.auralis.generated.nav.PageActions
+import net.develivarr.auralis.generated.nav.PlayMode
+import net.develivarr.auralis.generated.nav.PlayQueue
 import net.develivarr.auralis.generated.nav.Route
 import net.develivarr.auralis.generated.nav.closePage
 import net.develivarr.auralis.generated.nav.litDestination
@@ -16,10 +18,13 @@ import net.develivarr.auralis.generated.ui.BottomNavProps
 import net.develivarr.auralis.generated.ui.IconButtonProps
 import net.develivarr.auralis.generated.ui.MediaHeaderProps
 import net.develivarr.auralis.generated.ui.MiniPlayerProps
+import net.develivarr.auralis.generated.ui.OverflowMenuItem
+import net.develivarr.auralis.generated.ui.OverflowMenuProps
 import net.develivarr.auralis.generated.ui.PageBodyProps
 import net.develivarr.auralis.generated.ui.PageBodyWidth
 import net.develivarr.auralis.generated.ui.Platform
 import net.develivarr.auralis.generated.ui.ResultRowProps
+import net.develivarr.auralis.generated.ui.ResultRowTone
 import net.develivarr.auralis.generated.ui.SectionProps
 import net.develivarr.auralis.generated.ui.Variant
 import net.develivarr.auralis.ui.sonora.BackLayer
@@ -28,6 +33,7 @@ import net.develivarr.auralis.ui.sonora.BottomNav
 import net.develivarr.auralis.ui.sonora.IconButton
 import net.develivarr.auralis.ui.sonora.MediaHeader
 import net.develivarr.auralis.ui.sonora.MiniPlayer
+import net.develivarr.auralis.ui.sonora.OverflowMenu
 import net.develivarr.auralis.ui.sonora.PageBody
 import net.develivarr.auralis.ui.sonora.ResultRow
 import net.develivarr.auralis.ui.sonora.Section
@@ -103,9 +109,26 @@ fun PlaylistPage(navController: NavController, actions: PageActions) {
                                                 platform = Platform.MOBILE,
                                                 image = "/art/deep-inertia.jpg",
                                                 kindLabel = "Playlist",
-                                                meta = "8 songs · 32 min",
+                                                meta = "From Spotify · 8 of 10 found",
                                                 nextLabel = null,
                                                 lastLabel = "Add to queue",
+                                                onPlay = {
+                                                    actions.onPlay("late-walks", PlayQueue.MUSIC, PlayMode.SOURCE)
+                                                },
+                                                menu = {
+                                                    OverflowMenu(
+                                                        OverflowMenuProps(
+                                                            items = listOf(
+                                                                OverflowMenuItem(
+                                                                    key = "reimport",
+                                                                    label = "Import again from Spotify",
+                                                                    icon = "sync",
+                                                                ),
+                                                            ),
+                                                            platform = Platform.MOBILE,
+                                                        ),
+                                                    )
+                                                },
                                             ),
                                         )
                                     },
@@ -114,7 +137,6 @@ fun PlaylistPage(navController: NavController, actions: PageActions) {
                             Section(
                                 SectionProps(
                                     platform = Platform.MOBILE,
-                                    last = true,
                                     children = {
                                         ResultRow(
                                             ResultRowProps(
@@ -123,6 +145,9 @@ fun PlaylistPage(navController: NavController, actions: PageActions) {
                                                 status = "Playing",
                                                 image = "/art/deep-inertia.jpg",
                                                 platform = Platform.MOBILE,
+                                                onAction = {
+                                                    actions.onPlay("heartbeats-in-silence", PlayQueue.MUSIC, PlayMode.NOW)
+                                                },
                                                 divider = true,
                                                 trailing = {
                                                     IconButton(
@@ -142,6 +167,9 @@ fun PlaylistPage(navController: NavController, actions: PageActions) {
                                                 status = null,
                                                 image = "/art/salt-and-static.jpg",
                                                 platform = Platform.MOBILE,
+                                                onAction = {
+                                                    actions.onPlay("salt-and-static", PlayQueue.MUSIC, PlayMode.NOW)
+                                                },
                                                 divider = true,
                                                 trailing = {
                                                     IconButton(
@@ -161,6 +189,9 @@ fun PlaylistPage(navController: NavController, actions: PageActions) {
                                                 status = null,
                                                 image = "/art/golden-scars.jpg",
                                                 platform = Platform.MOBILE,
+                                                onAction = {
+                                                    actions.onPlay("golden-scars", PlayQueue.MUSIC, PlayMode.NOW)
+                                                },
                                                 divider = true,
                                                 trailing = {
                                                     IconButton(
@@ -180,6 +211,9 @@ fun PlaylistPage(navController: NavController, actions: PageActions) {
                                                 status = null,
                                                 image = "/art/shadows-and-sighs.jpg",
                                                 platform = Platform.MOBILE,
+                                                onAction = {
+                                                    actions.onPlay("low-sun", PlayQueue.MUSIC, PlayMode.NOW)
+                                                },
                                                 divider = true,
                                                 trailing = {
                                                     IconButton(
@@ -199,6 +233,9 @@ fun PlaylistPage(navController: NavController, actions: PageActions) {
                                                 status = null,
                                                 image = "/art/paper-lanterns.jpg",
                                                 platform = Platform.MOBILE,
+                                                onAction = {
+                                                    actions.onPlay("paper-lanterns", PlayQueue.MUSIC, PlayMode.NOW)
+                                                },
                                                 divider = true,
                                                 trailing = {
                                                     IconButton(
@@ -218,6 +255,9 @@ fun PlaylistPage(navController: NavController, actions: PageActions) {
                                                 status = null,
                                                 image = "/art/escapes-and-moons.jpg",
                                                 platform = Platform.MOBILE,
+                                                onAction = {
+                                                    actions.onPlay("escapes-and-moons", PlayQueue.MUSIC, PlayMode.NOW)
+                                                },
                                                 divider = true,
                                                 trailing = {
                                                     IconButton(
@@ -237,6 +277,9 @@ fun PlaylistPage(navController: NavController, actions: PageActions) {
                                                 status = null,
                                                 image = "/art/fragments-of-the-wind.jpg",
                                                 platform = Platform.MOBILE,
+                                                onAction = {
+                                                    actions.onPlay("fragments-of-the-wind", PlayQueue.MUSIC, PlayMode.NOW)
+                                                },
                                                 divider = true,
                                                 trailing = {
                                                     IconButton(
@@ -256,6 +299,9 @@ fun PlaylistPage(navController: NavController, actions: PageActions) {
                                                 status = null,
                                                 image = "/art/between-lines-of-light.jpg",
                                                 platform = Platform.MOBILE,
+                                                onAction = {
+                                                    actions.onPlay("between-lines-of-light", PlayQueue.MUSIC, PlayMode.NOW)
+                                                },
                                                 divider = true,
                                                 trailing = {
                                                     IconButton(
@@ -266,6 +312,37 @@ fun PlaylistPage(navController: NavController, actions: PageActions) {
                                                         ),
                                                     )
                                                 },
+                                            ),
+                                        )
+                                    },
+                                ),
+                            )
+                            Section(
+                                SectionProps(
+                                    title = "Not found on YouTube Music",
+                                    platform = Platform.MOBILE,
+                                    last = true,
+                                    children = {
+                                        ResultRow(
+                                            ResultRowProps(
+                                                title = "Night Ferry",
+                                                meta = "Harbour Lights · Tidewater · 3:45",
+                                                status = "Not found",
+                                                tone = ResultRowTone.ERROR,
+                                                image = "/art/tears-of-ice.jpg",
+                                                platform = Platform.MOBILE,
+                                                divider = true,
+                                            ),
+                                        )
+                                        ResultRow(
+                                            ResultRowProps(
+                                                title = "Field Recording, Pier 4",
+                                                meta = "Sonic Tales · Coastlines · 1:12",
+                                                status = "Not a song",
+                                                tone = ResultRowTone.ERROR,
+                                                image = "/art/signal-noise.jpg",
+                                                platform = Platform.MOBILE,
+                                                divider = true,
                                             ),
                                         )
                                     },

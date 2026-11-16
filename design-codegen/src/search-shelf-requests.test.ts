@@ -102,12 +102,13 @@ describe('Search', () => {
     expect(header?.props.label).toEqual({ kind: 'binding', path: ['data', 'activeFilters'] });
   });
 
-  it('[M0.canvas] shows the single top result first, then your library, then outside it', () => {
+  it('[M0.canvas] shows the single top result first, then a pasted playlist, your library, then outside it', () => {
     expect(sections(tree)).toEqual([
       undefined,
       undefined,
       undefined,
       'Top result',
+      undefined,
       'In your library',
       'Not in your library',
     ]);
@@ -173,7 +174,7 @@ describe('Search', () => {
       full!.children.map((c) =>
         c.kind === 'element' && c.props.title?.kind === 'literal' ? c.props.title.value : c.kind,
       ),
-    ).toEqual(['Top result', 'In your library', 'Not in your library']);
+    ).toEqual(['Top result', 'each', 'In your library', 'Not in your library']);
   });
 
   it.each([

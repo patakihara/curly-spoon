@@ -77,6 +77,20 @@ export default function Search({ data }) {
               />
             </Each>
           </Section>
+          <Each of={data.outside.playlist} as="playlist">
+            <Section>
+              <ResultRow
+                title={playlist.title}
+                meta={playlist.meta}
+                image={playlist.image}
+                trailing={
+                  <Button variant="secondary" size="sm" onClick={<Import from={playlist.from} />}>
+                    Import
+                  </Button>
+                }
+              />
+            </Section>
+          </Each>
           <Section title="In your library">
             <Each of={data.library} as="item">
               <ResultRow

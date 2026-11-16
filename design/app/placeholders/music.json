@@ -83,5 +83,29 @@
       "status": "Downloading · 64%",
       "tone": "progress"
     }
+  ],
+  "lists": [
+    {
+      "title": "Late walks",
+      "ref": "late-walks",
+      "sub": "Playlist · 8 songs",
+      "covers": [
+        "/art/deep-inertia.jpg",
+        "/art/salt-and-static.jpg",
+        "/art/golden-scars.jpg",
+        "/art/paper-lanterns.jpg"
+      ]
+    },
+    {
+      "title": "Salt Road Drive",
+      "ref": "salt-road-drive",
+      "sub": "From Spotify · 142 songs",
+      "covers": [
+        "/art/escapes-and-moons.jpg",
+        "/art/fragments-of-the-wind.jpg",
+        "/art/between-lines-of-light.jpg",
+        "/art/shadows-and-sighs.jpg"
+      ]
+    }
   ]
 }

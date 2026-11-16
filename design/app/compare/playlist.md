@@ -1,6 +1,6 @@
 ---
 page: playlist
-pageHash: b47d35a7216fc2ff80fb39d752ee7439b87c636a51553e044780eea96383cc0e
+pageHash: d0ba92cbdee01adab352849e1e5d4db3cb3e4034c061ce05f2eeaab4caf82133
 sonora: [kit:mobile/collection, kit:desktop/collection]
 ---
 
@@ -44,3 +44,15 @@ marked, each ending in a drag handle (`IconButton drag_handle`) for reordering.
 - Open: a playlist's cover is the first song's art here; a mosaic has no Sonora component.
 - Changed on purpose: the page is not a destination, so on the phone the shell shows it under a top app bar (`BackdropShell appBar`), as the mobile kit's flat detail bar does: the close control and the title, set as a mobile section header in the body face, on the page surface, with no back layer and no rounded front layer behind it; a hairline marks the bar once the content scrolls. The bottom bar and mini-player stay. On desktop it keeps the backdrop, Music's rail item lit.
 - Changed on purpose: the rail's head carries old Sonora's hamburger (`NavRail toggle`), `menu_open` on this labelled rail, on the heading's line; it collapses the rail to the icon rail and back. The mini-player's play and pause glyph is white (`--play-contrast`) and filled: solid bars, not the icon font's hairline outline.
+
+## M3.spotify
+
+- Changed on purpose: the header's Play plays the playlist on the music queue as its own source, in
+  its order, and its menu (`OverflowMenu`, the page's phone-menu artboard) holds "Import again from
+  Spotify". An imported playlist's meta says how far its import is, or, done, "From Spotify · 8 of 10
+  found".
+- Changed on purpose: each song plays from its art on the music queue (`ResultRow onAction`; a row has
+  no `onPlay`).
+- Changed on purpose: last, "Not found on YouTube Music" lists the songs YouTube Music lacks, in
+  Spotify's order, each with "Artist · Album · 3:45" and a "Not found" or "Not a song" pill in the
+  error tone, playing nothing. The section is drawn only while there are such songs.

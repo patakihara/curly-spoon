@@ -252,7 +252,7 @@
           },
           {
             "name": "Playlists and favourites",
-            "holds": "Where your playlists and favourites sit in the library is not drawn yet.",
+            "holds": "Your playlists after the library, those imported from Spotify among them, each opening its playlist. Where favourites sit is not drawn yet.",
             "provisional": true
           }
         ],
@@ -359,11 +359,11 @@
         "spotify": []
       },
       "structure": {
-        "purpose": "A music playlist you made, in your order. Still to design.",
+        "purpose": "A music playlist you made or imported from Spotify, in your order. Still to design.",
         "sections": [
           {
             "name": "Header",
-            "holds": "Name, song count and length.",
+            "holds": "Name, song count and length; an imported one says how far its import is, or how many of its songs were found. Play plays it in order on the music queue; its menu imports it again.",
             "provisional": true
           },
           {
@@ -372,8 +372,12 @@
           },
           {
             "name": "Songs",
-            "holds": "Song rows, reorderable.",
+            "holds": "Song rows, reorderable, each playing on the music queue.",
             "provisional": true
+          },
+          {
+            "name": "Not found on YouTube Music",
+            "holds": "Last, an imported playlist's songs YouTube Music lacks, in Spotify's order, each saying why: not found, or not a song."
           }
         ],
         "empty": "An empty playlist says how to add songs: from any song's menu.",

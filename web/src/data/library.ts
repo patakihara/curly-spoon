@@ -204,6 +204,8 @@ export function musicData(list: LibraryList, page: MusicData): MusicData {
           ...statusOf(asked.availability),
         }) as AlbumCard,
     ),
+    // Your music lists are not loaded yet (M3.spotify part G), so none of the canvas's are shown.
+    lists: [],
   };
 }
 

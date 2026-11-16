@@ -234,8 +234,17 @@ describe('Artist', () => {
 describe('Playlist', () => {
   const { tree, data } = readPage('playlist');
 
-  it('[M0.canvas] binds only the playlist: its name, kind, meta, art and songs', () => {
-    expect(dataRoots(tree)).toEqual(['image', 'kind', 'meta', 'songs', 'title']);
+  it('[M0.canvas] binds only the playlist: its name, kind, meta, art, menu, songs and the songs not found', () => {
+    expect(dataRoots(tree)).toEqual([
+      'image',
+      'kind',
+      'menu',
+      'meta',
+      'ref',
+      'songs',
+      'title',
+      'unmatched',
+    ]);
   });
 
   it("[M0.canvas] is headed by the playlist's name, with a local search scoped to it", () => {
@@ -245,7 +254,8 @@ describe('Playlist', () => {
   });
 
   it('[M0.canvas] lists its songs in your order, each with a handle to drag it', () => {
-    const handle = slotted(one(tree, 'ResultRow'), 'trailing');
+    const row = elements(tree).find((e) => e.component === 'ResultRow')!;
+    const handle = slotted(row, 'trailing');
     expect(handle?.component).toBe('IconButton');
     expect(handle?.props.icon).toEqual(lit('drag_handle'));
     expect((data.songs as Row[]).length).toBeGreaterThan(1);

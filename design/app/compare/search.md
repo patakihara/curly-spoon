@@ -1,6 +1,6 @@
 ---
 page: search
-pageHash: 48b94fd4dd62005e4124a4fddd39b2c19688545a4ed63fcb479fe028c41adb78
+pageHash: 3e04f0bcf6d89704310f5af6878bbfc0f77014428791bd960a2c540ac747c0b2
 sonora: [kit:desktop/search, kit:mobile/search]
 spotify: [S03, S04, S32]
 ---
@@ -153,3 +153,11 @@ chooses the state. The canvas draws each on its own phone artboard, `search.phon
 ## M3.albums
 
 - Changed on purpose: albums MusicBrainz finds that the library lacks get rows under "Not in your library", after the songs and their "More releases" row and before the books. They follow the book rows: each album sits in one of three lists (`album.asking`, `album.standing`, `album.arrived`). A row with no request ends in a secondary `Button`, "Add to library", which requests the album's lossless copy by its ref. A row with a request on its way shows only its status, such as "Downloading · 40%" in the progress tone, and opens Requests. "In library" opens the album and plays it from its art on the music queue. The canvas draws one of each: Salt Flats, Salt Lines and Salt Year. Unlike a song's, an album's Add to library is its own button, as 07-discover gives an album card one, since it is a torrent request and not a keep. These renders come from the web app, which binds no album request yet, so Salt Flats draws disabled. The rows are below the fold in both stills, which are unchanged; the rows were checked scrolled into view at both widths.
+
+## M3.spotify
+
+- Changed on purpose: a search that is a public Spotify playlist's link answers that playlist after
+  the top result, one `ResultRow` with its cover, its name ("Salt Road Drive") and "Spotify playlist ·
+  150 songs", and an Import button (`Button secondary sm`, `<Import from>`), as the outside book
+  and album rows ask with theirs. The canvas draws it disabled, as every unbound control; the web
+  imports it and opens the playlist.

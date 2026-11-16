@@ -12,7 +12,8 @@
  * `onChange={<Query />}`; or do a menu's chosen verb to the item its ref binds,
  * `onSelect={<Choose ref={data.ref} />}`; or do a request's verb to the request its ref binds,
  * `onClick={<Act ref={request.id} verb={request.verb} />}`; or set a setting from a switch,
- * `onChange={<Toggle setting="showEveryonesLibrary" />}`. An Open may also bind any of its route's query names,
+ * `onChange={<Toggle setting="showEveryonesLibrary" />}`; or import the Spotify playlist a link names,
+ * `onClick={<Import from={playlist.from} />}`. An Open may also bind any of its route's query names,
  * `<Open page="search" q={s.query} />`. It is read into a page
  * tree, never run, so both platforms can generate from the same file: the web as a navigation to
  * the route, Android as one to the nav graph's destination with the same arguments.
@@ -51,6 +52,8 @@ export type PropValue =
   | { kind: 'query' }
   /** A control's handler asking again for what the page failed to load. */
   | { kind: 'retry' }
+  /** A control's handler importing the outside playlist its `from` binds, a Spotify link. */
+  | { kind: 'import'; params: Record<string, string[]> }
   /** A menu's handler doing its chosen verb, by its key, to the item its `ref` binds. */
   | { kind: 'choose'; params: Record<string, string[]> }
   /**
@@ -132,7 +135,7 @@ const TAKEN = new Set([
   ...['context', 'leading', 'key', 'tab', 'window', 'undefined'],
   ...['useContext', 'useLayout', 'useNavigate', 'usePlay', 'usePlaying', 'useQuery', 'useShellNav'],
   ...['useChoose', 'act', 'useAct', 'askFor', 'useRequest'],
-  ...['toggle', 'useToggle', 'retry', 'useRetry'],
+  ...['toggle', 'useToggle', 'retry', 'useRetry', 'importFrom', 'useImport'],
 ]);
 
 /** `value`, if it is a plain lower-case name a page may give an Each item or a When state. */
@@ -172,6 +175,7 @@ function propValue(value: t.JSXAttribute['value']): PropValue {
     if (name.type === 'JSXIdentifier' && name.name === 'Choose') return choose(e);
     if (name.type === 'JSXIdentifier' && name.name === 'Act') return act(e);
     if (name.type === 'JSXIdentifier' && name.name === 'Toggle') return toggle(e);
+    if (name.type === 'JSXIdentifier' && name.name === 'Import') return importer(e);
     const tree = element(e);
     if (tree.kind !== 'element') return fail(e, 'Each and When go in children, not in a prop');
     return { kind: 'slot', tree };
@@ -200,6 +204,7 @@ function handlerAttrs(node: t.JSXElement, what: string) {
     const name = attr.name.name;
     const value = attr.value;
     if (what === 'Choose' && name !== 'ref') return fail(attr, `Choose takes ref, not ${name}`);
+    if (what === 'Import' && name !== 'from') return fail(attr, `Import takes from, not ${name}`);
     if (what === 'Act' && !['ref', 'verb', 'candidate'].includes(name)) {
       return fail(attr, `Act takes ref, verb and candidate, not ${name}`);
     }
@@ -313,6 +318,14 @@ function act(node: t.JSXElement): PropValue {
 }
 
 /**
+ * `<Import from={playlist.from} />`: importing the outside playlist its `from` binds, a Spotify
+ * link, as one of your lists. Each app knows how, and opens the list it makes.
+ */
+function importer(node: t.JSXElement): PropValue {
+  return { kind: 'import', params: handlerAttrs(node, 'Import').params };
+}
+
+/**
  * `<Toggle setting="showEveryonesLibrary" />`: sets a setting, one of `TOGGLE_SETTINGS`, to what the
  * switch says. It is always written, never bound, so the check knows every setting a page can set.
  */
@@ -411,6 +424,9 @@ function element(node: t.JSXElement): PageTree {
   if (name.name === 'Retry') return fail(node, 'Retry goes in a handler prop, onClick={<Retry />}');
   if (name.name === 'Toggle') {
     return fail(node, 'Toggle goes in a handler prop, onChange={<Toggle … />}');
+  }
+  if (name.name === 'Import') {
+    return fail(node, 'Import goes in a handler prop, onClick={<Import from={…} />}');
   }
   const props: Record<string, PropValue> = {};
   for (const attr of node.openingElement.attributes) {
@@ -779,6 +795,25 @@ export function checkPage(
               errors.push(
                 `${at} cannot hold the query: ${node.component} is not a text field. Query goes on a text field, ${listed(fields.sort())}, whose handler is handed the typed text`,
               );
+            }
+            continue;
+          }
+          if (value.kind === 'import') {
+            const at = `line ${node.line}: ${node.component}.${prop}`;
+            if (!(opens?.handlers.get(node.component)?.has(prop) ?? true)) {
+              errors.push(`${at} takes no handler, so it cannot import a playlist`);
+            }
+            const given = Object.keys(value.params);
+            if (given.join() !== 'from') {
+              errors.push(`${at} gives an import [${given}], and an import takes [from]`);
+              continue;
+            }
+            for (const v of check(node.line, value.params.from!)) {
+              if (typeof v !== 'string' || v === '') {
+                errors.push(
+                  `${at}: the import's from (${value.params.from!.join('.')}) is not a non-empty string`,
+                );
+              }
             }
             continue;
           }

@@ -345,7 +345,10 @@ const screens: Screen<never>[] = [
     name: 'music',
     Page: Music,
     frame: musicFrame,
-    empty: (params) => libraryAwaited(musicFrame.placeholder, libraryAsk(params).sort),
+    empty: (params) => ({
+      ...libraryAwaited(musicFrame.placeholder, libraryAsk(params).sort),
+      lists: [],
+    }),
     load: async (api, params) => {
       const list = await loadLibrary(api, 'music', libraryAsk(params));
       return { data: musicData(list, musicFrame.placeholder), seed: list.seed };
