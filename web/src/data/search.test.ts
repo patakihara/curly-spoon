@@ -970,3 +970,46 @@ describe('[M3.albums] an album the library lacks, in Search', () => {
     expect((await loaded(album({ status: 'inLibrary' }))).moving).toBe(false);
   });
 });
+
+describe('[M3.spotify] a pasted Spotify playlist link in Search', () => {
+  const pasted = {
+    from: 'https://open.spotify.com/playlist/37i9dQZF1DX4UtSsGT1Sbe',
+    name: 'All Out 80s',
+    count: 150,
+    art: '/api/search/playlists/ab67706f000000027b7e9a5c3b5ab5b1d7c3e5f2/art',
+  };
+  const answered = (playlists: unknown[]) =>
+    SearchResults.parse({
+      query: pasted.from,
+      results: [],
+      books: [],
+      albums: [],
+      songs: [],
+      playlists,
+      streaming: 'ok',
+      hasRequests: false,
+    });
+
+  it('[M3.spotify] answers the playlist’s row: its name, its size and cover, importing by its link', () => {
+    expect(searchData(answered([pasted]), empty).outside.playlist).toEqual([
+      {
+        title: 'All Out 80s',
+        meta: 'Spotify playlist · 150 songs',
+        image: `${pasted.art}?size=small`,
+        from: pasted.from,
+      },
+    ]);
+    expect(searchData(answered([]), empty).outside.playlist).toEqual([]);
+  });
+
+  it('[M3.spotify] counts the playlist’s row as something found', async () => {
+    const client = createApiClient({
+      baseUrl: 'http://auralis.test',
+      fetch: async () =>
+        new Response(JSON.stringify(answered([pasted])), {
+          headers: { 'content-type': 'application/json' },
+        }),
+    });
+    expect((await loadSearchPage(client, { q: pasted.from }, empty)).found).toBe(true);
+  });
+});

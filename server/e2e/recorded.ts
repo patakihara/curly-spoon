@@ -58,6 +58,7 @@ import { keepEveryTrack, standInAlbums } from './standInAlbums.js';
 import { type BookSource, standInBooks } from './standInBooks.js';
 import { standInMedia } from './standInMedia.js';
 import { type MusicSource, standInMusic } from './standInMusic.js';
+import { standInSpotify } from './standInSpotify.js';
 
 const ADAPTERS = fileURLToPath(new URL('../src/adapters/', import.meta.url));
 
@@ -82,6 +83,8 @@ export interface RecordedServerOptions {
   music?: MusicSource;
   /** The recorded album as one whose every track is a kept song, so its page offers its copy. */
   keptAlbum?: boolean;
+  /** Spotify playlist import over the recorded All Out 80s and its searches; needs `music`. */
+  spotify?: boolean;
 }
 
 export interface RecordedServer {
@@ -504,6 +507,9 @@ export async function recordedServer(options: RecordedServerOptions = {}): Promi
             dataDir: config.dataDir,
           }),
         }),
+    ...(options.spotify === true
+      ? { spotifyImport: standInSpotify({ adapters: ADAPTERS, art: deepInertia }) }
+      : {}),
   });
 
   const userinfo = jsonOf<{ preferred_username: string; groups: string[] }>(

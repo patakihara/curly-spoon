@@ -9,7 +9,8 @@
  * AURALIS_E2E_NOTHING_PLAYED=1 has the recorded person begin with nothing played;
  * AURALIS_E2E_BOOK_SOURCE is how Search's source of books the library lacks behaves;
  * AURALIS_E2E_MUSIC is how a stand-in YouTube Music behaves, with none when unset;
- * AURALIS_E2E_KEPT_ALBUM=1 makes every track of the album it lists a song kept from YouTube Music.
+ * AURALIS_E2E_KEPT_ALBUM=1 makes every track of the album it lists a song kept from YouTube Music;
+ * AURALIS_E2E_SPOTIFY=1 imports Spotify playlists from the recorded one, with YouTube Music on.
  */
 import { mediaRefKey } from '@auralis/schema';
 import { z } from 'zod';
@@ -24,6 +25,7 @@ const env = z
     AURALIS_E2E_BOOK_SOURCE: z.enum(['answers', 'slow', 'failing']).default('answers'),
     AURALIS_E2E_MUSIC: z.enum(['answers', 'unavailable']).optional(),
     AURALIS_E2E_KEPT_ALBUM: z.literal('1').optional(),
+    AURALIS_E2E_SPOTIFY: z.literal('1').optional(),
   })
   .parse(process.env);
 
@@ -35,6 +37,7 @@ const server = await recordedServer({
   nothingPlayed: env.AURALIS_E2E_NOTHING_PLAYED === '1',
   bookSource: env.AURALIS_E2E_BOOK_SOURCE,
   keptAlbum: env.AURALIS_E2E_KEPT_ALBUM === '1',
+  spotify: env.AURALIS_E2E_SPOTIFY === '1',
   ...(env.AURALIS_E2E_MUSIC === undefined ? {} : { music: env.AURALIS_E2E_MUSIC }),
 });
 

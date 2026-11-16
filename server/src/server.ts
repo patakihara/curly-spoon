@@ -91,6 +91,8 @@ export async function assembleServer(
     albumCatalogue?: AlbumCatalogue;
     /** Songs from outside the library, in place of the configured extractor, as a harness brings. */
     music?: (log: MusicLog, db: Db) => { music: Music; stop: () => void | Promise<void> };
+    /** Spotify playlist import's reader, search and pace, in place of Spotify's own, as a harness brings. */
+    spotifyImport?: NonNullable<BuildAppOptions['spotifyImport']>;
   },
 ): Promise<Server> {
   const { fetch } = deps;
@@ -221,7 +223,7 @@ export async function assembleServer(
     },
     playback: { idleMs: config.playIdleMinutes * 60_000 },
     music: streamed?.music ?? null,
-    spotifyImport: { spotify },
+    spotifyImport: deps.spotifyImport ?? { spotify },
     lyrics,
     // A medium with no steps here cannot be requested.
     requests: {
