@@ -233,6 +233,24 @@ describe('[M3.spotify] importing a public Spotify playlist', { timeout: 30_000 }
     expect(s.refs(ottos.items)).toEqual(want.songs);
   });
 
+  it('a list deleted while it imports stops its import before the next track', async () => {
+    const s = await server();
+    s.u.holdAfter(6);
+    const { id } = s.ok(await importIt(s), ListDetail);
+    await handled(s, id, 3);
+    expect((await s.call('DELETE', `/lists/${id}`)).status).toBe(200);
+    const asked = { ...s.u.calls };
+    s.u.release();
+    // Once nothing more is asked for 100 ms, the job is over.
+    for (let last = -1; last !== s.u.calls.spotify + s.u.calls.searches;) {
+      last = s.u.calls.spotify + s.u.calls.searches;
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    // Only the track under way was finished: its search held, and perhaps its ISRC's.
+    expect(s.u.calls.searches - asked.searches).toBeLessThanOrEqual(1);
+    expect(s.u.calls.spotify).toBe(asked.spotify);
+  });
+
   it('refuses a second import of the same playlist while the first runs: 409 importing', async () => {
     const s = await server();
     s.u.holdAfter(1);

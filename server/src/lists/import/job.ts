@@ -17,7 +17,7 @@ import type { SpotifyTrack } from '../../adapters/spotify/schemas.js';
 import type { YtSong } from '../../adapters/ytmusic/client.js';
 import { pacedSearch, resolveEntries } from '../../music/import/resolve.js';
 import type { Db } from '../../store/connection.js';
-import { handled, nextImport, setState, type StoredImport } from './state.js';
+import { handled, importOf, nextImport, setState, type StoredImport } from './state.js';
 
 /** What the job reads of Spotify: a playlist's name, cover and order, and one track. */
 export interface SpotifyReader {
@@ -92,6 +92,7 @@ export class ImportJob {
     const { db, clock } = this.deps;
     try {
       const playlist = await this.spotify(() => this.deps.spotify.playlist(i.playlistId));
+      if (importOf(db, i.listId) === null) return;
       setState(db, i.listId, { state: 'matching', total: playlist.entries.length });
       const deps = {
         db,
@@ -119,7 +120,8 @@ export class ImportJob {
               },
           clock.now(),
         );
-        if (this.stopping) return;
+        // A list deleted while it imports takes its import with it: nothing more is read for it.
+        if (this.stopping || importOf(db, i.listId) === null) return;
       }
       setState(db, i.listId, { state: 'done' });
     } catch (error) {
