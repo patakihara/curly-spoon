@@ -38,6 +38,7 @@ import {
   type Standing,
   withHeld,
 } from '../upstream/reach.js';
+import { importOf, shownImport } from './import/state.js';
 import { digestEpisodes, isPlayed, showFinished, subscribedShows } from './rules.js';
 
 /** What each kind of list takes as an entry, by the index's kind; a music list also takes streamed songs. */
@@ -322,6 +323,10 @@ export function shown(r: Reader, list: store.StoredList): ListDetail {
     ].slice(0, LIST_COVERS_MAX),
     shows: showEntries,
     items,
+    import: (() => {
+      const imported = list.kind === 'music' ? importOf(r.db, list.id) : null;
+      return imported === null ? null : shownImport(imported);
+    })(),
   };
 }
 

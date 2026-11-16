@@ -764,6 +764,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/lists/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Import a public Spotify playlist as a music list of yours, in its order */
+        post: operations["importList"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lists/{id}/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Import a list again from its Spotify playlist */
+        post: operations["reimportList"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -861,6 +895,31 @@ export interface components {
         LyricsSource: "jellyfin" | "lrclib";
         /** @enum {string} */
         EpisodeOrder: "oldest" | "newest";
+        /** @enum {string} */
+        ListImportStop: "playlist_not_found" | "spotify_unavailable" | "medium_unavailable";
+        /** @enum {string} */
+        ListImportState: "reading" | "matching" | "done" | "stopped";
+        /** @enum {string} */
+        UnmatchedReason: "noMatch" | "notASong" | "unavailable" | "listFull";
+        ListUnmatched: {
+            position: number;
+            reason: components["schemas"]["UnmatchedReason"];
+            title: string | null;
+            artists: string[];
+            album: string | null;
+            duration: number | null;
+        };
+        ListImport: {
+            /** @enum {string} */
+            source: "spotify";
+            state: components["schemas"]["ListImportState"];
+            done: number;
+            total: number;
+            unmatched: components["schemas"]["ListUnmatched"][];
+            duplicates: number;
+            stopped: components["schemas"]["ListImportStop"] | null;
+            importedAt: number;
+        };
         HealthResponse: {
             /** @enum {string} */
             status: "ok";
@@ -1370,6 +1429,7 @@ export interface components {
             covers: string[];
             shows: components["schemas"]["LibraryEntry"][];
             items: components["schemas"]["ListItem"][];
+            import: components["schemas"]["ListImport"] | null;
         };
         CreateListBody: {
             kind: components["schemas"]["ListKind"];
@@ -1391,6 +1451,9 @@ export interface components {
         PlayListBody: {
             start?: components["schemas"]["MediaRef"];
             rev?: number;
+        };
+        ImportListBody: {
+            from: string;
         };
     };
     responses: never;
@@ -4179,6 +4242,106 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Queue"];
+                };
+            };
+            /** @description The request does not parse, or was refused. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description No session. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Without the role this route needs, or sent from another site. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    importList: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ImportListBody"];
+            };
+        };
+        responses: {
+            /** @description The list, made at once with the playlist's name and its import `reading`; its songs fill in, in Spotify's order, as each is found on YouTube Music, one import at a time across the server. Importing a playlist you imported before replaces that list's songs, keeping its id and name. 400 `not_a_spotify_playlist`, 404 `playlist_not_found` for a playlist gone or private, 409 `importing` while your import of it runs, `medium_unavailable` while YouTube Music streaming is off, 503 `spotify_unavailable`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListDetail"];
+                };
+            };
+            /** @description The request does not parse, or was refused. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description No session. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Without the role this route needs, or sent from another site. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    reimportList: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The list, its import `reading` again: its songs are replaced by the playlist's as it is now, in its order, and it keeps its id and name. 404 for a list not yours or not imported, 409 `importing` while its import runs, `medium_unavailable` while YouTube Music streaming is off. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListDetail"];
                 };
             };
             /** @description The request does not parse, or was refused. */

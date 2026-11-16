@@ -91,17 +91,78 @@ export const ListItem = z
   .openapi('ListItem');
 export type ListItem = z.infer<typeof ListItem>;
 
+/** Where an import is: queued or reading the order, matching songs, done, or stopped. */
+export const ListImportState = z
+  .enum(['reading', 'matching', 'done', 'stopped'])
+  .openapi('ListImportState');
+export type ListImportState = z.infer<typeof ListImportState>;
+
+/**
+ * Why an import stopped: the playlist is gone or private (`playlist_not_found`), Spotify kept
+ * refusing (`spotify_unavailable`), or YouTube Music streaming went off (`medium_unavailable`).
+ * Running it again goes on from where it stopped.
+ */
+export const ListImportStop = z
+  .enum(['playlist_not_found', 'spotify_unavailable', 'medium_unavailable'])
+  .openapi('ListImportStop');
+export type ListImportStop = z.infer<typeof ListImportStop>;
+
+/**
+ * Why a playlist's entry is not on the list: searched and nothing passed (`noMatch`), an episode
+ * or a local file (`notASong`), Spotify has no metadata for it (`unavailable`), or past the most a
+ * list holds (`listFull`).
+ */
+export const UnmatchedReason = z
+  .enum(['noMatch', 'notASong', 'unavailable', 'listFull'])
+  .openapi('UnmatchedReason');
+export type UnmatchedReason = z.infer<typeof UnmatchedReason>;
+
+/** One entry of the playlist left off the list: its place (from 0), why, and what Spotify names. */
+export const ListUnmatched = z
+  .object({
+    position: Count,
+    reason: UnmatchedReason,
+    title: z.string().nullable(),
+    artists: z.array(z.string()),
+    album: z.string().nullable(),
+    /** Seconds, where Spotify said. */
+    duration: z.number().nonnegative().nullable(),
+  })
+  .openapi('ListUnmatched');
+export type ListUnmatched = z.infer<typeof ListUnmatched>;
+
+/**
+ * Where a list imported from a Spotify playlist stands: `done` of the playlist's `total` entries
+ * read, the entries left off in Spotify's order, how many named a song already on the list
+ * (`duplicates`, kept in its first place), why it stopped, and when it was last started
+ * (milliseconds since the epoch).
+ */
+export const ListImport = z
+  .object({
+    source: z.literal('spotify'),
+    state: ListImportState,
+    done: Count,
+    total: Count,
+    unmatched: z.array(ListUnmatched),
+    duplicates: Count,
+    stopped: ListImportStop.nullable(),
+    importedAt: z.number().int(),
+  })
+  .openapi('ListImport');
+export type ListImport = z.infer<typeof ListImport>;
+
 /**
  * One list opened: its summary, then a digest's shows (every subscribed show for The Digest, by
  * title; a custom digest's in the order named; none on any other list), and its entries in
  * order. Entries the index no longer holds, or in a library you may no longer open, are left
- * out.
+ * out. A list imported from Spotify says where its import stands (`import`; null on any other).
  */
 export const ListDetail = z
   .object({
     ...ListSummary.shape,
     shows: z.array(LibraryEntry),
     items: z.array(ListItem),
+    import: ListImport.nullable(),
   })
   .openapi('ListDetail');
 export type ListDetail = z.infer<typeof ListDetail>;
@@ -155,3 +216,9 @@ export const PlayListBody = z
   .object({ start: MediaRef.optional(), rev: Revision.optional() })
   .openapi('PlayListBody');
 export type PlayListBody = z.infer<typeof PlayListBody>;
+
+/** A public Spotify playlist to import, as a pasted link (`open.spotify.com/playlist/…`) or URI. */
+export const ImportListBody = z
+  .object({ from: z.string().trim().min(1).max(2000) })
+  .openapi('ImportListBody');
+export type ImportListBody = z.infer<typeof ImportListBody>;

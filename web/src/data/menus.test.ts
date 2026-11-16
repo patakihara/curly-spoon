@@ -49,7 +49,7 @@ const summary = (over: Partial<ListSummary>): ListSummary => ({
 });
 
 const detail = (over: Partial<ListDetail>): ListDetail =>
-  ListDetail.parse({ ...summary({}), shows: [], items: [], ...over });
+  ListDetail.parse({ ...summary({}), shows: [], items: [], import: null, ...over });
 
 const megacorp = {
   ref: show,

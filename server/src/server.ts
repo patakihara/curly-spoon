@@ -1,6 +1,6 @@
 /**
  * The whole server from its configuration: the database, the sign-on, each upstream's
- * provisioner, the app with its request job, the library index job, the lyrics backfill and the extractor's update, wired as they run. `main.ts` starts it with the network's `fetch`;
+ * provisioner, the app with its request job and Spotify import job, the library index job, the lyrics backfill and the extractor's update, wired as they run. `main.ts` starts it with the network's `fetch`;
  * anything else that runs the server (a harness on recordings) passes its own `fetch` here and
  * changes nothing else.
  */
@@ -11,6 +11,11 @@ import { AbsClient } from './adapters/audiobookshelf/client.js';
 import { AbsProvisioner } from './adapters/audiobookshelf/provision.js';
 import type { FetchLike } from './adapters/http/fetch.js';
 import { JellyfinClient } from './adapters/jellyfin/client.js';
+import {
+  SPOTIFY_EMBED_URL,
+  SPOTIFY_SPCLIENT_URL,
+  SpotifyClient,
+} from './adapters/spotify/client.js';
 import { JellyfinProvisioner } from './adapters/jellyfin/quickConnect.js';
 import { type BuildAppOptions, buildApp } from './app.js';
 import { OidcClient } from './auth/oidc.js';
@@ -34,6 +39,7 @@ import type { Upstreams } from './upstream/links.js';
 import { readSecretFile } from './secretFile.js';
 import { type Db, openDatabase } from './store/connection.js';
 import { startSessionSweep } from './store/sessions.js';
+import { spotifyTrackCache } from './store/spotifyTracks.js';
 import { issueSetupCode } from './store/setupCode.js';
 import { getUserById, hasAdmin } from './store/users.js';
 import { Linker, type Provisioner, upstreamFor } from './upstream/links.js';
@@ -185,6 +191,16 @@ export async function assembleServer(
     musicBrainz,
   });
 
+  // One Spotify reader for the server, so every import waits in its one queue; it asks nothing
+  // until an import is made.
+  const spotify = new SpotifyClient({
+    embedUrl: SPOTIFY_EMBED_URL,
+    spclientUrl: SPOTIFY_SPCLIENT_URL,
+    fetch,
+    cache: spotifyTrackCache(db, { now: Date.now }),
+    log: (line) => app.log.warn(line),
+  });
+
   const setupCodeFile = join(config.dataDir, 'setup-code');
   const app = await buildApp({
     webDistDir: config.webDistDir,
@@ -205,6 +221,7 @@ export async function assembleServer(
     },
     playback: { idleMs: config.playIdleMinutes * 60_000 },
     music: streamed?.music ?? null,
+    spotifyImport: { spotify },
     lyrics,
     // A medium with no steps here cannot be requested.
     requests: {

@@ -23,7 +23,10 @@ import { deviceRoutes } from './routes/devices.js';
 import { feedRoutes } from './routes/feed.js';
 import { itemRoutes } from './routes/items.js';
 import { libraryRoutes } from './routes/library.js';
-import { listRoutes } from './routes/lists.js';
+import { type ListImports, listRoutes } from './routes/lists.js';
+import type { Clock } from './adapters/musicbrainz/client.js';
+import type { YtSong } from './adapters/ytmusic/client.js';
+import { ImportJob, type SpotifyReader } from './lists/import/job.js';
 import { lyricsRoutes } from './routes/lyrics.js';
 import { OpenPlays } from './routes/openPlays.js';
 import type { Music } from './music/index.js';
@@ -90,6 +93,17 @@ export interface BuildAppOptions {
   playback?: PlaybackOptions;
   /** Songs from outside the library. Null or absent, a streamed ref is not linked. */
   music?: Music | null;
+  /**
+   * Spotify playlist import: the reader, and, in place of `music`'s, YouTube Music's song search,
+   * whether streaming is on, and the clock the searches are paced by (as a harness brings). Off
+   * when absent, or with neither `music` nor a search.
+   */
+  spotifyImport?: {
+    spotify: SpotifyReader;
+    search?: (query: string) => Promise<YtSong[]>;
+    available?: () => boolean;
+    clock?: Clock;
+  } | null;
   random?: Random;
   now?: () => number;
   /** The commit the image was built from, reported by the health check; none by default. */
@@ -131,6 +145,41 @@ export const OPEN_PAGES: readonly string[] = [SIGN_IN_PAGE, '/setup'];
 function isPage(path: string): boolean {
   return path.endsWith('.html');
 }
+
+const realClock: Clock = {
+  now: () => Date.now(),
+  sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+};
+
+/**
+ * The import job and what its routes ask, or null when import is off. The job goes on with what
+ * was queued once the app is ready, and stops after its current place when the app closes.
+ */
+function listImports(options: BuildAppOptions, app: FastifyInstance): ListImports | null {
+  const given = options.spotifyImport ?? null;
+  const music = options.music ?? null;
+  if (given === null) return null;
+  const search =
+    given.search ?? (music === null ? null : (q: string) => music.searchSongs(q, NEVER));
+  if (search === null) return null;
+  const available = given.available ?? (() => music?.radio.available() ?? false);
+  const job = new ImportJob({
+    db: options.db,
+    spotify: given.spotify,
+    search,
+    available,
+    clock: given.clock ?? realClock,
+    log: { warn: (details, message) => app.log.warn(details, message) },
+  });
+  app.addHook('onReady', async () => {
+    job.wake();
+  });
+  app.addHook('onClose', () => job.stop());
+  return { job, spotify: given.spotify, available };
+}
+
+/** An import's search is never given up: the job outlives any request. */
+const NEVER = new AbortController().signal;
 
 export async function buildApp(options: BuildAppOptions): Promise<FastifyInstance> {
   const { db } = options;
@@ -256,7 +305,13 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     music: options.music ?? null,
     albumRequests: requestDeps.steps.has('album'),
   });
-  listRoutes(app, { db, upstreams, sessions, now: options.now ?? Date.now });
+  listRoutes(app, {
+    db,
+    upstreams,
+    sessions,
+    now: options.now ?? Date.now,
+    imports: listImports(options, app),
+  });
   feedRoutes(app, { db, upstreams, now: options.now ?? Date.now });
   const lyrics =
     options.lyrics ??

@@ -1141,14 +1141,16 @@ export const migrations: readonly Migration[] = [
         DROP TABLE keep_spoken_digests;
 
         -- A list imported from a Spotify playlist, one per person and playlist: how far the
-        -- import is (done of total places read), and what it left unmatched, JSON read back
-        -- through zod.
+        -- import is (done of total places read), why it stopped, and what it left unmatched,
+        -- JSON read back through zod.
         CREATE TABLE list_imports (
           list_id     TEXT PRIMARY KEY REFERENCES lists(id) ON DELETE CASCADE,
           user_id     TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
           source      TEXT NOT NULL CHECK (source IN ('spotify')),
           playlist_id TEXT NOT NULL,
           state       TEXT NOT NULL CHECK (state IN ('reading', 'matching', 'done', 'stopped')),
+          stopped     TEXT CHECK (stopped IN
+                        ('playlist_not_found', 'spotify_unavailable', 'medium_unavailable')),
           done        INTEGER NOT NULL CHECK (done >= 0),
           total       INTEGER NOT NULL CHECK (total >= 0),
           unmatched   TEXT NOT NULL,

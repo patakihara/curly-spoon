@@ -116,6 +116,7 @@ describe('a list opened', () => {
           finished: false,
         },
       ],
+      import: null,
     };
     expect(ListDetail.parse(detail)).toEqual(detail);
     expect(

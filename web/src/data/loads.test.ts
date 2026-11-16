@@ -182,7 +182,7 @@ const listOf = (id: string, name: string) => ({
 describe('[M2.lists] what the list pages read from the API', () => {
   it('[M2.lists] reads one list by its id, parsed', async () => {
     const { client, asked } = api({
-      '/api/lists/l1': [200, { ...listOf('l1', 'Commute'), shows: [], items: [] }],
+      '/api/lists/l1': [200, { ...listOf('l1', 'Commute'), shows: [], items: [], import: null }],
     });
     expect((await loadList(client, 'l1')).name).toBe('Commute');
     expect(asked).toEqual(['/api/lists/l1']);

@@ -28,6 +28,7 @@ const detail = (over: Partial<ListDetail> = {}): ListDetail =>
     covers: ['/api/media/abs:s1/art'],
     shows: [],
     items: [episode()],
+    import: null,
     ...over,
   });
 

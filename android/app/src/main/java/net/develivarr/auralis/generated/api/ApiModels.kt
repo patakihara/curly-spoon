@@ -211,6 +211,11 @@ enum class HealthResponseStatus {
 const val HLS_MIME = "application/vnd.apple.mpegurl"
 
 @Serializable
+data class ImportListBody(
+    val from: String,
+)
+
+@Serializable
 data class ItemDetail(
     val ref: MediaRef,
     val kind: ItemKind,
@@ -422,7 +427,48 @@ data class ListDetail(
     val covers: List<String>,
     val shows: List<LibraryEntry>,
     val items: List<ListItem>,
+    val import: ListImport?,
 )
+
+@Serializable
+data class ListImport(
+    val source: ListImportSource,
+    val state: ListImportState,
+    val done: Long,
+    val total: Long,
+    val unmatched: List<ListUnmatched>,
+    val duplicates: Long,
+    val stopped: ListImportStop?,
+    val importedAt: Long,
+)
+
+@Serializable
+enum class ListImportSource {
+    @SerialName("spotify")
+    SPOTIFY,
+}
+
+@Serializable
+enum class ListImportState {
+    @SerialName("reading")
+    READING,
+    @SerialName("matching")
+    MATCHING,
+    @SerialName("done")
+    DONE,
+    @SerialName("stopped")
+    STOPPED,
+}
+
+@Serializable
+enum class ListImportStop {
+    @SerialName("playlist_not_found")
+    PLAYLIST_NOT_FOUND,
+    @SerialName("spotify_unavailable")
+    SPOTIFY_UNAVAILABLE,
+    @SerialName("medium_unavailable")
+    MEDIUM_UNAVAILABLE,
+}
 
 @Serializable
 data class ListItem(
@@ -476,6 +522,16 @@ data class ListSummary(
 @Serializable
 data class ListSummaryList(
     val lists: List<ListSummary>,
+)
+
+@Serializable
+data class ListUnmatched(
+    val position: Long,
+    val reason: UnmatchedReason,
+    val title: String?,
+    val artists: List<String>,
+    val album: String?,
+    val duration: Double?,
 )
 
 @Serializable
@@ -1121,6 +1177,18 @@ data class TokenBody(
     val code: String,
     val codeVerifier: String,
 )
+
+@Serializable
+enum class UnmatchedReason {
+    @SerialName("noMatch")
+    NO_MATCH,
+    @SerialName("notASong")
+    NOT_ASONG,
+    @SerialName("unavailable")
+    UNAVAILABLE,
+    @SerialName("listFull")
+    LIST_FULL,
+}
 
 @Serializable
 data class UpdateListBody(

@@ -392,6 +392,132 @@
           "newest"
         ]
       },
+      "ListImportStop": {
+        "type": "string",
+        "enum": [
+          "playlist_not_found",
+          "spotify_unavailable",
+          "medium_unavailable"
+        ]
+      },
+      "ListImportState": {
+        "type": "string",
+        "enum": [
+          "reading",
+          "matching",
+          "done",
+          "stopped"
+        ]
+      },
+      "UnmatchedReason": {
+        "type": "string",
+        "enum": [
+          "noMatch",
+          "notASong",
+          "unavailable",
+          "listFull"
+        ]
+      },
+      "ListUnmatched": {
+        "type": "object",
+        "properties": {
+          "position": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "reason": {
+            "$ref": "#/components/schemas/UnmatchedReason"
+          },
+          "title": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "artists": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "album": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "duration": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0
+          }
+        },
+        "required": [
+          "position",
+          "reason",
+          "title",
+          "artists",
+          "album",
+          "duration"
+        ]
+      },
+      "ListImport": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string",
+            "enum": [
+              "spotify"
+            ]
+          },
+          "state": {
+            "$ref": "#/components/schemas/ListImportState"
+          },
+          "done": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "unmatched": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ListUnmatched"
+            }
+          },
+          "duplicates": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "stopped": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ListImportStop"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "importedAt": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "source",
+          "state",
+          "done",
+          "total",
+          "unmatched",
+          "duplicates",
+          "stopped",
+          "importedAt"
+        ]
+      },
       "HealthResponse": {
         "type": "object",
         "properties": {
@@ -2858,6 +2984,16 @@
             "items": {
               "$ref": "#/components/schemas/ListItem"
             }
+          },
+          "import": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ListImport"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -2870,7 +3006,8 @@
           "counts",
           "covers",
           "shows",
-          "items"
+          "items",
+          "import"
         ]
       },
       "CreateListBody": {
@@ -2957,6 +3094,19 @@
             "minimum": 0
           }
         }
+      },
+      "ImportListBody": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          }
+        },
+        "required": [
+          "from"
+        ]
       }
     },
     "parameters": {}
@@ -6695,6 +6845,139 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Queue"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request does not parse, or was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Without the role this route needs, or sent from another site.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/lists/import": {
+      "post": {
+        "summary": "Import a public Spotify playlist as a music list of yours, in its order",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "operationId": "importList",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportListBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The list, made at once with the playlist's name and its import `reading`; its songs fill in, in Spotify's order, as each is found on YouTube Music, one import at a time across the server. Importing a playlist you imported before replaces that list's songs, keeping its id and name. 400 `not_a_spotify_playlist`, 404 `playlist_not_found` for a playlist gone or private, 409 `importing` while your import of it runs, `medium_unavailable` while YouTube Music streaming is off, 503 `spotify_unavailable`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request does not parse, or was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Without the role this route needs, or sent from another site.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/lists/{id}/import": {
+      "post": {
+        "summary": "Import a list again from its Spotify playlist",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "operationId": "reimportList",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The list, its import `reading` again: its songs are replaced by the playlist's as it is now, in its order, and it keeps its id and name. 404 for a list not yours or not imported, 409 `importing` while its import runs, `medium_unavailable` while YouTube Music streaming is off.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListDetail"
                 }
               }
             }
