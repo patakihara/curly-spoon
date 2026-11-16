@@ -167,6 +167,17 @@ export class SongCatalogue {
     }
   }
 
+  /**
+   * The songs this search finds, waiting as long as YouTube Music takes, its failure thrown: for
+   * an import, which outlives any request and must tell a failure from no rows.
+   */
+  async lookUp(q: string): Promise<YtSong[]> {
+    const key = searchFold(q);
+    const kept = this.kept.get(key);
+    if (kept !== undefined && this.deps.now() - kept.at < KEPT_MS) return kept.songs;
+    return this.asked(key, q);
+  }
+
   /** One upstream ask per search at a time. A late answer is still kept for the next one. */
   private asked(key: string, q: string): Promise<YtSong[]> {
     const running = this.running.get(key);

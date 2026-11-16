@@ -3,7 +3,8 @@
  * playlist (All Out 80s, 150 tracks) read from its recorded Spotify answers, each track searched in
  * its recorded YouTube Music answers, both on fake clocks so the 1 s and 2 s gaps take no time.
  */
-import { readdirSync, readFileSync } from 'node:fs';
+import { mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ListDetail, type MediaRef } from '@auralis/schema';
@@ -20,6 +21,8 @@ import {
 import { SpotifyError, type SpotifyEntry } from './adapters/spotify/client.js';
 import type { YtSong } from './adapters/ytmusic/client.js';
 import type { SpotifyReader } from './lists/import/job.js';
+import { type SongSource } from './music/catalogue.js';
+import { Music } from './music/index.js';
 import { resolveEntries } from './music/import/resolve.js';
 import { openDatabase, type Db } from './store/connection.js';
 
@@ -344,3 +347,86 @@ describe('[M3.spotify] importing a public Spotify playlist', { timeout: 30_000 }
     expect(list.import).toBeNull();
   });
 });
+
+/** YouTube Music's own search as the server wires it: the import given no search of its own. */
+describe(
+  '[M3.spotify] an import searching through YouTube Music’s song search',
+  { timeout: 30_000 },
+  () => {
+    const dirs: string[] = [];
+    afterEach(() => {
+      for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true });
+    });
+
+    /** The server with `music` built over `client`, its search given up after `limitMs`. */
+    async function wired(client: SongSource, limitMs: number) {
+      const dataDir = mkdtempSync(join(tmpdir(), 'auralis-list-imports-'));
+      dirs.push(dataDir);
+      const music = new Music({
+        db,
+        log: { warn: () => undefined, error: () => undefined },
+        now: () => 1_000,
+        dataDir,
+        capBytes: 1024,
+        imagePath: '/opt/yt-dlp/2026.10.26/yt-dlp',
+        streamFetch: () => Promise.reject(new Error('no stream host')),
+        canary: async () => ({ passed: false, reason: 'unavailable', ms: 1 }),
+        client,
+        searchLimitMs: limitMs,
+      });
+      music.prepare();
+      const u = upstreams();
+      const s = await listsServer(db, {
+        music,
+        spotifyImport: { spotify: u.options.spotify, clock: u.options.clock },
+      });
+      apps.push(s.app);
+      return { ...s, u };
+    }
+
+    it('stops as medium_unavailable when YouTube Music fails, keeping no track as unmatched', async () => {
+      const yt = replayedYtMusic(ytRecordings);
+      let failing = true;
+      const client: SongSource = {
+        search: async (q) => {
+          if (failing) throw new Error('YouTube Music answered 503');
+          return yt.search(q);
+        },
+        radio: async () => [],
+      };
+      const s = await wired(client, 1_000);
+      const { id } = s.ok(await s.call('POST', '/lists/import', { from: LINK }), ListDetail);
+      const stopped = await finished(s, id);
+      expect(stopped.import).toMatchObject({ state: 'stopped', stopped: 'medium_unavailable' });
+      expect(stopped.import!.unmatched).toEqual([]);
+      expect(db.prepare('SELECT COUNT(*) AS n FROM spotify_matches').get()).toEqual({ n: 0 });
+
+      failing = false;
+      s.ok(await s.call('POST', `/lists/${id}/import`), ListDetail);
+      const list = await finished(s, id);
+      expect(list.import).toMatchObject({ state: 'done', stopped: null });
+      expect(s.refs(list.items)).toEqual(want.songs);
+    });
+
+    it('waits for a slow answer past the search route’s limit, one search at a time', async () => {
+      const yt = replayedYtMusic(ytRecordings);
+      let asking = 0;
+      let most = 0;
+      const client: SongSource = {
+        search: async (q) => {
+          most = Math.max(most, ++asking);
+          await new Promise((resolve) => setTimeout(resolve, 3));
+          asking--;
+          return yt.search(q);
+        },
+        radio: async () => [],
+      };
+      const s = await wired(client, 1);
+      const { id } = s.ok(await s.call('POST', '/lists/import', { from: LINK }), ListDetail);
+      const list = await finished(s, id);
+      expect(list.import).toMatchObject({ state: 'done' });
+      expect(s.refs(list.items)).toEqual(want.songs);
+      expect(most).toBe(1);
+    });
+  },
+);

@@ -299,6 +299,15 @@ export class Music {
   }
 
   /**
+   * The songs an import's search finds, waiting for YouTube Music's answer however long it takes.
+   * Its failure is thrown, and so is `StreamingUnavailable` while streaming is unavailable.
+   */
+  async importSearch(q: string): Promise<YtSong[]> {
+    if (this.catalogue === null || !this.state.available) throw new StreamingUnavailable();
+    return this.catalogue.lookUp(q);
+  }
+
+  /**
    * Readies a search's top song rows for their tap, without holding up its answer: the first
    * `ROWS_RESOLVED_AHEAD` resolved through the direct call alone, never a process, and the first
    * row's first chunk fetched. A newer search's first row stops this device's last chunk fetch, and

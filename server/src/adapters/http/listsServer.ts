@@ -164,6 +164,7 @@ export async function listsServer(
     abs?: Recording[];
     household?: boolean;
     spotifyImport?: BuildAppOptions['spotifyImport'];
+    music?: BuildAppOptions['music'];
   } = {},
 ) {
   const clock = { now: options.now ?? SEPT_15 };
@@ -230,6 +231,7 @@ export async function listsServer(
     logger: { stream: { write: (line) => logs.push(JSON.parse(line) as { msg?: string }) } },
     now: () => clock.now,
     ...(options.spotifyImport === undefined ? {} : { spotifyImport: options.spotifyImport }),
+    ...(options.music === undefined ? {} : { music: options.music }),
     upstreams: {
       key: KEY,
       config: { absUrl: UPSTREAM, jellyfinUrl: UPSTREAM },

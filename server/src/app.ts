@@ -161,8 +161,7 @@ function listImports(options: BuildAppOptions, app: FastifyInstance): ListImport
   const given = options.spotifyImport ?? null;
   const music = options.music ?? null;
   if (given === null) return null;
-  const search =
-    given.search ?? (music === null ? null : (q: string) => music.searchSongs(q, NEVER));
+  const search = given.search ?? (music === null ? null : (q: string) => music.importSearch(q));
   if (search === null) return null;
   const available = given.available ?? (() => music?.radio.available() ?? false);
   const job = new ImportJob({
@@ -179,9 +178,6 @@ function listImports(options: BuildAppOptions, app: FastifyInstance): ListImport
   app.addHook('onClose', () => job.stop());
   return { job, spotify: given.spotify, available };
 }
-
-/** An import's search is never given up: the job outlives any request. */
-const NEVER = new AbortController().signal;
 
 export async function buildApp(options: BuildAppOptions): Promise<FastifyInstance> {
   const { db } = options;
