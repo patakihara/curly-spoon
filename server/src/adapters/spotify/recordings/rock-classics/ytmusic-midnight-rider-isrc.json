@@ -1,0 +1,514 @@
+{
+  "upstream": "ytmusic",
+  "upstreamVersion": "InnerTube WEB_REMIX, unversioned",
+  "call": "ytmusic-midnight-rider-isrc",
+  "request": {
+    "method": "POST",
+    "path": "/youtubei/v1/search",
+    "query": {
+      "prettyPrint": "false"
+    },
+    "headers": {
+      "accept": "application/json",
+      "content-type": "application/json"
+    },
+    "body": {
+      "json": {
+        "context": {
+          "client": {
+            "clientName": "WEB_REMIX",
+            "clientVersion": "1.20261116.01.00",
+            "hl": "en",
+            "gl": "FI"
+          }
+        },
+        "query": "USPR37030030",
+        "params": "EgWKAQIIAWoKEAkQBRAKEAMQBA=="
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=UTF-8"
+    },
+    "body": {
+      "json": {
+        "contents": {
+          "tabbedSearchResultsRenderer": {
+            "tabs": [
+              {
+                "tabRenderer": {
+                  "content": {
+                    "sectionListRenderer": {
+                      "contents": [
+                        {
+                          "musicShelfRenderer": {
+                            "contents": [
+                              {
+                                "musicResponsiveListItemRenderer": {
+                                  "flexColumns": [
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "Midnight Rider",
+                                              "navigationEndpoint": {
+                                                "watchEndpoint": {
+                                                  "videoId": "gd84Z7ccBbA",
+                                                  "watchEndpointMusicSupportedConfigs": {
+                                                    "watchEndpointMusicConfig": {
+                                                      "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "The Allman Brothers Band",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "Best Of Classic Rock",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "2:57"
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    }
+                                  ],
+                                  "playlistItemData": {
+                                    "videoId": "gd84Z7ccBbA"
+                                  },
+                                  "thumbnail": {
+                                    "musicThumbnailRenderer": {
+                                      "thumbnail": {
+                                        "thumbnails": [
+                                          {
+                                            "url": "https://yt3.googleusercontent.com/Wuu1WT0mXC4ydlguQIUoykBPjYtG6LHHuxOFjPSazxactP0DwN2mXDb2uMTJJwIElBvd73R-OnuE20mqWQ=w120-h120-l90-rj",
+                                            "width": 120
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "musicResponsiveListItemRenderer": {
+                                  "flexColumns": [
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "Midnight Rider",
+                                              "navigationEndpoint": {
+                                                "watchEndpoint": {
+                                                  "videoId": "Z8zk7XKyoE8",
+                                                  "watchEndpointMusicSupportedConfigs": {
+                                                    "watchEndpointMusicConfig": {
+                                                      "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "The Allman Brothers Band",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "A Decade Of Hits 1969-1979",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "3:00"
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    }
+                                  ],
+                                  "playlistItemData": {
+                                    "videoId": "Z8zk7XKyoE8"
+                                  },
+                                  "thumbnail": {
+                                    "musicThumbnailRenderer": {
+                                      "thumbnail": {
+                                        "thumbnails": [
+                                          {
+                                            "url": "https://yt3.googleusercontent.com/SnSghvhrWtmSyByhXP9l3q-DfEtnF1BuUMxFysNp5hBKyl0mCpg-nVQTvuYWIA9J_lr1JZVuzPajwXNz=w120-h120-l90-rj",
+                                            "width": 120
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "musicResponsiveListItemRenderer": {
+                                  "flexColumns": [
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "Varjoissa Kuolleet Elävät",
+                                              "navigationEndpoint": {
+                                                "watchEndpoint": {
+                                                  "videoId": "jzDo61LBhH8",
+                                                  "watchEndpointMusicSupportedConfigs": {
+                                                    "watchEndpointMusicConfig": {
+                                                      "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "MURSKAUS"
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "Murskaus",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "10:41"
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    }
+                                  ],
+                                  "playlistItemData": {
+                                    "videoId": "jzDo61LBhH8"
+                                  },
+                                  "thumbnail": {
+                                    "musicThumbnailRenderer": {
+                                      "thumbnail": {
+                                        "thumbnails": [
+                                          {
+                                            "url": "https://yt3.googleusercontent.com/GDM616TuaYmVCeft_w6RRCIsS9tyXg1A8X3V1a2mVKNR7gYE3T3M5qn_m9ye_8q2kJZ0tHKI7nJRgemS=w120-h120-l90-rj",
+                                            "width": 120
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "musicResponsiveListItemRenderer": {
+                                  "flexColumns": [
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "Bollywood Dj Non Stop Remix(Remix By Dj Jitesh,Psynth)",
+                                              "navigationEndpoint": {
+                                                "watchEndpoint": {
+                                                  "videoId": "68RLvhxk_4g",
+                                                  "watchEndpointMusicSupportedConfigs": {
+                                                    "watchEndpointMusicConfig": {
+                                                      "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "Bappi Lahiri",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": ", "
+                                            },
+                                            {
+                                              "text": "K.K.",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": ", "
+                                            },
+                                            {
+                                              "text": "Anushka Manchanda",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " & "
+                                            },
+                                            {
+                                              "text": "Kamal Khan",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "Bollywood Dj",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "50:23"
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    }
+                                  ],
+                                  "playlistItemData": {
+                                    "videoId": "68RLvhxk_4g"
+                                  },
+                                  "thumbnail": {
+                                    "musicThumbnailRenderer": {
+                                      "thumbnail": {
+                                        "thumbnails": [
+                                          {
+                                            "url": "https://yt3.googleusercontent.com/h3YXdjVdpzXidZdPy9COKXeGdtLVAEd1iMSMVLKvCKfJ-F6VDTGyCqi96fFXmNZR-h8-8VlhM0TnowBU=w120-h120-l90-rj",
+                                            "width": 120
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "musicResponsiveListItemRenderer": {
+                                  "flexColumns": [
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "Jai Shree Ram (From \"Ram Setu\")",
+                                              "navigationEndpoint": {
+                                                "watchEndpoint": {
+                                                  "videoId": "vUg8ytG7wqQ",
+                                                  "watchEndpointMusicSupportedConfigs": {
+                                                    "watchEndpointMusicConfig": {
+                                                      "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "Vikram Montrose",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "Jai Shree Ram (From \"Ram Setu\")",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "4:00"
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    }
+                                  ],
+                                  "playlistItemData": {
+                                    "videoId": "vUg8ytG7wqQ"
+                                  },
+                                  "thumbnail": {
+                                    "musicThumbnailRenderer": {
+                                      "thumbnail": {
+                                        "thumbnails": [
+                                          {
+                                            "url": "https://yt3.googleusercontent.com/OJoDpEfinoprRmYTBC-xnsPHQk0rW7midsmdg0fI4oze4fWJjDOccfAhjMFjhZpfSRl-NS1w2XnfJ72l=w120-h120-l90-rj",
+                                            "width": 120
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "trimmed": "Trimmed by the recorder: the shelf of songs cut to the rows an import weighs, each row to the fields Auralis parses and its largest art; everything else, the visitor id among it, taken out."
+      }
+    }
+  }
+}

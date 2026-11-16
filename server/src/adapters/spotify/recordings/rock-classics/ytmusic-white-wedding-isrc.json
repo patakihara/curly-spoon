@@ -1,0 +1,478 @@
+{
+  "upstream": "ytmusic",
+  "upstreamVersion": "InnerTube WEB_REMIX, unversioned",
+  "call": "ytmusic-white-wedding-isrc",
+  "request": {
+    "method": "POST",
+    "path": "/youtubei/v1/search",
+    "query": {
+      "prettyPrint": "false"
+    },
+    "headers": {
+      "accept": "application/json",
+      "content-type": "application/json"
+    },
+    "body": {
+      "json": {
+        "context": {
+          "client": {
+            "clientName": "WEB_REMIX",
+            "clientVersion": "1.20261116.01.00",
+            "hl": "en",
+            "gl": "FI"
+          }
+        },
+        "query": "USCH30100008",
+        "params": "EgWKAQIIAWoKEAkQBRAKEAMQBA=="
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=UTF-8"
+    },
+    "body": {
+      "json": {
+        "contents": {
+          "tabbedSearchResultsRenderer": {
+            "tabs": [
+              {
+                "tabRenderer": {
+                  "content": {
+                    "sectionListRenderer": {
+                      "contents": [
+                        {
+                          "musicShelfRenderer": {
+                            "contents": [
+                              {
+                                "musicResponsiveListItemRenderer": {
+                                  "flexColumns": [
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "White Wedding (Pt. 1)",
+                                              "navigationEndpoint": {
+                                                "watchEndpoint": {
+                                                  "videoId": "o5oTrvdNoP4",
+                                                  "watchEndpointMusicSupportedConfigs": {
+                                                    "watchEndpointMusicConfig": {
+                                                      "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "Billy Idol",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "Billy Idol",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "4:13"
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    }
+                                  ],
+                                  "playlistItemData": {
+                                    "videoId": "o5oTrvdNoP4"
+                                  },
+                                  "thumbnail": {
+                                    "musicThumbnailRenderer": {
+                                      "thumbnail": {
+                                        "thumbnails": [
+                                          {
+                                            "url": "https://yt3.googleusercontent.com/DuA7x4ZyelpOIYNF3BCLvx-M3YU-HWUiEWmi30yyYC86HILkXa0rX0MTcNk1kOItjtNXDULwe0u1vHG6=w120-h120-l90-rj",
+                                            "width": 120
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "musicResponsiveListItemRenderer": {
+                                  "flexColumns": [
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "28330",
+                                              "navigationEndpoint": {
+                                                "watchEndpoint": {
+                                                  "videoId": "Lx-JlOq0qzE",
+                                                  "watchEndpointMusicSupportedConfigs": {
+                                                    "watchEndpointMusicConfig": {
+                                                      "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "M//O",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "28330",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "3:00"
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    }
+                                  ],
+                                  "playlistItemData": {
+                                    "videoId": "Lx-JlOq0qzE"
+                                  },
+                                  "thumbnail": {
+                                    "musicThumbnailRenderer": {
+                                      "thumbnail": {
+                                        "thumbnails": [
+                                          {
+                                            "url": "https://yt3.googleusercontent.com/LY-UAlk5inFPSt86St6cKMfTFq9PLpOQq9yOZolEjPIt5miiFwM06QHEskBNOROUTDKRO7oPOgj9t18=w120-h120-l90-rj",
+                                            "width": 120
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "musicResponsiveListItemRenderer": {
+                                  "flexColumns": [
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "00/380.10",
+                                              "navigationEndpoint": {
+                                                "watchEndpoint": {
+                                                  "videoId": "C6-ZPzGR9Co",
+                                                  "watchEndpointMusicSupportedConfigs": {
+                                                    "watchEndpointMusicConfig": {
+                                                      "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "Conrad Schnitzler",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "00/346+00/380: Mixes 1",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "4:40"
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    }
+                                  ],
+                                  "playlistItemData": {
+                                    "videoId": "C6-ZPzGR9Co"
+                                  },
+                                  "thumbnail": {
+                                    "musicThumbnailRenderer": {
+                                      "thumbnail": {
+                                        "thumbnails": [
+                                          {
+                                            "url": "https://yt3.googleusercontent.com/ZYSBHYXkjz8Jy-Mf1vKU4rd4OR_A7bz6STLYUEGH7Z2bUhLizz56jvxerSaj95KtM8QGfdRN0rZXYOQ=w120-h120-l90-rj",
+                                            "width": 120
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "musicResponsiveListItemRenderer": {
+                                  "flexColumns": [
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "WHSPR-3B899D36",
+                                              "navigationEndpoint": {
+                                                "watchEndpoint": {
+                                                  "videoId": "fF-u7YcGp_s",
+                                                  "watchEndpointMusicSupportedConfigs": {
+                                                    "watchEndpointMusicConfig": {
+                                                      "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "Jesse Schilling",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "Whispers in the Attic Volume One",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "5:01"
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    }
+                                  ],
+                                  "playlistItemData": {
+                                    "videoId": "fF-u7YcGp_s"
+                                  },
+                                  "thumbnail": {
+                                    "musicThumbnailRenderer": {
+                                      "thumbnail": {
+                                        "thumbnails": [
+                                          {
+                                            "url": "https://yt3.googleusercontent.com/qlg_JuXGz2kHDWHuPBViCBrPpcd2Gi5_OCValIRkH32vmj64_iiu4m_ACPuU679zXnmghyWM8V6nnSGl=w120-h120-l90-rj",
+                                            "width": 120
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "musicResponsiveListItemRenderer": {
+                                  "flexColumns": [
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "WHSPR-361D8AB0",
+                                              "navigationEndpoint": {
+                                                "watchEndpoint": {
+                                                  "videoId": "vm5hoM7LdVU",
+                                                  "watchEndpointMusicSupportedConfigs": {
+                                                    "watchEndpointMusicConfig": {
+                                                      "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "Jesse Schilling",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "Whispers in the Attic Volume Two",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "4:31"
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    }
+                                  ],
+                                  "playlistItemData": {
+                                    "videoId": "vm5hoM7LdVU"
+                                  },
+                                  "thumbnail": {
+                                    "musicThumbnailRenderer": {
+                                      "thumbnail": {
+                                        "thumbnails": [
+                                          {
+                                            "url": "https://yt3.googleusercontent.com/5eMjtvMrbBMkCChmyqUGMqpjeONapllfA4O5E62LGIv76tGcMOeh_MGbr_FRBKYfimRNWjV7IrUtqzWOEw=w120-h120-l90-rj",
+                                            "width": 120
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "trimmed": "Trimmed by the recorder: the shelf of songs cut to the rows an import weighs, each row to the fields Auralis parses and its largest art; everything else, the visitor id among it, taken out."
+      }
+    }
+  }
+}

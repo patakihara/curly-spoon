@@ -31,6 +31,8 @@ export function searchFold(text: string): string {
 const BRACKETED = /\s*[([{][^)\]}]*[)\]}]/g;
 /** A dash's edition: "Song - 2002 Remaster", "Song - Radio Edit". */
 const EDITION = /\s+-\s+.*(?:remaster|version|edit|mono|stereo|mix|live).*$/i;
+/** A dash's part number, which YouTube Music brackets: "White Wedding - Pt. 1", "Song - Part 2". */
+const PART = /\s+-\s+(?:pts?|parts?)\.?\s*\d.*$/i;
 /** An ellipsis, typed as three dots or one character, and the spaces around it. */
 const ELLIPSIS = /\s*(?:\.\.\.|…)\s*/g;
 /** A dash's soundtrack note: "Song - From "Top Gun"", "Song - Love Theme from the Motion Picture". */
@@ -45,14 +47,15 @@ export function plainTitle(title: string): string {
 }
 
 /**
- * A song's title for comparing: folded for search, its brackets, its dash's edition and its dash's
- * soundtrack note dropped, and an ellipsis always followed by one space.
+ * A song's title for comparing: folded for search, its brackets, its dash's edition, part number
+ * and soundtrack note dropped, and an ellipsis always followed by one space.
  */
 export function titleKey(title: string): string {
   return searchFold(title)
     .replace(BRACKETED, '')
     .replace(SOUNDTRACK, '')
     .replace(EDITION, '')
+    .replace(PART, '')
     .replace(ELLIPSIS, '... ')
     .trim();
 }

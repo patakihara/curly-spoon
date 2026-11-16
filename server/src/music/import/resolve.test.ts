@@ -5,6 +5,8 @@ import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 import { type Recording, recordingSchema } from '../../adapters/http/recording.js';
 import {
+  MISFIRE_PLAYLIST,
+  MISFIRE_TRACKS,
   RECORDED_PLAYLIST,
   replayedSpotify,
   replayedYtMusic,
@@ -295,5 +297,60 @@ describe('[M3.spotify/a] the match rules, on recorded rows', () => {
     const found = matchSpotifyTrack(track, wrong);
     expect(found.match).toBe(null);
     expect(found.match === null && found.near?.failed).toBe('length');
+  });
+});
+
+const misfireDir = join(adapters, 'spotify', 'recordings', 'rock-classics');
+const misfireRecordings = read(misfireDir);
+
+/** A Rock Classics track, from its recorded metadata, and its recorded name search's rows. */
+async function misfire(name: keyof typeof MISFIRE_TRACKS) {
+  const spotify = replayedSpotify(misfireRecordings);
+  await spotify.playlistHeader(MISFIRE_PLAYLIST);
+  const track = (await spotify.track(MISFIRE_TRACKS[name]))!;
+  const rows = await replayedYtMusic(misfireRecordings).search(nameQuery(track));
+  return { track, rows };
+}
+
+describe("[M3.spotify/a] Rock Classics' live misses, on recorded rows", () => {
+  it('[M3.spotify/a] "White Wedding - Pt. 1" is YouTube Music\'s "White Wedding (Pt. 1)"', async () => {
+    const { track, rows } = await misfire('white-wedding');
+    const found = matchSpotifyTrack(track, rows);
+    expect(found.match?.title).toBe('White Wedding (Pt. 1)');
+    expect(found.match?.artists).toEqual(['Billy Idol']);
+  });
+
+  it("[M3.spotify/a] a bracket's other name is the title when the title outside it finds nothing", async () => {
+    // Bang a Gong (Get It On): YouTube Music lists T. Rex's song only as "Get It On".
+    const { track, rows } = await misfire('bang-a-gong');
+    const found = matchSpotifyTrack(track, rows);
+    expect(found.match?.title).toBe('Get It On');
+    expect(found.match?.artists).toEqual(['T. Rex']);
+  });
+
+  it('[M3.spotify/a] an artist is the same with or without a leading "The"', async () => {
+    const { track, rows } = await misfire('midnight-rider');
+    expect(track.artists).toEqual(['Allman Brothers Band']);
+    const found = matchSpotifyTrack(track, rows);
+    expect(found.match?.artists).toEqual(['The Allman Brothers Band']);
+    expect(found.match?.title).toBe('Midnight Rider');
+  });
+
+  it('[M3.spotify/a] Hurricane stays unmatched: YouTube Music has no studio take by Bob Dylan', async () => {
+    const spotify = replayedSpotify(misfireRecordings);
+    await spotify.playlistHeader(MISFIRE_PLAYLIST);
+    const track = (await spotify.track(MISFIRE_TRACKS.hurricane))!;
+    const yt = replayedYtMusic(misfireRecordings);
+    const found = await resolveTrack(
+      {
+        db: openDatabase(':memory:'),
+        clock: { now: () => 1_000 },
+        track: async () => track,
+        search: (q) => yt.search(q),
+      },
+      MISFIRE_TRACKS.hurricane,
+      track,
+    );
+    expect(found.youtubeId).toBe(null);
   });
 });

@@ -1,0 +1,508 @@
+{
+  "upstream": "ytmusic",
+  "upstreamVersion": "InnerTube WEB_REMIX, unversioned",
+  "call": "ytmusic-hurricane",
+  "request": {
+    "method": "POST",
+    "path": "/youtubei/v1/search",
+    "query": {
+      "prettyPrint": "false"
+    },
+    "headers": {
+      "accept": "application/json",
+      "content-type": "application/json"
+    },
+    "body": {
+      "json": {
+        "context": {
+          "client": {
+            "clientName": "WEB_REMIX",
+            "clientVersion": "1.20261116.01.00",
+            "hl": "en",
+            "gl": "FI"
+          }
+        },
+        "query": "Hurricane Bob Dylan",
+        "params": "EgWKAQIIAWoKEAkQBRAKEAMQBA=="
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=UTF-8"
+    },
+    "body": {
+      "json": {
+        "contents": {
+          "tabbedSearchResultsRenderer": {
+            "tabs": [
+              {
+                "tabRenderer": {
+                  "content": {
+                    "sectionListRenderer": {
+                      "contents": [
+                        {
+                          "musicShelfRenderer": {
+                            "contents": [
+                              {
+                                "musicResponsiveListItemRenderer": {
+                                  "flexColumns": [
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "Hurricane / All Along the Watchtower / Idiot Wind",
+                                              "navigationEndpoint": {
+                                                "watchEndpoint": {
+                                                  "videoId": "iKeeHkAxVkU",
+                                                  "watchEndpointMusicSupportedConfigs": {
+                                                    "watchEndpointMusicConfig": {
+                                                      "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "Arinzé Kene",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": ", "
+                                            },
+                                            {
+                                              "text": "Sheila Atim",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " & "
+                                            },
+                                            {
+                                              "text": "Original London Cast of Girl from the North Country",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "Girl from the North Country (Original London Cast Recording)",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "5:32"
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    }
+                                  ],
+                                  "playlistItemData": {
+                                    "videoId": "iKeeHkAxVkU"
+                                  },
+                                  "thumbnail": {
+                                    "musicThumbnailRenderer": {
+                                      "thumbnail": {
+                                        "thumbnails": [
+                                          {
+                                            "url": "https://yt3.googleusercontent.com/LbI0zjBcyyll2NieAc64kO1Bt4jCqA_YWUbQNKlMQRF1YUNOgbHSdNh6oS3zvLqryUn9YZx3bXZdnQOP=w120-h120-l90-rj",
+                                            "width": 120
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "musicResponsiveListItemRenderer": {
+                                  "flexColumns": [
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "Hurricane",
+                                              "navigationEndpoint": {
+                                                "watchEndpoint": {
+                                                  "videoId": "o8466AB1qaU",
+                                                  "watchEndpointMusicSupportedConfigs": {
+                                                    "watchEndpointMusicConfig": {
+                                                      "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "Laine Hardy",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "In the Bayou",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "3:47"
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    }
+                                  ],
+                                  "playlistItemData": {
+                                    "videoId": "o8466AB1qaU"
+                                  },
+                                  "thumbnail": {
+                                    "musicThumbnailRenderer": {
+                                      "thumbnail": {
+                                        "thumbnails": [
+                                          {
+                                            "url": "https://yt3.googleusercontent.com/_7WdJ-enLEv7VRaRSLJsp-octhfJHf4kFWPfuy5ff1OQxLlt4jQAYfhpXjAtC4jHW2Zt_f0jjeNvQEA=w120-h120-l90-rj",
+                                            "width": 120
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "musicResponsiveListItemRenderer": {
+                                  "flexColumns": [
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "A Hard Rain's A-Gonna Fall",
+                                              "navigationEndpoint": {
+                                                "watchEndpoint": {
+                                                  "videoId": "MGeP2GDlGyo",
+                                                  "watchEndpointMusicSupportedConfigs": {
+                                                    "watchEndpointMusicConfig": {
+                                                      "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "Bob Dylan",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "The Freewheelin' Bob Dylan",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "6:53"
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    }
+                                  ],
+                                  "playlistItemData": {
+                                    "videoId": "MGeP2GDlGyo"
+                                  },
+                                  "thumbnail": {
+                                    "musicThumbnailRenderer": {
+                                      "thumbnail": {
+                                        "thumbnails": [
+                                          {
+                                            "url": "https://yt3.googleusercontent.com/fGFzpmso362w36ndYkLaSwALZg9jIQbn21qkf75uIvrVf_v0kFDwSoZOtrbin2kHfDQvkCi9lKJ-O7k=w120-h120-l90-rj",
+                                            "width": 120
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "musicResponsiveListItemRenderer": {
+                                  "flexColumns": [
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "ハリケーン - HURRICANE",
+                                              "navigationEndpoint": {
+                                                "watchEndpoint": {
+                                                  "videoId": "Jc8fLsZIjPQ",
+                                                  "watchEndpointMusicSupportedConfigs": {
+                                                    "watchEndpointMusicConfig": {
+                                                      "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "Koji Wakui",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "Wakui Sings Dylan",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "5:35"
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    }
+                                  ],
+                                  "playlistItemData": {
+                                    "videoId": "Jc8fLsZIjPQ"
+                                  },
+                                  "thumbnail": {
+                                    "musicThumbnailRenderer": {
+                                      "thumbnail": {
+                                        "thumbnails": [
+                                          {
+                                            "url": "https://yt3.googleusercontent.com/ubPIoHvlIae6gI15f7jZTN-gC_OgvrTHIaSEZjgNKrulOnDH581gqfQybo8kSSNFfeXbgyg5nl9YP-WZAQ=w120-h120-l90-rj",
+                                            "width": 120
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "musicResponsiveListItemRenderer": {
+                                  "flexColumns": [
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "Hurricane (furacão) (feat. Miguel Paiva & Sandoval Neto)",
+                                              "navigationEndpoint": {
+                                                "watchEndpoint": {
+                                                  "videoId": "aQfxeAw-U8c",
+                                                  "watchEndpointMusicSupportedConfigs": {
+                                                    "watchEndpointMusicConfig": {
+                                                      "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "Shakemakers",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "Os Fabulosos Shakemakers do Brasil - Rock n' Roll é Bom P'ra Mim",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "5:23"
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    }
+                                  ],
+                                  "playlistItemData": {
+                                    "videoId": "aQfxeAw-U8c"
+                                  },
+                                  "thumbnail": {
+                                    "musicThumbnailRenderer": {
+                                      "thumbnail": {
+                                        "thumbnails": [
+                                          {
+                                            "url": "https://yt3.googleusercontent.com/tO-Rx8v4s92L7LMX6fvuepWDnazpztb1r6xlepytz0ZIB1xhvb2jHIidIzHGo4hwoT4T1UdfzVAQxeVS=w120-h120-l90-rj",
+                                            "width": 120
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "trimmed": "Trimmed by the recorder: the shelf of songs cut to the rows an import weighs, each row to the fields Auralis parses and its largest art; everything else, the visitor id among it, taken out."
+      }
+    }
+  }
+}

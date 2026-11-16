@@ -2,8 +2,10 @@
  * Which YouTube Music song a Spotify track is, from the rows of a search. YouTube Music names no
  * ISRC, so a row is the track when all three rules hold:
  *
- * 1. **title**: the row's `titleKey` is the track's;
- * 2. **artist**: one of the row's artists folds (`foldName`) to one of the track's, or, for names in
+ * 1. **title**: the row's `titleKey` is the track's, or, failing that, a bracket's other name in the
+ *    track's title (`Bang a Gong (Get It On)`, listed as `Get It On`);
+ * 2. **artist**: one of the row's artists folds (`foldName`, a leading `The` dropped) to one of the
+ *    track's, or, for names in
  *    another script (`米津玄師`, `Kenshi Yonezu`), the album's `titleKey` is the track's and the
  *    length is within 2 s;
  * 3. **length**: within `MATCH_LENGTH_MS` (4 s, M3.keep's tolerance); or, when the row's first
@@ -30,6 +32,11 @@ export const REMASTER_LENGTH_SHARE = 0.08;
 /** Words in a title that name another take of the song than its remaster. */
 const TAKE =
   /\b(?:live|version|mix|remix|edit|acoustic|demo|instrumental|re-?recorded|unplugged)\b/g;
+/** Words in a bracket that make it a note on the take, not another name of the song. */
+const NOTE =
+  /\b(?:feat|ft|with|from|remaster(?:ed)?|live|version|mix|remix|edit|acoustic|demo|instrumental|mono|stereo|pts?|parts?|soundtrack)\b|\d{4}/;
+/** A bracket's words: "(Get It On)". */
+const BRACKET = /[([{]([^)\]}]*)[)\]}]/g;
 /** How many rows of one search answer are weighed (rows 2 to 4 were the alternatives, live). */
 export const MATCH_ROWS = 5;
 
@@ -53,6 +60,17 @@ export function nameQuery(track: Pick<SpotifyTrack, 'title' | 'artists'>): strin
   return [plainTitle(track.title), track.artists[0] ?? ''].join(' ').trim();
 }
 
+/** An artist's name for comparing: folded, a leading "The" dropped. */
+const artistKey = (name: string) => foldName(name).replace(/^the\s+/, '');
+
+/** The track's title, then each bracket in it that names the song another way. */
+function titleKeys(title: string): string[] {
+  const others = [...title.matchAll(BRACKET)]
+    .map((m) => m[1]!.trim())
+    .filter((inside) => inside !== '' && !NOTE.test(searchFold(inside)));
+  return [titleKey(title), ...others.map(titleKey)];
+}
+
 const lengthGap = (track: SpotifyTrack, row: YtSong) =>
   Math.abs(row.duration * 1000 - track.durationMs);
 
@@ -68,7 +86,7 @@ const takes = (title: string) => new Set(searchFold(title).match(TAKE) ?? []);
 /** A remaster: the same first artist, and no take named in the row's title but the track's own. */
 function looseLength(track: SpotifyTrack, row: YtSong): boolean {
   const [ours, theirs] = [track.artists[0], row.artists[0]];
-  if (ours === undefined || theirs === undefined || foldName(ours) !== foldName(theirs))
+  if (ours === undefined || theirs === undefined || artistKey(ours) !== artistKey(theirs))
     return false;
   const named = takes(track.title);
   if ([...takes(row.title)].some((take) => !named.has(take))) return false;
@@ -79,10 +97,10 @@ function looseLength(track: SpotifyTrack, row: YtSong): boolean {
 
 /** The first rule the row fails, or null when it is the track. */
 export function failedRule(track: SpotifyTrack, row: YtSong): MatchRule | null {
-  if (titleKey(row.title) !== titleKey(track.title)) return 'title';
-  const ours = new Set(track.artists.map(foldName));
+  if (!titleKeys(track.title).includes(titleKey(row.title))) return 'title';
+  const ours = new Set(track.artists.map(artistKey));
   const artist =
-    row.artists.some((name) => ours.has(foldName(name))) ||
+    row.artists.some((name) => ours.has(artistKey(name))) ||
     (sameAlbum(track, row) && lengthGap(track, row) <= SAME_ALBUM_LENGTH_MS);
   if (!artist) return 'artist';
   if (lengthGap(track, row) > MATCH_LENGTH_MS && !looseLength(track, row)) return 'length';

@@ -1,0 +1,478 @@
+{
+  "upstream": "ytmusic",
+  "upstreamVersion": "InnerTube WEB_REMIX, unversioned",
+  "call": "ytmusic-white-wedding",
+  "request": {
+    "method": "POST",
+    "path": "/youtubei/v1/search",
+    "query": {
+      "prettyPrint": "false"
+    },
+    "headers": {
+      "accept": "application/json",
+      "content-type": "application/json"
+    },
+    "body": {
+      "json": {
+        "context": {
+          "client": {
+            "clientName": "WEB_REMIX",
+            "clientVersion": "1.20261116.01.00",
+            "hl": "en",
+            "gl": "FI"
+          }
+        },
+        "query": "White Wedding - Pt. 1 Billy Idol",
+        "params": "EgWKAQIIAWoKEAkQBRAKEAMQBA=="
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=UTF-8"
+    },
+    "body": {
+      "json": {
+        "contents": {
+          "tabbedSearchResultsRenderer": {
+            "tabs": [
+              {
+                "tabRenderer": {
+                  "content": {
+                    "sectionListRenderer": {
+                      "contents": [
+                        {
+                          "musicShelfRenderer": {
+                            "contents": [
+                              {
+                                "musicResponsiveListItemRenderer": {
+                                  "flexColumns": [
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "White Wedding (Pt. 1)",
+                                              "navigationEndpoint": {
+                                                "watchEndpoint": {
+                                                  "videoId": "o5oTrvdNoP4",
+                                                  "watchEndpointMusicSupportedConfigs": {
+                                                    "watchEndpointMusicConfig": {
+                                                      "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "Billy Idol",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "Billy Idol",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "4:13"
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    }
+                                  ],
+                                  "playlistItemData": {
+                                    "videoId": "o5oTrvdNoP4"
+                                  },
+                                  "thumbnail": {
+                                    "musicThumbnailRenderer": {
+                                      "thumbnail": {
+                                        "thumbnails": [
+                                          {
+                                            "url": "https://yt3.googleusercontent.com/DuA7x4ZyelpOIYNF3BCLvx-M3YU-HWUiEWmi30yyYC86HILkXa0rX0MTcNk1kOItjtNXDULwe0u1vHG6=w120-h120-l90-rj",
+                                            "width": 120
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "musicResponsiveListItemRenderer": {
+                                  "flexColumns": [
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "White Wedding – Part 1",
+                                              "navigationEndpoint": {
+                                                "watchEndpoint": {
+                                                  "videoId": "T0nsabCHj14",
+                                                  "watchEndpointMusicSupportedConfigs": {
+                                                    "watchEndpointMusicConfig": {
+                                                      "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "Billy Idol",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "White Wedding",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "3:35"
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    }
+                                  ],
+                                  "playlistItemData": {
+                                    "videoId": "T0nsabCHj14"
+                                  },
+                                  "thumbnail": {
+                                    "musicThumbnailRenderer": {
+                                      "thumbnail": {
+                                        "thumbnails": [
+                                          {
+                                            "url": "https://yt3.googleusercontent.com/9Pe4Zam1v7n3ZWdc55biYYMA2Jm2-FMYBp36O0XQVV0C8lVbnH_E9vMwFPYSGpRv3mxgqUKsIc71fek=w120-h120-l90-rj",
+                                            "width": 120
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "musicResponsiveListItemRenderer": {
+                                  "flexColumns": [
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "White Wedding (Pt. 1 / Remastered 2002)",
+                                              "navigationEndpoint": {
+                                                "watchEndpoint": {
+                                                  "videoId": "EMEkkZmIBEI",
+                                                  "watchEndpointMusicSupportedConfigs": {
+                                                    "watchEndpointMusicConfig": {
+                                                      "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "Billy Idol",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "Greatest Hits",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "4:13"
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    }
+                                  ],
+                                  "playlistItemData": {
+                                    "videoId": "EMEkkZmIBEI"
+                                  },
+                                  "thumbnail": {
+                                    "musicThumbnailRenderer": {
+                                      "thumbnail": {
+                                        "thumbnails": [
+                                          {
+                                            "url": "https://yt3.googleusercontent.com/KE3lm0Zdh_jyhXgWfCqThcikZxJ7LCKxgLltIaknXKjYHtrnIAyhln12rwjnzm_237EJy2HCWQ1ancRW3g=w120-h120-l90-rj",
+                                            "width": 120
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "musicResponsiveListItemRenderer": {
+                                  "flexColumns": [
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "White Wedding (Pts. 1 & 2) (Shotgun Mix / Remastered 2001)",
+                                              "navigationEndpoint": {
+                                                "watchEndpoint": {
+                                                  "videoId": "fadsu8UC5nI",
+                                                  "watchEndpointMusicSupportedConfigs": {
+                                                    "watchEndpointMusicConfig": {
+                                                      "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "Billy Idol",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "Vital Idol",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "8:26"
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    }
+                                  ],
+                                  "playlistItemData": {
+                                    "videoId": "fadsu8UC5nI"
+                                  },
+                                  "thumbnail": {
+                                    "musicThumbnailRenderer": {
+                                      "thumbnail": {
+                                        "thumbnails": [
+                                          {
+                                            "url": "https://yt3.googleusercontent.com/eS1WcLieCM5OvwqWgP7HkmvRdhMeMXj3KQN43eK6WvnM5rfQ-qOjJIxjM6uMzXyOUkHSDGtncEJhZvJq=w120-h120-l90-rj",
+                                            "width": 120
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "musicResponsiveListItemRenderer": {
+                                  "flexColumns": [
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "White Wedding (Clubland Extended Remix)",
+                                              "navigationEndpoint": {
+                                                "watchEndpoint": {
+                                                  "videoId": "QSIKLRlZNXY",
+                                                  "watchEndpointMusicSupportedConfigs": {
+                                                    "watchEndpointMusicConfig": {
+                                                      "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "Billy Idol",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "Billy Idol (Expanded Edition)",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "12:39"
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    }
+                                  ],
+                                  "playlistItemData": {
+                                    "videoId": "QSIKLRlZNXY"
+                                  },
+                                  "thumbnail": {
+                                    "musicThumbnailRenderer": {
+                                      "thumbnail": {
+                                        "thumbnails": [
+                                          {
+                                            "url": "https://yt3.googleusercontent.com/5FsJ39qdmvSvDdSknBz312sbKQy6WJNpcwTyqRaxRdc-mK0bUYbitMlK4h6HN6J_dZX4wLK6VQ8SguNH=w120-h120-l90-rj",
+                                            "width": 120
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "trimmed": "Trimmed by the recorder: the shelf of songs cut to the rows an import weighs, each row to the fields Auralis parses and its largest art; everything else, the visitor id among it, taken out."
+      }
+    }
+  }
+}
