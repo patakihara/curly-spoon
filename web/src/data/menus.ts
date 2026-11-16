@@ -43,6 +43,7 @@ const NOUNS: Record<ListKind, string> = {
   listening: 'list',
   playlist: 'playlist',
   digest: 'digest',
+  music: 'playlist',
 };
 
 /** What a new list of each kind is called in a menu. */
@@ -50,6 +51,7 @@ const NEW: Record<ListKind, string> = {
   playlist: 'New playlist',
   listening: 'New listening list',
   digest: 'New digest',
+  music: 'New playlist',
 };
 
 /** List `list`'s own menu. */

@@ -23,18 +23,21 @@ const KINDS: Record<ListKind, string> = {
   listening: 'List',
   playlist: 'Playlist',
   digest: 'Digest',
+  music: 'Playlist',
 };
 
 const NOUNS: Record<ListItem['kind'], [string, string]> = {
   book: ['book', 'books'],
   show: ['show', 'shows'],
   episode: ['episode', 'episodes'],
+  song: ['song', 'songs'],
 };
 
 const counted = (n: number, [one, many]: [string, string]) => `${n} ${n === 1 ? one : many}`;
 
-/** A list's size: a listening list's by its books and shows, any other's in episodes. */
+/** A list's size: a listening list's by its books and shows, a music list's in songs, any other's in episodes. */
 function sizeOf(list: ListSummary): string {
+  if (list.kind === 'music') return counted(list.count, NOUNS.song);
   if (list.kind !== 'listening') return counted(list.count, NOUNS.episode);
   const kinds = (['book', 'show', 'episode'] as const).filter((kind) => list.counts[kind] > 0);
   if (kinds.length === 0) return counted(0, ['item', 'items']);

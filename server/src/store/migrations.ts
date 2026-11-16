@@ -1093,6 +1093,71 @@ export const migrations: readonly Migration[] = [
       `);
     },
   },
+  {
+    id: 35,
+    name: 'music_lists',
+    up: (db) => {
+      // A list may be a music list, of songs: a streamed song by its YouTube Music id, or a
+      // Jellyfin track. SQLite changes a check only by rebuilding the table, and dropping lists
+      // empties what refers to it (foreign keys stay on in a migration's transaction), so the
+      // entries and each session's digest are carried across.
+      db.exec(`
+        CREATE TEMP TABLE keep_list_items AS SELECT * FROM list_items;
+        CREATE TEMP TABLE keep_spoken_digests AS
+          SELECT device_id, spoken_digest FROM listening_sessions WHERE spoken_digest IS NOT NULL;
+        DROP TABLE list_items;
+
+        CREATE TABLE lists_rebuilt (
+          id         TEXT PRIMARY KEY,
+          user_id    TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          kind       TEXT NOT NULL CHECK (kind IN ('listening', 'playlist', 'digest', 'music')),
+          name       TEXT NOT NULL,
+          all_shows  INTEGER NOT NULL DEFAULT 0 CHECK (all_shows IN (0, 1)),
+          play_order TEXT CHECK (play_order IN ('oldest', 'newest')),
+          created_at INTEGER NOT NULL,
+          updated_at INTEGER NOT NULL,
+          CHECK ((play_order IS NOT NULL) = (kind = 'digest')),
+          CHECK (all_shows = 0 OR kind = 'digest')
+        );
+        INSERT INTO lists_rebuilt SELECT * FROM lists;
+        DROP TABLE lists;
+        ALTER TABLE lists_rebuilt RENAME TO lists;
+        CREATE INDEX idx_lists_user_id ON lists(user_id);
+        CREATE UNIQUE INDEX idx_lists_the_digest ON lists(user_id) WHERE all_shows = 1;
+
+        CREATE TABLE list_items (
+          list_id     TEXT NOT NULL REFERENCES lists(id) ON DELETE CASCADE,
+          ord         INTEGER NOT NULL CHECK (ord >= 0),
+          source      TEXT NOT NULL CHECK (source IN ('abs', 'jellyfin', 'ytmusic')),
+          upstream_id TEXT NOT NULL,
+          PRIMARY KEY (list_id, ord)
+        );
+        INSERT INTO list_items SELECT * FROM keep_list_items;
+        UPDATE listening_sessions SET spoken_digest =
+          (SELECT k.spoken_digest FROM keep_spoken_digests k
+           WHERE k.device_id = listening_sessions.device_id)
+          WHERE device_id IN (SELECT device_id FROM keep_spoken_digests);
+        DROP TABLE keep_list_items;
+        DROP TABLE keep_spoken_digests;
+
+        -- A list imported from a Spotify playlist, one per person and playlist: how far the
+        -- import is (done of total places read), and what it left unmatched, JSON read back
+        -- through zod.
+        CREATE TABLE list_imports (
+          list_id     TEXT PRIMARY KEY REFERENCES lists(id) ON DELETE CASCADE,
+          user_id     TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          source      TEXT NOT NULL CHECK (source IN ('spotify')),
+          playlist_id TEXT NOT NULL,
+          state       TEXT NOT NULL CHECK (state IN ('reading', 'matching', 'done', 'stopped')),
+          done        INTEGER NOT NULL CHECK (done >= 0),
+          total       INTEGER NOT NULL CHECK (total >= 0),
+          unmatched   TEXT NOT NULL,
+          imported_at INTEGER NOT NULL,
+          UNIQUE (user_id, playlist_id)
+        );
+      `);
+    },
+  },
 ];
 
 export function runMigrations(

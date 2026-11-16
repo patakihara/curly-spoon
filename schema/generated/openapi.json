@@ -2647,7 +2647,8 @@
         "enum": [
           "listening",
           "playlist",
-          "digest"
+          "digest",
+          "music"
         ]
       },
       "ListCounts": {
@@ -2742,7 +2743,8 @@
         "enum": [
           "book",
           "show",
-          "episode"
+          "episode",
+          "song"
         ]
       },
       "ListItem": {

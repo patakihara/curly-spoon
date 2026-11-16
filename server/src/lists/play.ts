@@ -4,14 +4,16 @@
  * beforehand, as for any play), a show as its unplayed episodes in the show's own order, and an
  * episode as itself. A finished book, a show with nothing left, and a played episode are left out,
  * unless it is the one asked for: that plays from its beginning, a show as all its episodes. A
- * list play plays from nothing, as `PlayingFrom` names an item, not a list.
+ * music list plays every song from the one asked for (else its first) onwards, in its order, as
+ * one item for the music queue: a song is never skipped as played. A list play plays from
+ * nothing, as `PlayingFrom` names an item, not a list.
  */
 import { type MediaRef, mediaRefKey } from '@auralis/schema';
 import { episodesInOrder, type StoredRow } from '../libraryIndex/store.js';
 import type { Expansion } from '../queues/engine.js';
 import { Refusal } from '../route.js';
 import type * as store from '../store/lists.js';
-import { notFound, played, type Reader, reachable, TAKES } from './reader.js';
+import { notFound, played, type Reader, reachable, songs, TAKES } from './reader.js';
 
 export const nothingToPlay = () => new Refusal(400, 'nothing_to_play');
 
@@ -32,6 +34,14 @@ export interface ListRun {
  * onwards: 404 for a `start` not on it, 400 `nothing_to_play` when nothing is left.
  */
 export function listRun(r: Reader, list: store.StoredList, start: MediaRef | undefined): ListRun {
+  if (list.kind === 'music') {
+    const refs = songs(r, list.items).map((song) => song.ref);
+    const from =
+      start === undefined ? 0 : refs.findIndex((ref) => mediaRefKey(ref) === mediaRefKey(start));
+    if (from === -1) throw notFound();
+    if (refs.length === 0) throw nothingToPlay();
+    return { refs: refs.slice(from), again: false };
+  }
   const rows = reachable(r, list.items).filter((row) => TAKES[list.kind].includes(row.kind));
   const from =
     start === undefined
@@ -51,7 +61,7 @@ export function listRun(r: Reader, list: store.StoredList, start: MediaRef | und
   return { refs, again };
 }
 
-/** A run's refs as one item for the spoken queue, from no item. */
+/** A run's refs as one item for the queue their kind plays on, from no item. */
 export function listExpansion(
   run: ListRun,
   expand: (ref: MediaRef) => Expansion | null,

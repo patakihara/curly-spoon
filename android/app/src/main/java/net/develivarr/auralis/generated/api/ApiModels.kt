@@ -445,6 +445,8 @@ enum class ListItemKind {
     SHOW,
     @SerialName("episode")
     EPISODE,
+    @SerialName("song")
+    SONG,
 }
 
 @Serializable
@@ -455,6 +457,8 @@ enum class ListKind {
     PLAYLIST,
     @SerialName("digest")
     DIGEST,
+    @SerialName("music")
+    MUSIC,
 }
 
 @Serializable

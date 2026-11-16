@@ -1,6 +1,7 @@
 /**
  * Lists that aren't queues: listening lists of books and shows you tick through, podcast
- * playlists of episodes you pick, and digests, a rule over shows. The Digest covers every
+ * playlists of episodes you pick, music lists of songs in your order, and digests, a rule over
+ * shows. The Digest covers every
  * subscription; a custom digest covers the shows you name. A digest holds its shows' unplayed
  * episodes of the last 14 days, oldest or newest first; a playlist leaves out the episodes you
  * played; a listening list crosses off what you finished but keeps it.
@@ -13,8 +14,8 @@ import { z } from './zod.js';
 /** A share of a whole, from 0 to 1: how far through an item. */
 const Fraction = z.number().min(0).max(1);
 
-/** A listening list, a podcast playlist, or a digest. */
-export const ListKind = z.enum(['listening', 'playlist', 'digest']).openapi('ListKind');
+/** A listening list, a podcast playlist, a digest, or a music list. */
+export const ListKind = z.enum(['listening', 'playlist', 'digest', 'music']).openapi('ListKind');
 export type ListKind = z.infer<typeof ListKind>;
 
 /** The most entries, or shows, a list holds. */
@@ -26,8 +27,11 @@ const ListName = z.string().trim().min(1).max(200);
 /** Entries or shows, at most `LIST_ENTRIES_MAX`; one named twice is kept once, where first named. */
 const Refs = z.array(MediaRef).max(LIST_ENTRIES_MAX);
 
-/** What a list's entry is: a book or show on a listening list, or an episode. */
-export const ListItemKind = z.enum(['book', 'show', 'episode']).openapi('ListItemKind');
+/**
+ * What a list's entry is: a book or show on a listening list, an episode, or a song on a music
+ * list: a streamed song search or an import named, or a Jellyfin track.
+ */
+export const ListItemKind = z.enum(['book', 'show', 'episode', 'song']).openapi('ListItemKind');
 export type ListItemKind = z.infer<typeof ListItemKind>;
 
 /** The most covers a list's card draws: a 2×2 mosaic. */
@@ -35,7 +39,7 @@ export const LIST_COVERS_MAX = 4;
 
 const Count = z.number().int().nonnegative();
 
-/** How many of a list's entries it shows now are books, shows and episodes. */
+/** How many of a list's entries it shows now are books, shows and episodes; songs `count` alone. */
 export const ListCounts = z
   .object({ book: Count, show: Count, episode: Count })
   .openapi('ListCounts');
@@ -66,10 +70,11 @@ export const ListSummaryList = z.object({ lists: z.array(ListSummary) }).openapi
 export type ListSummaryList = z.infer<typeof ListSummaryList>;
 
 /**
- * One entry of a list: its title, its author or host, or an episode's show (`sub`), its art (an
- * episode's is its show's), when an episode was published (milliseconds since the epoch; null on
- * a book or show), its length in seconds (null on a show), how far through it you are, and
- * whether you finished it: a book, an episode, or a show whose every episode you finished.
+ * One entry of a list: its title, its author or host, an episode's show, or a song's artists
+ * (`sub`), its art (an episode's is its show's), when an episode was published (milliseconds since
+ * the epoch; null on anything else), its length in seconds (null on a show), how far through it
+ * you are, and whether you finished it: a book, an episode, or a show whose every episode you
+ * finished. A song is never in progress or finished.
  */
 export const ListItem = z
   .object({
@@ -142,8 +147,9 @@ export type PutListItemsBody = z.infer<typeof PutListItemsBody>;
 
 /**
  * Play a listening list or playlist now, in its order: its unplayed entries from `start` (one of
- * its entries, played from its beginning if finished; else the first unplayed) onwards. `rev`,
- * when given, must be the session's revision, else 409.
+ * its entries, played from its beginning if finished; else the first unplayed) onwards. A music
+ * list plays on the music queue, every song from `start` (else the first) onwards. `rev`, when
+ * given, must be the session's revision, else 409.
  */
 export const PlayListBody = z
   .object({ start: MediaRef.optional(), rev: Revision.optional() })

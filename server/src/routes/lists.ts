@@ -13,8 +13,11 @@
  * - An entry named twice is kept once, where first named; adding one already on a list keeps it
  *   where it is.
  *
+ * - A music list takes songs: a streamed song search or an import named, or a Jellyfin track the
+ *   person may open; a song goes on no other list (400 `wrong_kind`).
+ *
  * Playing a listening list or playlist (lists/play.ts) plays it now on this device's spoken
- * queue. A digest plays in a queue of its own, from `start` (one of its episodes) or where its
+ * queue, a music list on its music queue. A digest plays in a queue of its own, from `start` (one of its episodes) or where its
  * queue was left: the spoken queue it replaces is saved, and comes back when its current item, or
  * its next once that finished, is played. Deleting a digest leaves its queue playing as your own,
  * so autoplay is worked out again for each of the person's devices.
@@ -26,6 +29,7 @@ import {
   getList,
   LIST_ENTRIES_MAX,
   listLists,
+  type MediaRef,
   mediaRefKey,
   playList,
   setListItems,
@@ -46,7 +50,7 @@ import {
   wrongKind,
 } from '../lists/reader.js';
 import { listExpansion, listRun, nothingToPlay } from '../lists/play.js';
-import { addEntries, enterDigest } from '../queues/engine.js';
+import { addEntries, enterDigest, queueFor } from '../queues/engine.js';
 import type { Sessions } from '../queues/sessions.js';
 import { serve } from '../route.js';
 import * as store from '../store/lists.js';
@@ -57,7 +61,8 @@ export function listRoutes(
   context: ListsContext & { sessions: Sessions },
 ): void {
   const { db, sessions } = context;
-  const reader = (request: FastifyRequest) => readerFor(context, signedIn(request));
+  const reader = (request: FastifyRequest, named: readonly MediaRef[] = []) =>
+    readerFor(context, signedIn(request), named);
 
   /** A store write, its `FixedList` answered as a refusal, and a list gone since as 404. */
   const written = <T>(write: () => T | null): T => {
@@ -154,7 +159,7 @@ export function listRoutes(
   };
 
   serve(app, addListItem, async (request, _reply, body, { params }) => {
-    const r = await reader(request);
+    const r = await reader(request, [body.ref]);
     const list = entriesOf(r, params.id);
     const [ref] = checked(r, list.kind, [body.ref]);
     const key = mediaRefKey(ref!);
@@ -167,7 +172,7 @@ export function listRoutes(
   });
 
   serve(app, setListItems, async (request, _reply, body, { params }) => {
-    const r = await reader(request);
+    const r = await reader(request, body.refs);
     const list = entriesOf(r, params.id);
     const refs = checked(r, list.kind, body.refs);
     return shown(
@@ -205,15 +210,16 @@ export function listRoutes(
     const run = listRun(r, list, body.start);
     await sessions.load(caller, run.refs);
     const expansion = listExpansion(run, sessions.deps.expand);
+    const type = queueFor(expansion.kind);
     const saved = sessions.change(caller, body.rev, (s) => {
       const played = addEntries(s, expansion, 'now', sessions.deps);
       if (played === null) throw new Error('invariant: a list play has entries');
-      const spoken = played.queues.spoken;
-      spoken.context = null;
+      const queue = played.queues[type];
+      queue.context = null;
       // Started over a finished entry, it plays from its beginning, not its upstream end.
-      if (run.again) spoken.position = { ms: 0, takenAt: r.now };
+      if (run.again) queue.position = { ms: 0, takenAt: r.now };
       return played;
     });
-    return sessions.queueOf(saved, 'spoken');
+    return sessions.queueOf(saved, type);
   });
 }

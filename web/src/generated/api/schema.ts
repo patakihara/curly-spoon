@@ -1327,7 +1327,7 @@ export interface components {
             lines: components["schemas"]["LyricLine"][];
         };
         /** @enum {string} */
-        ListKind: "listening" | "playlist" | "digest";
+        ListKind: "listening" | "playlist" | "digest" | "music";
         ListCounts: {
             book: number;
             show: number;
@@ -1347,7 +1347,7 @@ export interface components {
             lists: components["schemas"]["ListSummary"][];
         };
         /** @enum {string} */
-        ListItemKind: "book" | "show" | "episode";
+        ListItemKind: "book" | "show" | "episode" | "song";
         ListItem: {
             ref: components["schemas"]["MediaRef"];
             kind: components["schemas"]["ListItemKind"];
