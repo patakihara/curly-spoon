@@ -19,9 +19,11 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { MATCH_ROWS } from '../music/import/match.js';
 import {
+  IMPORT_SEARCH_GAP_MS,
   pacedSearch,
   type ResolveDeps,
   resolveEntries,
+  resolveTrack,
   type Unmatched,
 } from '../music/import/resolve.js';
 import { openDatabase } from '../store/connection.js';
@@ -577,4 +579,116 @@ export async function recordSpotifyYtMusic(
     `spotify-ytmusic: ${matched} matched, ${unmatched.length} unmatched of ${playlist.entries.length}`,
   );
   return { written, matched, unmatched };
+}
+
+/** Rock Classics: editorial, 200 tracks, imported live on 16 Nov. */
+export const MISFIRE_PLAYLIST = '37i9dQZF1DWXRqgorJj26U';
+/**
+ * The four tracks its live import left unmatched, by the name each recording carries: three the
+ * rules missed, and Hurricane, of which YouTube Music lists no studio take by Bob Dylan.
+ */
+export const MISFIRE_TRACKS = {
+  'white-wedding': '1gzIbdFnGJ226LTl0Cn2SX',
+  'bang-a-gong': '6FsQrRpBLgsrFeAeiQqytm',
+  'midnight-rider': '7J4WbEdRTZGJDsSr5AACCw',
+  hurricane: '1lqMLr9Wj7SM2F9AikGcxN',
+} as const;
+/** Where the misfires' recordings are kept. */
+export const MISFIRE_DIR = join('spotify', 'recordings', 'rock-classics');
+
+/**
+ * Record mode's `spotify-misfires` part: Rock Classics' embed page (for the session), the four
+ * tracks' metadata (`track-<name>`), 1 s apart, then YouTube Music's answers to each, searched as an
+ * import searches them (`ytmusic-<name>`, then `ytmusic-<name>-isrc`), 2 s apart, after the same
+ * address check as `spotify-ytmusic`. No account; scrubbed as `spotify` and `spotify-ytmusic` are.
+ */
+export async function recordSpotifyMisfires(
+  input: SpotifyYtMusicRecordInput,
+): Promise<{ written: string[] }> {
+  const { out } = input;
+  const address = echoedAddress(await (await input.fetch(ADDRESS_ECHO_URL)).text());
+  if (address !== echoedAddress(await input.serverEcho())) {
+    throw new Error("this machine does not leave by the server's public address: nothing recorded");
+  }
+  const dir = join(input.root, MISFIRE_DIR);
+  const written: string[] = [];
+  const secrets: string[] = [];
+  const learning: FetchLike = async (url, init) => {
+    const response = await input.fetch(url, init);
+    if (url.includes('/embed/playlist/') && response.ok) {
+      const parsed = embedPageSchema.safeParse(await response.clone().text());
+      if (parsed.success && parsed.data && !secrets.includes(parsed.data.token))
+        secrets.push(parsed.data.token);
+    }
+    return response;
+  };
+  const spotifyRecorder = (baseUrl: string, prepare: (raw: RawExchange) => RawExchange) =>
+    createRecorder({
+      fetch: learning,
+      dir,
+      upstream: 'spotify',
+      upstreamVersion: SPOTIFY_VERSION,
+      secrets,
+      baseUrl,
+      prepare,
+    });
+  const embedRec = spotifyRecorder(SPOTIFY_EMBED_URL, cutEmbed);
+  const spRec = spotifyRecorder(SPOTIFY_SPCLIENT_URL, cutSpclient);
+  const routed: FetchLike = (url, init) =>
+    url.startsWith(SPOTIFY_EMBED_URL) ? embedRec.fetch(url, init) : spRec.fetch(url, init);
+  const client = new SpotifyClient({
+    embedUrl: SPOTIFY_EMBED_URL,
+    spclientUrl: SPOTIFY_SPCLIENT_URL,
+    fetch: routed,
+    log: out,
+  });
+  const scanOnly = { verify: (_: unknown, r: Recording) => scanned(r) };
+  await embedRec.capture('embed-playlist', () => client.playlistHeader(MISFIRE_PLAYLIST), scanOnly);
+  written.push(join(dir, 'embed-playlist.json'));
+
+  const rec = createRecorder({
+    fetch: input.fetch,
+    dir,
+    upstream: 'ytmusic',
+    upstreamVersion: YTMUSIC_VERSION,
+    secrets: [address],
+    baseUrl: input.baseUrl,
+    prepare: (raw) =>
+      withoutFlaggedRows(raw, {
+        secrets: [address],
+        baseUrl: input.baseUrl,
+        ...(input.names ? { names: input.names } : {}),
+      }),
+  });
+  const ytmusic = new YtMusicClient({ baseUrl: input.baseUrl, fetch: rec.fetch, now: input.now });
+  for (const [name, id] of Object.entries(MISFIRE_TRACKS)) {
+    const track = await spRec.capture(`track-${name}`, () => client.track(id), scanOnly);
+    written.push(join(dir, `track-${name}.json`));
+    if (track === null) throw new Error(`${name}: Spotify has no metadata`);
+    const search = pacedSearch(
+      async (query) => {
+        const call = `ytmusic-${name}${query === track.isrc ? '-isrc' : ''}`;
+        let kept: Recording | undefined;
+        await rec.capture(call, () => ytmusic.search(query), {
+          verify: (_, recording) => {
+            scanned(recording, input.names);
+            kept = recording;
+          },
+        });
+        written.push(join(dir, `${call}.json`));
+        return replayedYtMusic(kept ? [kept] : []).search(query);
+      },
+      { now: Date.now, sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)) },
+    );
+    const db = openDatabase(':memory:');
+    const found = await resolveTrack(
+      { db, clock: { now: Date.now }, track: async () => track, search },
+      id,
+      track,
+    );
+    db.close();
+    out(`${name}: ${found.youtubeId ?? `no match, ${found.near?.failed ?? 'no row'}`}`);
+    await new Promise((resolve) => setTimeout(resolve, IMPORT_SEARCH_GAP_MS));
+  }
+  return { written };
 }

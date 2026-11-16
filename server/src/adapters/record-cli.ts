@@ -106,7 +106,8 @@
  * with no account, the anonymous token scrubbed everywhere (record-spotify.ts). `--only
  * spotify-ytmusic` then searches YouTube Music for each recorded track as an import does, 2 s
  * apart, after the same address check as `ytmusic`, and prints how many matched; Spotify is not
- * asked.
+ * asked. `--only spotify-misfires` records the four tracks Rock Classics' live import left
+ * unmatched: their metadata, 1 s apart, and their YouTube Music searches, 2 s apart.
  *
  * `--only albums-live --log <file> --pick <call=line,..>` turns the lines named of a live album
  * run's proxy log into recordings of qBittorrent, Prowlarr and Jellyfin, and asks the Cover Art
@@ -141,7 +142,7 @@ import { recordAlbumsLive } from './record-albums-live.js';
 import { recordBooks } from './record-books.js';
 import { recordQbit } from './record-qbit.js';
 import { recordExtractor } from './record-extractor.js';
-import { recordSpotify, recordSpotifyYtMusic } from './record-spotify.js';
+import { recordSpotify, recordSpotifyMisfires, recordSpotifyYtMusic } from './record-spotify.js';
 import { recordYtMusic, SERVER_ECHO_ARGV } from './record-ytmusic.js';
 import { YTMUSIC_URL } from './ytmusic/client.js';
 import { recordHousehold } from './record-household.js';
@@ -182,7 +183,7 @@ Records Audiobookshelf's and Jellyfin's calls into server/src/adapters/*/recordi
   --only <name>      record only abs, jellyfin, index, play, episode, jfplay, progress,
                      sessions, shell, lyrics, lists, played, books, albums, shelf, qbit, ytmusic,
                      extractor, musicbrainz, albums-musicbrainz, albums-qbit, albums-live, spotify,
-                     spotify-ytmusic, coverart or keep; or
+                     spotify-ytmusic, spotify-misfires, coverart or keep; or
                      oidc, a sign-in and its links
   --lrclib <url>     LRCLIB's base URL, for --only lyrics
   --prowlarr <url>   Prowlarr's base URL, for --only books and albums
@@ -777,10 +778,11 @@ export async function runRecord(io: RecordIo): Promise<number> {
       'oidc',
       'spotify',
       'spotify-ytmusic',
+      'spotify-misfires',
     ].includes(only)
   ) {
     io.err(
-      `--only is abs, jellyfin, index, play, episode, jfplay, progress, sessions, shell, lyrics, lists, played, household, books, albums, shelf, qbit, ytmusic, extractor, github, musicbrainz, albums-musicbrainz, albums-qbit, albums-live, coverart, keep, oidc, spotify or spotify-ytmusic, not ${only}`,
+      `--only is abs, jellyfin, index, play, episode, jfplay, progress, sessions, shell, lyrics, lists, played, household, books, albums, shelf, qbit, ytmusic, extractor, github, musicbrainz, albums-musicbrainz, albums-qbit, albums-live, coverart, keep, oidc, spotify, spotify-ytmusic or spotify-misfires, not ${only}`,
     );
     return 2;
   }
@@ -810,7 +812,8 @@ export async function runRecord(io: RecordIo): Promise<number> {
   if (only === 'github') return runGithub(io, root);
   if (only === 'musicbrainz') return runMusicBrainz(io, root);
   if (only === 'spotify') return runSpotify(io, root);
-  if (only === 'spotify-ytmusic') return runSpotifyYtMusic(io, root);
+  if (only === 'spotify-ytmusic') return runSpotifyYtMusic(io, root, recordSpotifyYtMusic);
+  if (only === 'spotify-misfires') return runSpotifyYtMusic(io, root, recordSpotifyMisfires);
   if (only === 'albums-musicbrainz') return runAlbumGroups(io, root);
   if (only === 'albums-qbit') return runAlbumsQbit(io, values, parseKeys(io.stdin), root);
   if (only === 'albums-live') return runAlbumsLive(io, values, root);
@@ -1369,8 +1372,12 @@ async function runSpotify(io: RecordIo, root: string): Promise<number> {
   return scanWritten(io, written, []);
 }
 
-async function runSpotifyYtMusic(io: RecordIo, root: string): Promise<number> {
-  const { written } = await recordSpotifyYtMusic({
+async function runSpotifyYtMusic(
+  io: RecordIo,
+  root: string,
+  record: typeof recordSpotifyYtMusic | typeof recordSpotifyMisfires,
+): Promise<number> {
+  const { written } = await record({
     fetch: io.fetch,
     out: io.out,
     root,

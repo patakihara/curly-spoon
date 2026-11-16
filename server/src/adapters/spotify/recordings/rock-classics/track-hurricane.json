@@ -1,0 +1,42 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-hurricane",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/2c36f9e18caf4cf39f49a3ed5893398f",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "Hurricane",
+        "artist": [
+          {
+            "name": "Bob Dylan"
+          }
+        ],
+        "album": {
+          "name": "Desire"
+        },
+        "duration": 512609,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "USSM17500791"
+          }
+        ]
+      }
+    }
+  }
+}

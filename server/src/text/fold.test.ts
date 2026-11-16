@@ -89,4 +89,10 @@ describe('folding text for search', () => {
       titleKey('Flashdance… What a Feeling (Radio Mix)'),
     );
   });
+
+  it('[M3.spotify/a] a title compared drops a dashed part number as it drops a bracketed one', () => {
+    expect(titleKey('White Wedding - Pt. 1')).toBe(titleKey('White Wedding (Pt. 1)'));
+    expect(titleKey('White Wedding – Part 1')).toBe('white wedding');
+    expect(titleKey('Song - Part of Me')).toBe('song - part of me');
+  });
 });

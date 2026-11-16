@@ -1,0 +1,42 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-midnight-rider",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/fde34eb3d7e04130977d5dafd2e6922c",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "Midnight Rider",
+        "artist": [
+          {
+            "name": "Allman Brothers Band"
+          }
+        ],
+        "album": {
+          "name": "Idlewild South"
+        },
+        "duration": 179933,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "USPR37030030"
+          }
+        ]
+      }
+    }
+  }
+}
