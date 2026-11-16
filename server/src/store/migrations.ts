@@ -1154,6 +1154,7 @@ export const migrations: readonly Migration[] = [
           done        INTEGER NOT NULL CHECK (done >= 0),
           total       INTEGER NOT NULL CHECK (total >= 0),
           unmatched   TEXT NOT NULL,
+          handled     TEXT NOT NULL DEFAULT '[]',
           imported_at INTEGER NOT NULL,
           UNIQUE (user_id, playlist_id)
         );

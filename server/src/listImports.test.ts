@@ -23,6 +23,7 @@ import type { YtSong } from './adapters/ytmusic/client.js';
 import type { SpotifyReader } from './lists/import/job.js';
 import { type SongSource } from './music/catalogue.js';
 import { Music } from './music/index.js';
+import { importOf } from './lists/import/state.js';
 import { resolveEntries } from './music/import/resolve.js';
 import { openDatabase, type Db } from './store/connection.js';
 
@@ -207,8 +208,11 @@ describe('[M3.spotify] importing a public Spotify playlist', { timeout: 30_000 }
     const { id } = first.ok(await importIt(first), ListDetail);
     await handled(first, id, 20);
     const closing = first.app.close();
+    // The job is told to stop while its search is held, so it stops after that place.
+    await new Promise((resolve) => setTimeout(resolve, 20));
     first.u.release();
     await closing;
+    expect(importOf(db, id)).toMatchObject({ state: 'matching' });
     apps = apps.filter((a) => a !== first.app);
 
     const second = await server();
@@ -217,6 +221,38 @@ describe('[M3.spotify] importing a public Spotify playlist', { timeout: 30_000 }
     expect(list.import).toMatchObject({ state: 'done', done: want.total });
     // The places handled before the restart were not searched again.
     expect(second.u.calls.searches).toBeLessThanOrEqual(want.searches - 20);
+  });
+
+  it('after a restart, goes on by track, not by place, when the playlist’s order changed', async () => {
+    const first = await server();
+    first.u.holdAfter(30);
+    const { id } = first.ok(await importIt(first), ListDetail);
+    await handled(first, id, 20);
+    const closing = first.app.close();
+    // The job is told to stop while its search is held, so it stops after that place.
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    first.u.release();
+    await closing;
+    expect(importOf(db, id)).toMatchObject({ state: 'matching' });
+    apps = apps.filter((a) => a !== first.app);
+
+    // Spotify's order now opens with a track from further on, every other place one later.
+    const real = replayedSpotify(spotifyRecordings);
+    const moved: SpotifyReader = {
+      playlistHeader: (pid) => real.playlistHeader(pid),
+      track: (tid) => real.track(tid),
+      playlist: async (pid) => {
+        const p = await real.playlist(pid);
+        const order = [p.entries[140]!, ...p.entries.filter((_, n) => n !== 140)];
+        return { ...p, entries: order.map((e, position) => ({ ...e, position })) };
+      },
+    };
+    const second = await server(upstreams(moved));
+    const list = await finished(second, id);
+    expect(list.import).toMatchObject({ state: 'done', done: want.total });
+    const ids = second.refs(list.items).map((r) => r.id);
+    expect(new Set(ids)).toEqual(new Set(want.songs.map((r) => r.id)));
+    expect(ids).toHaveLength(want.songs.length);
   });
 
   it('runs a second import behind the first, never both at once', async () => {

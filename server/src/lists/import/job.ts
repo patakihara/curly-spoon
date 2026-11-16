@@ -1,9 +1,9 @@
 /**
  * The import job: one Spotify import at a time across the server, the rest waiting in
  * `list_imports`, oldest started first. It reads the playlist's order, then resolves each entry
- * from the import's `done` onwards (music/import/resolve.ts), writing each song to the end of the
- * list as it matches, so the list fills in Spotify's order while it runs and a restart goes on from
- * where it was (the caches make what came before cheap).
+ * not yet handled, matched by track (state.ts `unhandled`; music/import/resolve.ts), writing each
+ * song to the end of the list as it matches, so the list fills in Spotify's order while it runs and
+ * a restart goes on with the tracks left, wherever Spotify's order now has them.
  *
  * The reader's refusals stop the import, never fail the server: `playlist_not_found` and
  * `spotify_unavailable` as themselves, any other Spotify failure as `spotify_unavailable`, and
@@ -19,7 +19,7 @@ import type { SpotifyTrack } from '../../adapters/spotify/schemas.js';
 import type { YtSong } from '../../adapters/ytmusic/client.js';
 import { pacedSearch, resolveEntries } from '../../music/import/resolve.js';
 import type { Db } from '../../store/connection.js';
-import { handled, importOf, nextImport, setState, type StoredImport } from './state.js';
+import { handled, importOf, nextImport, setState, type StoredImport, unhandled } from './state.js';
 
 /** What the job reads of Spotify: a playlist's name, cover and order, and one track. */
 export interface SpotifyReader {
@@ -102,7 +102,7 @@ export class ImportJob {
         search: this.search,
         track: (id: string) => this.spotify(() => this.deps.spotify.track(id)),
       };
-      for await (const r of resolveEntries(deps, playlist.entries.slice(i.done))) {
+      for await (const r of resolveEntries(deps, unhandled(i, playlist.entries))) {
         handled(
           db,
           i.listId,

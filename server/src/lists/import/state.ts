@@ -2,7 +2,8 @@
  * Where each Spotify import stands (`list_imports`), one per person and playlist, keyed by its
  * list. An import waiting or reading Spotify's order is `reading`, one finding songs `matching`;
  * both are queued, oldest started first, and the job takes them one at a time. `done` counts the
- * playlist's places handled, in order, so a restart goes on from there. The report (`unmatched`,
+ * playlist's places handled and `handled` keeps each one's Spotify URI, so a restart goes on with
+ * the tracks not yet handled, wherever Spotify's order now has them. The report (`unmatched`,
  * JSON parsed with zod on read) keeps each entry left off, and each that named a song already on
  * the list (`duplicate`, counted, never listed as unmatched).
  */
@@ -40,6 +41,7 @@ const Row = z.object({
   done: z.number().int(),
   total: z.number().int(),
   unmatched: z.string().transform((text) => z.array(ReportEntry).parse(JSON.parse(text))),
+  handled: z.string().transform((text) => z.array(z.string()).parse(JSON.parse(text))),
   imported_at: z.number().int(),
 });
 
@@ -52,6 +54,8 @@ export interface StoredImport {
   done: number;
   total: number;
   report: ReportEntry[];
+  /** The Spotify URI of each place handled, in the order handled. */
+  handled: string[];
   importedAt: number;
 }
 
@@ -66,6 +70,7 @@ const stored = (raw: unknown): StoredImport => {
     done: row.done,
     total: row.total,
     report: row.unmatched,
+    handled: row.handled,
     importedAt: row.imported_at,
   };
 };
@@ -128,7 +133,7 @@ export function requeueImport(db: Db, listId: string, now: number): void {
     db.prepare('DELETE FROM list_items WHERE list_id = ?').run(listId);
     db.prepare(
       `UPDATE list_imports SET state = 'reading', stopped = NULL, done = 0, total = 0,
-         unmatched = '[]', imported_at = ? WHERE list_id = ?`,
+         unmatched = '[]', handled = '[]', imported_at = ? WHERE list_id = ?`,
     ).run(now, listId);
   })();
 }
@@ -179,11 +184,30 @@ export function handled(
         db.prepare('UPDATE lists SET updated_at = ? WHERE id = ?').run(now, listId);
       } else report = { ...place.entry, reason: 'duplicate' };
     }
-    db.prepare('UPDATE list_imports SET done = done + 1, unmatched = ? WHERE list_id = ?').run(
+    const uri = 'report' in place ? place.report.uri : place.entry.uri;
+    db.prepare(
+      'UPDATE list_imports SET done = done + 1, unmatched = ?, handled = ? WHERE list_id = ?',
+    ).run(
       JSON.stringify(report === null ? current.report : [...current.report, report]),
+      JSON.stringify([...current.handled, uri]),
       listId,
     );
   })();
+}
+
+/**
+ * The entries of Spotify's order, as freshly read, that this import has not handled: each URI
+ * handled is matched once against the order, so a playlist changed since goes on by track, never
+ * by place.
+ */
+export function unhandled<E extends { uri: string }>(i: StoredImport, entries: readonly E[]): E[] {
+  const left = new Map<string, number>();
+  for (const uri of i.handled) left.set(uri, (left.get(uri) ?? 0) + 1);
+  return entries.filter((e) => {
+    const n = left.get(e.uri) ?? 0;
+    if (n > 0) left.set(e.uri, n - 1);
+    return n === 0;
+  });
 }
 
 /** The import as a list's detail shows it. */
