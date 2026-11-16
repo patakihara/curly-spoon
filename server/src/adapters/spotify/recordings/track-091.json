@@ -1,0 +1,42 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-091",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/ac6fe38620c443a29b644bb9e6d5c607",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "Arthur's Theme (Best That You Can Do)",
+        "artist": [
+          {
+            "name": "Christopher Cross"
+          }
+        ],
+        "album": {
+          "name": "Arthur - The Album [Original Soundtrack]"
+        },
+        "duration": 234493,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "USWB10800109"
+          }
+        ]
+      }
+    }
+  }
+}

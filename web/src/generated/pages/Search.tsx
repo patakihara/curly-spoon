@@ -8,6 +8,7 @@ import { usePlay, type PlayQueue, type Playing } from '../../player';
 import { useQuery } from '../../query';
 import { useChoose } from '../../choose';
 import { useRequest } from '../../request';
+import { useImport } from '../../import';
 import { AccountButton, BackLayer, BottomNav, Button, ButtonGroup, EmptyState, ExpanderRow, FrontLayerHeader, LayoutGrid, MiniPlayer, NavRail, OverflowMenu, PageBody, ResultRow, SearchField, Section, SortFilterBar, StatusBanner } from '../ui/index.js';
 
 const placeholder = {
@@ -133,6 +134,14 @@ const placeholder = {
     }
   ],
   "outside": {
+    "playlist": [
+      {
+        "title": "Salt Road Drive",
+        "meta": "Spotify playlist · 150 songs",
+        "image": "/art/salt-and-static.jpg",
+        "from": "https://open.spotify.com/playlist/0aB1cD2eF3gH4iJ5kL6mN7"
+      }
+    ],
     "household": [
       {
         "title": "Salt Roads",
@@ -542,6 +551,7 @@ export default function Search({ data = placeholder, state = 'full' }: SearchPro
   const play = usePlay();
   const choose = useChoose();
   const askFor = useRequest();
+  const importFrom = useImport();
   return (
     <PageBody width="list" platform={platform}>
       {data.errors.map((error, i) => (
@@ -592,6 +602,23 @@ export default function Search({ data = placeholder, state = 'full' }: SearchPro
               ))}
             </Section>
           )}
+          {data.outside.playlist.map((playlist, i) => (
+            <Fragment key={i}>
+              <Section platform={platform}>
+                <ResultRow
+                  title={playlist.title}
+                  meta={playlist.meta}
+                  image={playlist.image}
+                  trailing={
+                    <Button variant="secondary" size="sm" onClick={importFrom(playlist.from)} platform={platform}>
+                      {"Import"}
+                    </Button>
+                  }
+                  platform={platform}
+                />
+              </Section>
+            </Fragment>
+          ))}
           {data.library.length > 0 && (
             <Section title="In your library" platform={platform}>
               {data.library.map((item, i) => (

@@ -1,0 +1,493 @@
+{
+  "upstream": "ytmusic",
+  "upstreamVersion": "InnerTube WEB_REMIX, unversioned",
+  "call": "ytmusic-101",
+  "request": {
+    "method": "POST",
+    "path": "/youtubei/v1/search",
+    "query": {
+      "prettyPrint": "false"
+    },
+    "headers": {
+      "accept": "application/json",
+      "content-type": "application/json"
+    },
+    "body": {
+      "json": {
+        "context": {
+          "client": {
+            "clientName": "WEB_REMIX",
+            "clientVersion": "1.20261116.01.00",
+            "hl": "en",
+            "gl": "FI"
+          }
+        },
+        "query": "Golden Brown The Stranglers",
+        "params": "EgWKAQIIAWoKEAkQBRAKEAMQBA=="
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=UTF-8"
+    },
+    "body": {
+      "json": {
+        "contents": {
+          "tabbedSearchResultsRenderer": {
+            "tabs": [
+              {
+                "tabRenderer": {
+                  "content": {
+                    "sectionListRenderer": {
+                      "contents": [
+                        {
+                          "musicShelfRenderer": {
+                            "contents": [
+                              {
+                                "musicResponsiveListItemRenderer": {
+                                  "flexColumns": [
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "Golden Brown",
+                                              "navigationEndpoint": {
+                                                "watchEndpoint": {
+                                                  "videoId": "UZJFFStQemI",
+                                                  "watchEndpointMusicSupportedConfigs": {
+                                                    "watchEndpointMusicConfig": {
+                                                      "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "The Stranglers",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "La Folie",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "3:27"
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    }
+                                  ],
+                                  "playlistItemData": {
+                                    "videoId": "UZJFFStQemI"
+                                  },
+                                  "thumbnail": {
+                                    "musicThumbnailRenderer": {
+                                      "thumbnail": {
+                                        "thumbnails": [
+                                          {
+                                            "url": "https://yt3.googleusercontent.com/zSJKMSJjsHQitxL-2vEEOshyb52NWoImoKx8WI5CzDvpoqnd_cv3qcjdQlGupEbL0gWTwn56Vu28sSk=w120-h120-l90-rj",
+                                            "width": 120
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "musicResponsiveListItemRenderer": {
+                                  "flexColumns": [
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "Golden Brown (Slowed Down Version)",
+                                              "navigationEndpoint": {
+                                                "watchEndpoint": {
+                                                  "videoId": "BTnM71u_v2I",
+                                                  "watchEndpointMusicSupportedConfigs": {
+                                                    "watchEndpointMusicConfig": {
+                                                      "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "The Stranglers",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "Golden Brown",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "4:09"
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    }
+                                  ],
+                                  "playlistItemData": {
+                                    "videoId": "BTnM71u_v2I"
+                                  },
+                                  "thumbnail": {
+                                    "musicThumbnailRenderer": {
+                                      "thumbnail": {
+                                        "thumbnails": [
+                                          {
+                                            "url": "https://yt3.googleusercontent.com/43itqF_X5L7Kch6ahaiuSwwXrrR5df-dWm-Us4T2Ys8QzniRm0V11B6s2rcCMuVLceLHtqzO5ImTeNDA6Q=w120-h120-l90-rj",
+                                            "width": 120
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "musicResponsiveListItemRenderer": {
+                                  "flexColumns": [
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "Golden Brown",
+                                              "navigationEndpoint": {
+                                                "watchEndpoint": {
+                                                  "videoId": "ugDHpEKByj8",
+                                                  "watchEndpointMusicSupportedConfigs": {
+                                                    "watchEndpointMusicConfig": {
+                                                      "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "Kaleef",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "53rd State Of Mind",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "4:10"
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    }
+                                  ],
+                                  "playlistItemData": {
+                                    "videoId": "ugDHpEKByj8"
+                                  },
+                                  "thumbnail": {
+                                    "musicThumbnailRenderer": {
+                                      "thumbnail": {
+                                        "thumbnails": [
+                                          {
+                                            "url": "https://yt3.googleusercontent.com/vB_6X560xfnQjnUFrnpCa-0hYnh9S-ulrgMFLNbwzc8udNyi4EC5Y2SfuozPCvDJAjPVPS-4OilEOhH3=w120-h120-l90-rj",
+                                            "width": 120
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "musicResponsiveListItemRenderer": {
+                                  "flexColumns": [
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "​Golden Brown x Love Story (Piano & Orchestral Version)",
+                                              "navigationEndpoint": {
+                                                "watchEndpoint": {
+                                                  "videoId": "LHdzEOgs0ek",
+                                                  "watchEndpointMusicSupportedConfigs": {
+                                                    "watchEndpointMusicConfig": {
+                                                      "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "Bader Almansour",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "​Golden Brown x Love Story (Piano & Orchestral Version)",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "2:22"
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    }
+                                  ],
+                                  "playlistItemData": {
+                                    "videoId": "LHdzEOgs0ek"
+                                  },
+                                  "thumbnail": {
+                                    "musicThumbnailRenderer": {
+                                      "thumbnail": {
+                                        "thumbnails": [
+                                          {
+                                            "url": "https://yt3.googleusercontent.com/lIHQ8JMzD5eBWpQS17KHNbOzW_pf63IukwIvWMhTM3XGfPnoYrmlATs8Qpy7cXE9uDrEel1HSENjp4HJpQ=w120-h120-l90-rj",
+                                            "width": 120
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "musicResponsiveListItemRenderer": {
+                                  "flexColumns": [
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "Golden Brown (Slowed)",
+                                              "navigationEndpoint": {
+                                                "watchEndpoint": {
+                                                  "videoId": "sMAe39Thl3s",
+                                                  "watchEndpointMusicSupportedConfigs": {
+                                                    "watchEndpointMusicConfig": {
+                                                      "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "MysticDreamer",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " & "
+                                            },
+                                            {
+                                              "text": "skippless",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "Golden Brown",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "2:08"
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    }
+                                  ],
+                                  "playlistItemData": {
+                                    "videoId": "sMAe39Thl3s"
+                                  },
+                                  "thumbnail": {
+                                    "musicThumbnailRenderer": {
+                                      "thumbnail": {
+                                        "thumbnails": [
+                                          {
+                                            "url": "https://yt3.googleusercontent.com/lKltN6ioy0YvHY_QHoX_i514k14Z8AgWV6tkX2porGlPz9pRwAUDuqG_2tPoRydcj3WxZ56pcFdgL-DM=w120-h120-l90-rj",
+                                            "width": 120
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "trimmed": "Trimmed by the recorder: the shelf of songs cut to the rows an import weighs, each row to the fields Auralis parses and its largest art; everything else, the visitor id among it, taken out."
+      }
+    }
+  }
+}

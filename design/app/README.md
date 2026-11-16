@@ -88,6 +88,13 @@ string carrying the request (`web/src/request.ts`), and one that carries none as
 nothing can take it, and on Android until M5, the control draws disabled. The same request made twice
 joins the first.
 
+`onClick={<Import from={playlist.from} />}` imports the outside playlist its `from` binds, a public
+Spotify playlist's link, as one of your music lists: Search's row for a pasted link. It takes `from`
+alone, bound from the data, and goes on a handler prop. The web gives it to the imports the page is
+handed, `useImport()` in `web/src/import`, which send `POST /api/lists/import {from}` and open the
+playlist page with the list the answer names; with none, as on the canvas, the control draws
+disabled. Android leaves it unbound until M5 and it draws disabled too.
+
 `onClick={<Act ref={request.id} verb={request.verb} />}` does a request's verb to the request its
 ref binds: `retry`, `cancel`, `choose` or `pickAnother`, written or bound from the data, which the
 check holds to those four. `candidate={candidate.id}` binds the release `choose` and `pickAnother`

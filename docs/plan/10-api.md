@@ -58,7 +58,7 @@ Each takes `?refresh` (pull to refresh)
 #### Library actions
 
 `POST/DELETE /favorites/{ref}`\
-`/playlists` · `/lists` (CRUD) · `POST /lists/{id}/play`\
+`/lists` (CRUD) · `POST /lists/import` · `POST /lists/{id}/play`\
 `POST/DELETE /subscriptions` (a podcast feed, or a YouTube channel)\
 `GET /feeds/youtube/{channel}.xml` · `/feeds/youtube/{channel}/{video}` (audio only)\
 `PUT /items/{ref}/played`

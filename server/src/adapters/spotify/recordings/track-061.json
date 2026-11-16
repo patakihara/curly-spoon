@@ -1,0 +1,42 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-061",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/e445cc8b235641358f19aaac2c2189d7",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "Enjoy the Silence",
+        "artist": [
+          {
+            "name": "Depeche Mode"
+          }
+        ],
+        "album": {
+          "name": "The Singles 86-98"
+        },
+        "duration": 255133,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "GBAJH9800146"
+          }
+        ]
+      }
+    }
+  }
+}

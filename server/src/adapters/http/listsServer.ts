@@ -20,7 +20,7 @@ import { parseFeed } from '../feed/client.js';
 import { type FetchLike } from './fetch.js';
 import { type Recording, recordingSchema } from './recording.js';
 import { replayFetch } from './replay.js';
-import { buildApp } from '../../app.js';
+import { type BuildAppOptions, buildApp } from '../../app.js';
 import { absTree, orderingFromFeed } from '../../libraryIndex/rows.js';
 import { applyTree, emptyCounts } from '../../libraryIndex/store.js';
 import { type Db } from '../../store/connection.js';
@@ -158,7 +158,14 @@ export interface Answer {
  */
 export async function listsServer(
   db: Db,
-  options: { now?: number; me?: Recording; abs?: Recording[]; household?: boolean } = {},
+  options: {
+    now?: number;
+    me?: Recording;
+    abs?: Recording[];
+    household?: boolean;
+    spotifyImport?: BuildAppOptions['spotifyImport'];
+    music?: BuildAppOptions['music'];
+  } = {},
 ) {
   const clock = { now: options.now ?? SEPT_15 };
   const extra = options.abs ?? [];
@@ -223,6 +230,8 @@ export async function listsServer(
     db,
     logger: { stream: { write: (line) => logs.push(JSON.parse(line) as { msg?: string }) } },
     now: () => clock.now,
+    ...(options.spotifyImport === undefined ? {} : { spotifyImport: options.spotifyImport }),
+    ...(options.music === undefined ? {} : { music: options.music }),
     upstreams: {
       key: KEY,
       config: { absUrl: UPSTREAM, jellyfinUrl: UPSTREAM },

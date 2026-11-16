@@ -1,6 +1,6 @@
 /**
  * Nothing removed lingers: a Sonora component deleted from design/sonora is named nowhere in the
- * apps or the canvas, every exception an ignore file carves out names a file that exists, and no
+ * apps or the canvas (recorded upstream answers, in `recordings/` folders, aside), every exception an ignore file carves out names a file that exists, and no
  * tracked file names a machine, a user, a home folder or a personal email (the repo is public).
  * Reads Sonora's history, so CI's checkout needs full history (fetch-depth: 0).
  * Run: node --test scripts/repo/leftovers.test.mjs
@@ -35,6 +35,16 @@ test('Sonora has deleted components to check for', () => {
   assert.ok(deletedComponents().length > 0);
 });
 
+/** A recorded upstream answer: its words are the upstream's, never a leftover of ours. */
+const recorded = (file) => /(?:^|\/)recordings\//.test(file);
+
+test('a recorded upstream answer is not checked for deleted components; code beside it is', () => {
+  assert.equal(recorded('server/src/adapters/spotify/recordings/ytmusic/ytmusic-033.json'), true);
+  assert.equal(recorded('server/src/adapters/jellyfin/recordings/users-list.json'), true);
+  assert.equal(recorded('server/src/adapters/spotify/client.ts'), false);
+  assert.equal(recorded('web/src/recordingsView.tsx'), false);
+});
+
 test('no deleted Sonora component is named in the apps or the canvas', () => {
   const found = deletedComponents().flatMap((name) => {
     let hits = '';
@@ -43,7 +53,9 @@ test('no deleted Sonora component is named in the apps or the canvas', () => {
     } catch {
       // git grep exits 1 when nothing matches.
     }
-    return lines(hits).map((file) => `${name} in ${file}`);
+    return lines(hits)
+      .filter((file) => !recorded(file))
+      .map((file) => `${name} in ${file}`);
   });
   assert.deepEqual(found, []);
 });

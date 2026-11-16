@@ -72,6 +72,7 @@ describe('your lists', () => {
       count: 3,
       covers: ['/api/media/abs:b1/art', '/api/media/abs:s1/art'],
       counts: { book: 2, show: 1, episode: 0 },
+      importedFrom: null,
     };
     expect(ListSummaryList.parse({ lists: [summary] }).lists).toEqual([summary]);
     expect(ListSummary.safeParse({ ...summary, covers: ['https://elsewhere/art'] }).success).toBe(
@@ -92,6 +93,7 @@ describe('a list opened', () => {
       count: 1,
       covers: [`/api/media/abs:${show.id}/art`],
       counts: { book: 0, show: 0, episode: 1 },
+      importedFrom: null,
       shows: [
         {
           ref: show,
@@ -116,6 +118,7 @@ describe('a list opened', () => {
           finished: false,
         },
       ],
+      import: null,
     };
     expect(ListDetail.parse(detail)).toEqual(detail);
     expect(

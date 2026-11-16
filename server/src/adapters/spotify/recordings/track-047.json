@@ -1,0 +1,42 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-047",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/97c73605dc3e46d7b643e3c9c61bda91",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "Little Lies - 2017 Remaster",
+        "artist": [
+          {
+            "name": "Fleetwood Mac"
+          }
+        ],
+        "album": {
+          "name": "Tango In the Night (Deluxe Edition)"
+        },
+        "duration": 221053,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "USRH11602193"
+          }
+        ]
+      }
+    }
+  }
+}

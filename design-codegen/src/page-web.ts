@@ -12,7 +12,8 @@
  * `useChoose()` (`web/src/choose`), the page's own verbs, which give none while nothing acts; an
  * `<Act ref verb>` hands a request's verb to `useAct()` (`web/src/act`) the same way, and a
  * `<Request ref>` a control's tap to `useRequest()` (`web/src/request`), and a
- * `<Toggle setting>` a switch's change to `useToggle()` (`web/src/toggle`); a back layer or subheader holding one, or an
+ * `<Toggle setting>` a switch's change to `useToggle()` (`web/src/toggle`), and an `<Import from>` a
+ * control's tap to `useImport()` (`web/src/import`); a back layer or subheader holding one, or an
  * `<Open>` and so the router's `useNavigate()`, is drawn as a component of its own, since the
  * shell calls the frame's parts outside any page.
  */
@@ -125,6 +126,10 @@ const toggles = (node: PageTree) =>
 /** Whether an element asks again for what failed to load, a `<Retry />` in a handler prop. */
 const retries = (node: PageTree) =>
   node.kind === 'element' && Object.values(node.props).some((v) => v.kind === 'retry');
+
+/** Whether an element imports an outside playlist, an `<Import from>` in a handler prop. */
+const imports = (node: PageTree) =>
+  node.kind === 'element' && Object.values(node.props).some((v) => v.kind === 'import');
 
 /** Whether an element holds the search query, a `<Query />` in one of its handler props. */
 const queries = (node: PageTree) =>
@@ -282,6 +287,12 @@ function propLines(
   }
   // Asking again goes to what the page is given, none while nothing failed.
   if (value.kind === 'retry') return [`${name}={retry}`];
+  // An import goes to what the page is given, none while nothing can take this link.
+  if (value.kind === 'import') {
+    const from = value.params['from'];
+    if (from === undefined) throw new Error(`${owner}.${name}: Import needs from={…}`);
+    return [`${name}={importFrom(${pathCode(from)})}`];
+  }
   // A switch's change goes to the toggles the page is given, none while nothing sets the setting.
   if (value.kind === 'toggle') return [`${name}={toggle('${value.setting}')}`];
   // A request goes to what the page is given, none while nothing can take this one.
@@ -725,6 +736,12 @@ export function generateWebPage(
   }
   const usesToggle = some(root, toggles);
   const usesRetry = some(root, retries);
+  for (const part of [back, subheader]) {
+    if (part !== undefined && some(part, imports)) {
+      throw new Error(`${id}: Import goes in the page's content, not its back layer or subheader`);
+    }
+  }
+  const usesImport = some(root, imports);
   const actsBound = some(
     root,
     (node) =>
@@ -810,6 +827,7 @@ export function generateWebPage(
     ...(usesRequest ? ["import { useRequest } from '../../request';"] : []),
     ...(usesToggle ? ["import { useToggle } from '../../toggle';"] : []),
     ...(usesRetry ? ["import { useRetry } from '../../retry';"] : []),
+    ...(usesImport ? ["import { useImport } from '../../import';"] : []),
     `import { ${[...used].sort().join(', ')} } from '../ui/index.js';`,
     '',
     `const placeholder = ${JSON.stringify(placeholder, null, 2)};`,
@@ -881,6 +899,7 @@ export function generateWebPage(
     ...(usesRequest ? ['  const askFor = useRequest();'] : []),
     ...(usesToggle ? ['  const toggle = useToggle();'] : []),
     ...(usesRetry ? ['  const retry = useRetry();'] : []),
+    ...(usesImport ? ['  const importFrom = useImport();'] : []),
     ...(usesPlaying
       ? ['  const playing = usePlaying();', '  if (playing === null) return null;']
       : []),

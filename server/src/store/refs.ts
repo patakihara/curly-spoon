@@ -56,6 +56,7 @@ export const NOT_REFS: Readonly<Record<string, string>> = {
   'index_runs.source': 'which upstream an index run read, not an item',
   'extractor_versions.source': 'where an extractor version came from, not an item',
   'users.role_source': 'where a person’s role came from, not an item',
+  'list_imports.source': 'the service a list was imported from, not an item',
 };
 
 /** One item becoming another. */

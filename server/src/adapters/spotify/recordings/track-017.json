@@ -1,0 +1,48 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-017",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/3e22cef06755401b8b5226ad33879a8e",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "Sweet Dreams (Are Made of This) - 2005 Remaster",
+        "artist": [
+          {
+            "name": "Eurythmics"
+          },
+          {
+            "name": "Annie Lennox"
+          },
+          {
+            "name": "Dave Stewart"
+          }
+        ],
+        "album": {
+          "name": "Sweet Dreams (Are Made Of This)"
+        },
+        "duration": 216933,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "GBARL0300589"
+          }
+        ]
+      }
+    }
+  }
+}

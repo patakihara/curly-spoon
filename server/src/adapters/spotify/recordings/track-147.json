@@ -1,0 +1,42 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-147",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/c85eae317a394934bdd3f23a4f5fab5e",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "We Belong",
+        "artist": [
+          {
+            "name": "Pat Benatar"
+          }
+        ],
+        "album": {
+          "name": "Tropico"
+        },
+        "duration": 221133,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "USCH38400001"
+          }
+        ]
+      }
+    }
+  }
+}

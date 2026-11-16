@@ -3,62 +3,97 @@ import { Fragment } from 'react';
 import type { ComponentProps } from 'react';
 import { PLATFORM, useLayout, type Chrome, type LayoutId, type PageFrame } from '../nav/platform';
 import type { ShellNav } from '../../shell-nav';
-import type { Playing } from '../../player';
-import { BackLayer, BottomNav, IconButton, MediaHeader, MiniPlayer, NavRail, PageBody, ResultRow, Section } from '../ui/index.js';
+import { usePlay, type Playing } from '../../player';
+import { useChoose } from '../../choose';
+import { BackLayer, BottomNav, IconButton, MediaHeader, MiniPlayer, NavRail, OverflowMenu, PageBody, ResultRow, Section } from '../ui/index.js';
 
 const placeholder = {
   "title": "Late walks",
+  "ref": "late-walks",
   "kind": "Playlist",
-  "meta": "8 songs · 32 min",
+  "meta": "From Spotify · 8 of 10 found",
   "image": "/art/deep-inertia.jpg",
+  "menu": [
+    {
+      "key": "reimport",
+      "label": "Import again from Spotify",
+      "icon": "sync"
+    }
+  ],
   "songs": [
     {
       "title": "Heartbeats in Silence",
       "meta": "Deep Inertia · 4:22",
       "image": "/art/deep-inertia.jpg",
-      "status": "Playing"
+      "status": "Playing",
+      "ref": "heartbeats-in-silence"
     },
     {
       "title": "Salt and Static",
       "meta": "Soul Vertex · 3:54",
       "image": "/art/salt-and-static.jpg",
-      "status": null
+      "status": null,
+      "ref": "salt-and-static"
     },
     {
       "title": "Golden Scars",
       "meta": "Fleeting Verses · 2:53",
       "image": "/art/golden-scars.jpg",
-      "status": null
+      "status": null,
+      "ref": "golden-scars"
     },
     {
       "title": "Low Sun",
       "meta": "Deep Inertia · 3:39",
       "image": "/art/shadows-and-sighs.jpg",
-      "status": null
+      "status": null,
+      "ref": "low-sun"
     },
     {
       "title": "Paper Lanterns",
       "meta": "Sonic Tales · 4:08",
       "image": "/art/paper-lanterns.jpg",
-      "status": null
+      "status": null,
+      "ref": "paper-lanterns"
     },
     {
       "title": "Escapes and Moons",
       "meta": "Soul Vertex · 3:33",
       "image": "/art/escapes-and-moons.jpg",
-      "status": null
+      "status": null,
+      "ref": "escapes-and-moons"
     },
     {
       "title": "Fragments of the Wind",
       "meta": "Fleeting Verses · 4:51",
       "image": "/art/fragments-of-the-wind.jpg",
-      "status": null
+      "status": null,
+      "ref": "fragments-of-the-wind"
     },
     {
       "title": "Between Lines of Light",
       "meta": "Sonic Tales · 3:50",
       "image": "/art/between-lines-of-light.jpg",
-      "status": null
+      "status": null,
+      "ref": "between-lines-of-light"
+    }
+  ],
+  "unmatched": [
+    {
+      "songs": [
+        {
+          "title": "Night Ferry",
+          "meta": "Harbour Lights · Tidewater · 3:45",
+          "image": "/art/tears-of-ice.jpg",
+          "status": "Not found"
+        },
+        {
+          "title": "Field Recording, Pier 4",
+          "meta": "Sonic Tales · Coastlines · 1:12",
+          "image": "/art/signal-noise.jpg",
+          "status": "Not a song"
+        }
+      ]
     }
   ]
 };
@@ -270,12 +305,23 @@ export interface PlaylistProps {
 
 export default function Playlist({ data = placeholder, state = 'full' }: PlaylistProps) {
   const platform = PLATFORM[useLayout()];
+  const play = usePlay();
+  const choose = useChoose();
   return (
     <PageBody width="list" platform={platform}>
       <Section platform={platform}>
-        <MediaHeader kindLabel={data.kind} meta={data.meta} image={data.image} nextLabel={null} lastLabel="Add to queue" platform={platform} />
+        <MediaHeader
+          kindLabel={data.kind}
+          meta={data.meta}
+          image={data.image}
+          onPlay={play(data.ref, 'music', 'source')}
+          nextLabel={null}
+          lastLabel="Add to queue"
+          menu={<OverflowMenu items={data.menu} onSelect={choose(data.ref)} platform={platform} />}
+          platform={platform}
+        />
       </Section>
-      <Section last={true} platform={platform}>
+      <Section platform={platform}>
         {data.songs.map((song, i) => (
           <Fragment key={i}>
             <ResultRow
@@ -283,6 +329,7 @@ export default function Playlist({ data = placeholder, state = 'full' }: Playlis
               meta={song.meta}
               image={song.image}
               status={song.status}
+              onAction={play(song.ref, 'music', 'now')}
               divider={true}
               trailing={<IconButton icon="drag_handle" label="Drag to reorder" muted={true} />}
               platform={platform}
@@ -290,6 +337,19 @@ export default function Playlist({ data = placeholder, state = 'full' }: Playlis
           </Fragment>
         ))}
       </Section>
+      {data.unmatched.map((missing, i) => (
+        <Fragment key={i}>
+          {missing.songs.length > 0 && (
+            <Section title="Not found on YouTube Music" last={true} platform={platform}>
+              {missing.songs.map((song, i) => (
+                <Fragment key={i}>
+                  <ResultRow title={song.title} meta={song.meta} image={song.image} status={song.status} tone="error" divider={true} platform={platform} />
+                </Fragment>
+              ))}
+            </Section>
+          )}
+        </Fragment>
+      ))}
     </PageBody>
   );
 }

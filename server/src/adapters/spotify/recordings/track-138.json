@@ -1,0 +1,42 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-138",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/a2340618845246a5a1583577d01d6b7d",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "Love Shack",
+        "artist": [
+          {
+            "name": "The B-52's"
+          }
+        ],
+        "album": {
+          "name": "Cosmic Thing"
+        },
+        "duration": 320680,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "USRE18900030"
+          }
+        ]
+      }
+    }
+  }
+}

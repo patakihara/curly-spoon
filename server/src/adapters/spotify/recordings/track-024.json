@@ -1,0 +1,42 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-024",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/9fc9ae93f7814dc8b4b2b50c06b6a39c",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "Everybody Wants To Rule The World",
+        "artist": [
+          {
+            "name": "Tears For Fears"
+          }
+        ],
+        "album": {
+          "name": "Songs From The Big Chair (Super Deluxe Edition)"
+        },
+        "duration": 251488,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "GBF088590110"
+          }
+        ]
+      }
+    }
+  }
+}

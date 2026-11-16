@@ -1,0 +1,42 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-003",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/66b9b3ade3c549cc92f49d2dd34fef80",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "Heaven Is A Place On Earth",
+        "artist": [
+          {
+            "name": "Belinda Carlisle"
+          }
+        ],
+        "album": {
+          "name": "Greatest Vol.1 - Belinda Carlisle"
+        },
+        "duration": 246520,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "GBAAA8700010"
+          }
+        ]
+      }
+    }
+  }
+}

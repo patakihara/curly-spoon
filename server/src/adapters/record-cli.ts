@@ -101,6 +101,13 @@
  * which Jellyfin ignores and which does not exist (record-musicbrainz.ts); `--no-report` leaves
  * that report out. It needs only JELLYFIN_API_KEY.
  *
+ * `--only spotify` records M3.spotify's signed-out Spotify reads: one editorial playlist of more
+ * than 100 tracks, its order and each track, a missing playlist and track, and the Web API's 429,
+ * with no account, the anonymous token scrubbed everywhere (record-spotify.ts). `--only
+ * spotify-ytmusic` then searches YouTube Music for each recorded track as an import does, 2 s
+ * apart, after the same address check as `ytmusic`, and prints how many matched; Spotify is not
+ * asked.
+ *
  * `--only albums-live --log <file> --pick <call=line,..>` turns the lines named of a live album
  * run's proxy log into recordings of qBittorrent, Prowlarr and Jellyfin, and asks the Cover Art
  * Archive for The Slip's release-group front (record-albums-live.ts). Nothing goes on stdin.
@@ -134,6 +141,7 @@ import { recordAlbumsLive } from './record-albums-live.js';
 import { recordBooks } from './record-books.js';
 import { recordQbit } from './record-qbit.js';
 import { recordExtractor } from './record-extractor.js';
+import { recordSpotify, recordSpotifyYtMusic } from './record-spotify.js';
 import { recordYtMusic, SERVER_ECHO_ARGV } from './record-ytmusic.js';
 import { YTMUSIC_URL } from './ytmusic/client.js';
 import { recordHousehold } from './record-household.js';
@@ -173,8 +181,8 @@ Records Audiobookshelf's and Jellyfin's calls into server/src/adapters/*/recordi
                      the track to mark if the test user has played nothing
   --only <name>      record only abs, jellyfin, index, play, episode, jfplay, progress,
                      sessions, shell, lyrics, lists, played, books, albums, shelf, qbit, ytmusic,
-                     extractor, musicbrainz, albums-musicbrainz, albums-qbit, albums-live, coverart or
-                     keep; or
+                     extractor, musicbrainz, albums-musicbrainz, albums-qbit, albums-live, spotify,
+                     spotify-ytmusic, coverart or keep; or
                      oidc, a sign-in and its links
   --lrclib <url>     LRCLIB's base URL, for --only lyrics
   --prowlarr <url>   Prowlarr's base URL, for --only books and albums
@@ -767,10 +775,12 @@ export async function runRecord(io: RecordIo): Promise<number> {
       'coverart',
       'keep',
       'oidc',
+      'spotify',
+      'spotify-ytmusic',
     ].includes(only)
   ) {
     io.err(
-      `--only is abs, jellyfin, index, play, episode, jfplay, progress, sessions, shell, lyrics, lists, played, household, books, albums, shelf, qbit, ytmusic, extractor, github, musicbrainz, albums-musicbrainz, albums-qbit, albums-live, coverart, keep or oidc, not ${only}`,
+      `--only is abs, jellyfin, index, play, episode, jfplay, progress, sessions, shell, lyrics, lists, played, household, books, albums, shelf, qbit, ytmusic, extractor, github, musicbrainz, albums-musicbrainz, albums-qbit, albums-live, coverart, keep, oidc, spotify or spotify-ytmusic, not ${only}`,
     );
     return 2;
   }
@@ -799,6 +809,8 @@ export async function runRecord(io: RecordIo): Promise<number> {
   if (only === 'extractor') return runExtractor(io, values, root);
   if (only === 'github') return runGithub(io, root);
   if (only === 'musicbrainz') return runMusicBrainz(io, root);
+  if (only === 'spotify') return runSpotify(io, root);
+  if (only === 'spotify-ytmusic') return runSpotifyYtMusic(io, root);
   if (only === 'albums-musicbrainz') return runAlbumGroups(io, root);
   if (only === 'albums-qbit') return runAlbumsQbit(io, values, parseKeys(io.stdin), root);
   if (only === 'albums-live') return runAlbumsLive(io, values, root);
@@ -1348,6 +1360,29 @@ async function runMusicBrainz(io: RecordIo, root: string): Promise<number> {
     out: io.out,
     root,
     musicBrainzUrl: MUSICBRAINZ_URL,
+  });
+  return scanWritten(io, written, []);
+}
+
+async function runSpotify(io: RecordIo, root: string): Promise<number> {
+  const { written } = await recordSpotify({ fetch: io.fetch, out: io.out, root });
+  return scanWritten(io, written, []);
+}
+
+async function runSpotifyYtMusic(io: RecordIo, root: string): Promise<number> {
+  const { written } = await recordSpotifyYtMusic({
+    fetch: io.fetch,
+    out: io.out,
+    root,
+    baseUrl: YTMUSIC_URL,
+    now: io.now ?? Date.now,
+    ...(io.names ? { names: io.names } : {}),
+    serverEcho:
+      io.serverEcho ??
+      (async () => {
+        const [file, ...args] = SERVER_ECHO_ARGV as [string, ...string[]];
+        return (await promisify(execFile)(file, args, { timeout: 120_000 })).stdout;
+      }),
   });
   return scanWritten(io, written, []);
 }

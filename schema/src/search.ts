@@ -138,6 +138,21 @@ export const SearchSong = z
   .openapi('SearchSong');
 export type SearchSong = z.infer<typeof SearchSong>;
 
+/**
+ * A public Spotify playlist a pasted link names, which importing makes one of your music lists: its
+ * name, how many entries Spotify says it holds, its cover, and `from`, the link `POST
+ * /lists/import` takes.
+ */
+export const SearchPlaylist = z
+  .object({
+    from: z.string(),
+    name: z.string(),
+    count: z.number().int().nonnegative(),
+    art: ArtUrl.nullable(),
+  })
+  .openapi('SearchPlaylist');
+export type SearchPlaylist = z.infer<typeof SearchPlaylist>;
+
 /** Whether songs from outside the library can play right now. */
 export const StreamingState = z.enum(['ok', 'unavailable']).openapi('StreamingState');
 export type StreamingState = z.infer<typeof StreamingState>;
@@ -150,10 +165,15 @@ export type SearchBookParams = z.infer<typeof SearchBookParams>;
 export const SearchAlbumParams = z.object({ mbid: z.string().uuid() });
 export type SearchAlbumParams = z.infer<typeof SearchAlbumParams>;
 
+/** A playlist row's cover, by its Spotify image id (40 hex digits). */
+export const SearchPlaylistParams = z.object({ image: z.string().regex(/^[0-9a-f]{40}$/) });
+export type SearchPlaylistParams = z.infer<typeof SearchPlaylistParams>;
+
 /**
  * A search's results, best first, for the query as it was searched, the books and albums the
  * library lacks that the catalogues find for it, the songs that play straight away, and whether they
- * can now.
+ * can now. A query that is a Spotify playlist link searches nothing else: it answers that playlist
+ * alone in `playlists`, while it can be imported, and none when Spotify does not answer.
  */
 export const SearchResults = z
   .object({
@@ -162,6 +182,7 @@ export const SearchResults = z
     books: z.array(SearchBook),
     albums: z.array(SearchAlbum),
     songs: z.array(SearchSong),
+    playlists: z.array(SearchPlaylist),
     streaming: StreamingState,
     /** Whether the person has any request, which Search offers whatever it shows. */
     hasRequests: z.boolean(),

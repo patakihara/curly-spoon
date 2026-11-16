@@ -1,6 +1,6 @@
 ---
 page: music
-pageHash: 8ebdfa51e2161305fa5b1d833eae6714752fdaf6d063cee5bd43bf1c2f06b03e
+pageHash: 5d4e4d4db5705e8984945f0dc2f8fd1db5e2be4b2067d5be23b8d237d38f323d
 sonora: [kit:mobile/music, kit:desktop/music]
 spotify: [S31]
 ---
@@ -87,3 +87,10 @@ Each album card opens its Album page; the Artists tab, not drawn, holds the arti
 ## M3.requests failure
 
 - Changed on purpose: a list that failed to load draws the page's `failed` state, on its own phone artboard, in place of the sort bar and the grid: Sonora's `EmptyState`, as Search's, with "Try again".
+
+## M3.spotify
+
+- Changed on purpose: under the library a "Playlists" section lists your music lists as Podcasts'
+  "Lists" do, a grid of `MediaCard`s with their songs' covers as a mosaic, each opening its playlist
+  page: "Late walks", and "Salt Road Drive", imported from Spotify. Where favourites sit is still not
+  drawn.

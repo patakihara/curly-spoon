@@ -1,0 +1,42 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-048",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/c70fce315a394b258acfaa7958b92beb",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "Against All Odds (Take a Look at Me Now) - 2016 Remaster",
+        "artist": [
+          {
+            "name": "Phil Collins"
+          }
+        ],
+        "album": {
+          "name": "The Singles (Expanded)"
+        },
+        "duration": 206360,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "USRH11603367"
+          }
+        ]
+      }
+    }
+  }
+}

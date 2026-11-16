@@ -1,0 +1,42 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-022",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/5190e9a9d7904fefb751eecf6be84bd7",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "I Wanna Dance with Somebody (Who Loves Me)",
+        "artist": [
+          {
+            "name": "Whitney Houston"
+          }
+        ],
+        "album": {
+          "name": "Whitney"
+        },
+        "duration": 292875,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "USAR18700121"
+          }
+        ]
+      }
+    }
+  }
+}

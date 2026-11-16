@@ -1,0 +1,21 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "metadata-404",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/00000000000000000000000000000000",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 404,
+    "headers": {},
+    "body": null
+  }
+}

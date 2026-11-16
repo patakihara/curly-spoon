@@ -1,0 +1,42 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-099",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/42781b80547c45079e298b7ae34d195a",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "Pump Up The Jam",
+        "artist": [
+          {
+            "name": "Technotronic"
+          }
+        ],
+        "album": {
+          "name": "Pump Up The Jam"
+        },
+        "duration": 320306,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "BED018901375"
+          }
+        ]
+      }
+    }
+  }
+}

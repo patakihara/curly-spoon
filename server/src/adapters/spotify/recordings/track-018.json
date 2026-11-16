@@ -1,0 +1,42 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-018",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/046ef5eaff02458f9a4fdb6d0465d163",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "Back In Black",
+        "artist": [
+          {
+            "name": "AC/DC"
+          }
+        ],
+        "album": {
+          "name": "Back In Black"
+        },
+        "duration": 256000,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "AUAP08000046"
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-038",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/7de6aa0b0ce8427c9b1c0729bd7cf87c",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "I'm On Fire",
+        "artist": [
+          {
+            "name": "Bruce Springsteen"
+          }
+        ],
+        "album": {
+          "name": "Born In The U.S.A."
+        },
+        "duration": 159313,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "USSM18400411"
+          }
+        ]
+      }
+    }
+  }
+}

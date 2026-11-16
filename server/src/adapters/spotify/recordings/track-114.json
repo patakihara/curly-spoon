@@ -1,0 +1,42 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-114",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/33034ce3f129418bbc94a7d97c3286a7",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "Holding Back the Years - 2008 Remaster",
+        "artist": [
+          {
+            "name": "Simply Red"
+          }
+        ],
+        "album": {
+          "name": "Picture Book (Expanded Version)"
+        },
+        "duration": 269840,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "GBCRL0800119"
+          }
+        ]
+      }
+    }
+  }
+}

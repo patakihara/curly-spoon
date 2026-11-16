@@ -1,0 +1,42 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-040",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/9033df74ae0f4e5790213a2adc7136ae",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "You Make My Dreams (Come True)",
+        "artist": [
+          {
+            "name": "Daryl Hall & John Oates"
+          }
+        ],
+        "album": {
+          "name": "Voices"
+        },
+        "duration": 190626,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "USRC10301828"
+          }
+        ]
+      }
+    }
+  }
+}

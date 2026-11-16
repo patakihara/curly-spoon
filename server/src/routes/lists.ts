@@ -13,8 +13,11 @@
  * - An entry named twice is kept once, where first named; adding one already on a list keeps it
  *   where it is.
  *
+ * - A music list takes songs: a streamed song search or an import named, or a Jellyfin track the
+ *   person may open; a song goes on no other list (400 `wrong_kind`).
+ *
  * Playing a listening list or playlist (lists/play.ts) plays it now on this device's spoken
- * queue. A digest plays in a queue of its own, from `start` (one of its episodes) or where its
+ * queue, a music list on its music queue. A digest plays in a queue of its own, from `start` (one of its episodes) or where its
  * queue was left: the spoken queue it replaces is saved, and comes back when its current item, or
  * its next once that finished, is played. Deleting a digest leaves its queue playing as your own,
  * so autoplay is worked out again for each of the person's devices.
@@ -22,10 +25,13 @@
 import {
   addListItem,
   createList,
+  importList,
+  reimportList,
   deleteList,
   getList,
   LIST_ENTRIES_MAX,
   listLists,
+  type MediaRef,
   mediaRefKey,
   playList,
   setListItems,
@@ -45,19 +51,31 @@ import {
   shown,
   wrongKind,
 } from '../lists/reader.js';
+import { NOT_A_SPOTIFY_PLAYLIST, spotifyPlaylistId } from '../adapters/spotify/link.js';
+import { SpotifyError } from '../adapters/spotify/client.js';
+import type { ImportJob, SpotifyReader } from '../lists/import/job.js';
+import { importFor, importOf, queueImport, requeueImport, running } from '../lists/import/state.js';
 import { listExpansion, listRun, nothingToPlay } from '../lists/play.js';
-import { addEntries, enterDigest } from '../queues/engine.js';
+import { addEntries, enterDigest, queueFor } from '../queues/engine.js';
 import type { Sessions } from '../queues/sessions.js';
-import { serve } from '../route.js';
+import { Refusal, serve } from '../route.js';
 import * as store from '../store/lists.js';
 import { signedIn } from './auth.js';
 
+/** Spotify playlist import: the job, the reader, and whether YouTube Music streaming is on. */
+export interface ListImports {
+  job: ImportJob;
+  spotify: SpotifyReader;
+  available: () => boolean;
+}
+
 export function listRoutes(
   app: FastifyInstance,
-  context: ListsContext & { sessions: Sessions },
+  context: ListsContext & { sessions: Sessions; imports: ListImports | null },
 ): void {
   const { db, sessions } = context;
-  const reader = (request: FastifyRequest) => readerFor(context, signedIn(request));
+  const reader = (request: FastifyRequest, named: readonly MediaRef[] = []) =>
+    readerFor(context, signedIn(request), named);
 
   /** A store write, its `FixedList` answered as a refusal, and a list gone since as 404. */
   const written = <T>(write: () => T | null): T => {
@@ -75,7 +93,7 @@ export function listRoutes(
     const r = await reader(request);
     return {
       lists: store.listLists(db, r.userId).map((list) => {
-        const { shows: _shows, items: _items, ...summary } = shown(r, list);
+        const { shows: _shows, items: _items, import: _import, ...summary } = shown(r, list);
         return summary;
       }),
     };
@@ -154,7 +172,7 @@ export function listRoutes(
   };
 
   serve(app, addListItem, async (request, _reply, body, { params }) => {
-    const r = await reader(request);
+    const r = await reader(request, [body.ref]);
     const list = entriesOf(r, params.id);
     const [ref] = checked(r, list.kind, [body.ref]);
     const key = mediaRefKey(ref!);
@@ -167,7 +185,7 @@ export function listRoutes(
   });
 
   serve(app, setListItems, async (request, _reply, body, { params }) => {
-    const r = await reader(request);
+    const r = await reader(request, body.refs);
     const list = entriesOf(r, params.id);
     const refs = checked(r, list.kind, body.refs);
     return shown(
@@ -205,15 +223,66 @@ export function listRoutes(
     const run = listRun(r, list, body.start);
     await sessions.load(caller, run.refs);
     const expansion = listExpansion(run, sessions.deps.expand);
+    const type = queueFor(expansion.kind);
     const saved = sessions.change(caller, body.rev, (s) => {
       const played = addEntries(s, expansion, 'now', sessions.deps);
       if (played === null) throw new Error('invariant: a list play has entries');
-      const spoken = played.queues.spoken;
-      spoken.context = null;
+      const queue = played.queues[type];
+      queue.context = null;
       // Started over a finished entry, it plays from its beginning, not its upstream end.
-      if (run.again) spoken.position = { ms: 0, takenAt: r.now };
+      if (run.again) queue.position = { ms: 0, takenAt: r.now };
       return played;
     });
-    return sessions.queueOf(saved, 'spoken');
+    return sessions.queueOf(saved, type);
+  });
+
+  /** Import is on only while YouTube Music streaming is: 409 `medium_unavailable` otherwise. */
+  const importing = (): ListImports => {
+    const imports = context.imports;
+    if (imports === null || !imports.available()) throw new Refusal(409, 'medium_unavailable');
+    return imports;
+  };
+
+  /** The list's import queued again from its start, its songs cleared, the job woken. */
+  const reimported = (r: Reader, imports: ListImports, listId: string) => {
+    const before = importOf(db, listId);
+    if (before === null) throw notFound();
+    if (running(before)) throw new Refusal(409, 'importing');
+    requeueImport(db, listId, r.now);
+    imports.job.wake();
+    return shown(r, owned(r, listId));
+  };
+
+  serve(app, importList, async (request, _reply, body) => {
+    const playlistId = spotifyPlaylistId(body.from);
+    if (playlistId === null) throw new Refusal(400, NOT_A_SPOTIFY_PLAYLIST);
+    const imports = importing();
+    const r = await reader(request);
+    const before = importFor(db, r.userId, playlistId);
+    if (before !== null) return reimported(r, imports, before.listId);
+    let name: string;
+    try {
+      ({ name } = await imports.spotify.playlistHeader(playlistId));
+    } catch (error) {
+      if (error instanceof SpotifyError) throw new Refusal(error.status, error.code);
+      throw error;
+    }
+    const made = db.transaction(() => {
+      // Asked twice at once, the second finds the first's import made while it read the name.
+      const raced = importFor(db, r.userId, playlistId);
+      if (raced !== null) return null;
+      const list = store.createList(db, r.userId, { kind: 'music', name }, r.now);
+      queueImport(db, { listId: list.id, userId: r.userId, playlistId }, r.now);
+      return list;
+    })();
+    if (made === null) throw new Refusal(409, 'importing');
+    imports.job.wake();
+    return shown(r, owned(r, made.id));
+  });
+
+  serve(app, reimportList, async (request, _reply, _body, { params }) => {
+    const imports = importing();
+    const r = await reader(request);
+    return reimported(r, imports, owned(r, params.id).id);
   });
 }

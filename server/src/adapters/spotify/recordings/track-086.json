@@ -1,0 +1,42 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-086",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/16bbfdec951f4ed09c755b319ce1c18b",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "Owner of a Lonely Heart",
+        "artist": [
+          {
+            "name": "Yes"
+          }
+        ],
+        "album": {
+          "name": "90125 (Deluxe Version)"
+        },
+        "duration": 268506,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "USAT20702539"
+          }
+        ]
+      }
+    }
+  }
+}

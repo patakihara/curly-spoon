@@ -696,3 +696,111 @@ describe('[M3.ytmusic/e] the migration that lets a streamed song sit in a queue'
     db.close();
   });
 });
+
+describe('[M3.spotify] the Spotify tracks migration', () => {
+  it('adds the empty track cache on top of everything before it, and applies once', () => {
+    const db = new Database(':memory:');
+    runMigrations(
+      db,
+      migrations.filter((m) => m.name !== 'spotify_tracks'),
+    );
+    expect(db.prepare("SELECT name FROM sqlite_master WHERE name = 'spotify_tracks'").get()).toBe(
+      undefined,
+    );
+    runMigrations(db);
+    const columns = (
+      db.prepare('PRAGMA table_info(spotify_tracks)').all() as { name: string }[]
+    ).map((c) => c.name);
+    expect(columns).toEqual(['id', 'title', 'artists', 'album', 'duration_ms', 'isrc', 'at']);
+    runMigrations(db);
+    const applied = db
+      .prepare("SELECT COUNT(*) AS n FROM _migrations WHERE name = 'spotify_tracks'")
+      .get();
+    expect(applied).toEqual({ n: 1 });
+  });
+});
+
+describe('[M3.spotify] the Spotify matches migration', () => {
+  it('adds the empty match cache on top of everything before it, and applies once', () => {
+    const db = new Database(':memory:');
+    runMigrations(
+      db,
+      migrations.filter((m) => m.name !== 'spotify_matches'),
+    );
+    expect(db.prepare("SELECT name FROM sqlite_master WHERE name = 'spotify_matches'").get()).toBe(
+      undefined,
+    );
+    runMigrations(db);
+    const columns = (
+      db.prepare('PRAGMA table_info(spotify_matches)').all() as { name: string }[]
+    ).map((c) => c.name);
+    expect(columns).toEqual(['spotify_track_id', 'youtube_id', 'reason', 'near', 'at']);
+    runMigrations(db);
+    const applied = db
+      .prepare("SELECT COUNT(*) AS n FROM _migrations WHERE name = 'spotify_matches'")
+      .get();
+    expect(applied).toEqual({ n: 1 });
+  });
+});
+
+describe('[M3.spotify/b] the music lists migration', () => {
+  it('keeps every list, entry and digest a session plays, and lets a list hold songs', () => {
+    const db = new Database(':memory:');
+    db.pragma('foreign_keys = ON');
+    runMigrations(
+      db,
+      migrations.filter((m) => m.name !== 'music_lists'),
+    );
+    db.exec(`
+      INSERT INTO users (id, username, role, created_at, updated_at)
+        VALUES ('user-1', 'kara', 'member', 1, 1);
+      INSERT INTO devices (id, user_id, kind, name, created_at, last_seen_at)
+        VALUES ('device-1', 'user-1', 'web', 'Laptop', 1, 1);
+      INSERT INTO lists (id, user_id, kind, name, all_shows, play_order, created_at, updated_at)
+        VALUES ('digest-1', 'user-1', 'digest', 'The Digest', 1, 'oldest', 1, 1),
+               ('list-1', 'user-1', 'playlist', 'Commute', 0, NULL, 2, 3);
+      INSERT INTO list_items (list_id, ord, source, upstream_id)
+        VALUES ('list-1', 0, 'abs', 'episode-2'), ('list-1', 1, 'abs', 'episode-1');
+      INSERT INTO listening_sessions (device_id, user_id, active, rev, updated_at, spoken_digest)
+        VALUES ('device-1', 'user-1', 'spoken', 3, 1, 'digest-1');
+    `);
+    const before = (sql: string) => db.prepare(sql).all();
+    const lists = before('SELECT * FROM lists ORDER BY id');
+    const items = before('SELECT * FROM list_items ORDER BY list_id, ord');
+
+    runMigrations(db);
+
+    expect(db.prepare('SELECT * FROM lists ORDER BY id').all()).toEqual(lists);
+    expect(db.prepare('SELECT * FROM list_items ORDER BY list_id, ord').all()).toEqual(items);
+    expect(db.prepare('SELECT rev, spoken_digest FROM listening_sessions').all()).toEqual([
+      { rev: 3, spoken_digest: 'digest-1' },
+    ]);
+    expect(db.pragma('foreign_key_check')).toEqual([]);
+    db.exec(`
+      INSERT INTO lists (id, user_id, kind, name, all_shows, play_order, created_at, updated_at)
+        VALUES ('music-1', 'user-1', 'music', 'All Out 80s', 0, NULL, 4, 4);
+      INSERT INTO list_items (list_id, ord, source, upstream_id)
+        VALUES ('music-1', 0, 'ytmusic', 'aaaaaaaaaaa');
+      INSERT INTO list_imports (list_id, user_id, source, playlist_id, state, done, total,
+          unmatched, imported_at)
+        VALUES ('music-1', 'user-1', 'spotify', '37i9dQZF1DX4UtSsGT1Sbe', 'reading', 0, 150, '[]', 4);
+    `);
+    expect(() =>
+      db.exec(`INSERT INTO lists (id, user_id, kind, name, all_shows, play_order, created_at,
+        updated_at) VALUES ('music-2', 'user-1', 'music', 'n', 0, 'oldest', 4, 4)`),
+    ).toThrow(/CHECK/);
+    // One import of a playlist per person; deleting the list drops its import.
+    expect(() =>
+      db.exec(`INSERT INTO list_imports (list_id, user_id, source, playlist_id, state, done,
+          total, unmatched, imported_at)
+        VALUES ('list-1', 'user-1', 'spotify', '37i9dQZF1DX4UtSsGT1Sbe', 'done', 0, 0, '[]', 4)`),
+    ).toThrow(/UNIQUE/);
+    db.exec("DELETE FROM lists WHERE id = 'music-1'");
+    expect(db.prepare('SELECT COUNT(*) AS n FROM list_imports').get()).toEqual({ n: 0 });
+    runMigrations(db);
+    expect(
+      db.prepare("SELECT COUNT(*) AS n FROM _migrations WHERE name = 'music_lists'").get(),
+    ).toEqual({ n: 1 });
+    db.close();
+  });
+});

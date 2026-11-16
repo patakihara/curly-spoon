@@ -47,6 +47,7 @@ import SignIn from '../generated/pages/SignIn';
 import { type Act, ActContext } from '../act';
 import { type Request, RequestContext, requestOf } from '../request';
 import { type Choose, ChooseContext } from '../choose';
+import { type Import, ImportContext } from '../import';
 import {
   PlayContext,
   type PlayerHeard,
@@ -94,7 +95,7 @@ import {
 } from './search';
 import { setSetting, settingFailure, settingsData, settingsAwaited } from './settings';
 import { SignInScreen } from './sign-in';
-import { listCards, listData } from './lists';
+import { listCards, listData, musicCards, playlistData } from './lists';
 import {
   episodeAsk,
   feedOrNone,
@@ -110,7 +111,7 @@ import {
   loadSettings,
   settledAddress,
 } from './loads';
-import { addMenu, browserAsk, itemVerb, listVerb } from './menus';
+import { addMenu, browserAsk, importPlaylist, itemVerb, listVerb } from './menus';
 import { answerFrom, type Answer, pageKey, SignedOut } from './store';
 
 /**
@@ -119,11 +120,12 @@ import { answerFrom, type Answer, pageKey, SignedOut } from './store';
  * player tab's page in the side panel, and the back layer and subheader the page's frame hands
  * the shell. One screen per page: Browse's first shelf and the library homes from
  * `GET /api/library/{medium}`, in the order their address asks, which their sort menu replaces,
- * Browse's Up next and Still listening from `GET /api/feed`, Podcasts' lists from
- * `GET /api/lists`, a book, show, episode or album from `GET /api/items/{ref}`, a show's episodes
- * in the order its address asks, which its sort menu replaces, a list from
+ * Browse's Up next and Still listening from `GET /api/feed`, Podcasts' lists and Music's playlists
+ * from `GET /api/lists`, a book, show, episode or album from `GET /api/items/{ref}`, a show's episodes
+ * in the order its address asks, which its sort menu replaces, a list or a music playlist from
  * `GET /api/lists/{id}`, whose Play plays it through its own route (`listPlayOf`) and whose menu
- * renames, turns round or deletes it, a book's, show's or episode's menu adding it to your lists
+ * renames, turns round, imports again or deletes it, a playlist's page looking again while its
+ * import runs, a pasted Spotify playlist's Import making one (`POST /api/lists/import`) and opening it, a book's, show's or episode's menu adding it to your lists
  * (`./menus`), the queue from `GET /api/queues/{active}`, Search from what is typed into it
  * (`../query`) and `GET /api/search/suggest` or `GET /api/search`, whose book rows ask through
  * `POST /api/requests` and whose song rows' menus keep through `POST /api/keep`, looking again
@@ -253,6 +255,8 @@ const settleOrder = <T,>(params: Params, loaded: Ordered<T>) => ({
 const pathOf = (id: string) => routePages.find((page) => page.id === id)!.path;
 const listPath = pathOf('list');
 const podcastsPath = pathOf('podcasts');
+const musicPath = pathOf('music');
+const playlistPath = pathOf('playlist');
 const showPath = pathOf('show');
 
 /** A seed for a fresh shuffle: any unsigned 32-bit whole number. */
@@ -330,7 +334,7 @@ const screens: Screen<never>[] = [
         podcastsFrame.placeholder,
       );
       // The Digest is always there, so only a list holding something keeps the home from empty.
-      const holding = (lists ?? []).some((list) => list.count > 0);
+      const holding = (lists ?? []).some((list) => list.kind !== 'music' && list.count > 0);
       return { data, seed: library.seed, holding };
     },
     settle: settleOrder,
@@ -345,16 +349,29 @@ const screens: Screen<never>[] = [
     name: 'music',
     Page: Music,
     frame: musicFrame,
-    empty: (params) => libraryAwaited(musicFrame.placeholder, libraryAsk(params).sort),
+    empty: (params) => ({
+      ...libraryAwaited(musicFrame.placeholder, libraryAsk(params).sort),
+      lists: [],
+    }),
     load: async (api, params) => {
-      const list = await loadLibrary(api, 'music', libraryAsk(params));
-      return { data: musicData(list, musicFrame.placeholder), seed: list.seed };
+      const [library, lists] = await Promise.all([
+        loadLibrary(api, 'music', libraryAsk(params)),
+        listsOrNone(api),
+      ]);
+      const data = {
+        ...musicData(library, musicFrame.placeholder),
+        lists: musicCards(lists ?? []),
+      };
+      return { data, seed: library.seed, holding: data.lists.length > 0 };
     },
     settle: settleOrder,
-    stateOf: ({ data }) => homeState(data.library),
+    stateOf: ({ data, holding }) => (holding ? 'full' : homeState(data.library)),
     saysFailed: true,
-    verbs: sortVerbs(pathOf('music')),
-  } satisfies Screen<typeof musicFrame.placeholder, Ordered<typeof musicFrame.placeholder>>,
+    verbs: sortVerbs(musicPath),
+  } satisfies Screen<
+    typeof musicFrame.placeholder,
+    Ordered<typeof musicFrame.placeholder> & { holding: boolean }
+  >,
   {
     name: 'book',
     Page: Book,
@@ -459,7 +476,31 @@ const screens: Screen<never>[] = [
   unserved('shelf', Shelf, shelfFrame),
   unserved('shelfReview', ShelfReview, shelfReviewFrame),
   unserved('artist', Artist, artistFrame, ['kind']),
-  unserved('playlist', Playlist, playlistFrame, ['kind']),
+  {
+    name: 'playlist',
+    Page: Playlist,
+    frame: playlistFrame,
+    empty: fixed({ ...emptied(playlistFrame.placeholder), kind: playlistFrame.placeholder.kind }),
+    playsList: (params) => params.ref ?? '',
+    load: async (api, params) => {
+      const list = await loadList(api, params.ref);
+      const state = list.import?.state;
+      return {
+        data: playlistData(list, playlistFrame.placeholder),
+        importing: state === 'reading' || state === 'matching',
+      };
+    },
+    settle: (_params, loaded) => ({ data: loaded.data, address: null }),
+    // An import fills the list as it runs, so its page looks again until it is done or stopped.
+    polls: ({ importing }) => importing,
+    verbs: async (api, ref, key) => {
+      const done = await listVerb(api, browserAsk, ref, key);
+      return done === 'gone' ? { open: musicPath, replace: true } : { reload: done === 'changed' };
+    },
+  } satisfies Screen<
+    typeof playlistFrame.placeholder,
+    { data: typeof playlistFrame.placeholder; importing: boolean }
+  >,
   unserved('favourites', Favourites, favouritesFrame),
   unserved('author', Author, authorFrame, ['kind']),
   unserved('series', Series, seriesFrame, ['kind']),
@@ -689,6 +730,30 @@ function requestsOf<T>(
   };
 }
 
+/** What a page says when a pasted playlist could not be imported. */
+const IMPORT_FAILED = 'This playlist couldn’t be imported. Try again in a moment.';
+
+/**
+ * A page's imports for it to hand down: none on the canvas. A tap imports the playlist its link
+ * names (`POST /api/lists/import`) and opens the list it made; one import of a link goes at a time,
+ * and a failure is said on the page as a change's is.
+ */
+function useImports<T>(drawn: Drawn<T> | undefined, { make, working }: Changes): Import | null {
+  const { api } = useDeps();
+  const navigate = useNavigate();
+  if (drawn === undefined) return null;
+  return (from) => {
+    const what = `import:${from}`;
+    return working.has(what)
+      ? undefined
+      : () =>
+          make(what, IMPORT_FAILED, async () => {
+            const id = await importPlaylist(api, from);
+            navigate(generatePath(playlistPath, { ref: id }));
+          });
+  };
+}
+
 /**
  * A page's switches for it to hand down: none on the canvas, or for a page with none that work. A
  * switch takes no tap until the server has said what it holds.
@@ -787,6 +852,7 @@ function pageOf<T>(screen: Screen<T>): ComponentType {
             const act = actsOf(screen, shown, api, changes);
             const request = requestsOf(shown, api, changes);
             const toggle = togglesOf(screen, shown, api, changes);
+            const importFrom = useImports(shown, changes);
             const retry = useRetries(screen, shown);
             usePolling(screen);
             const heard = useHeard(screen);
@@ -802,9 +868,11 @@ function pageOf<T>(screen: Screen<T>): ComponentType {
               <ChooseContext.Provider value={choose}>
                 <ActContext.Provider value={act}>
                   <RequestContext.Provider value={request}>
-                    <ToggleContext.Provider value={toggle}>
-                      <RetryContext.Provider value={retry}>{page}</RetryContext.Provider>
-                    </ToggleContext.Provider>
+                    <ImportContext.Provider value={importFrom}>
+                      <ToggleContext.Provider value={toggle}>
+                        <RetryContext.Provider value={retry}>{page}</RetryContext.Provider>
+                      </ToggleContext.Provider>
+                    </ImportContext.Provider>
                   </RequestContext.Provider>
                 </ActContext.Provider>
               </ChooseContext.Provider>
@@ -814,6 +882,7 @@ function pageOf<T>(screen: Screen<T>): ComponentType {
             const shown = useScreenData(screen);
             const play = useListPlay(playsList(useParams()));
             const choose = useVerbs(screen, shown);
+            usePolling(screen);
             return (
               <PlayContext.Provider value={play}>
                 <ChooseContext.Provider value={choose}>

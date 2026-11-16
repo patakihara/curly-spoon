@@ -1,0 +1,42 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-056",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/5e4d6fc020284e0c851ff89985f0fd33",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "Run To You",
+        "artist": [
+          {
+            "name": "Bryan Adams"
+          }
+        ],
+        "album": {
+          "name": "Reckless (30th Anniversary / Deluxe Edition)"
+        },
+        "duration": 233270,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "USAM18490003"
+          }
+        ]
+      }
+    }
+  }
+}

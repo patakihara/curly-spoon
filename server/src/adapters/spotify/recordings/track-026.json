@@ -1,0 +1,42 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-026",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/3b274867068940d1be4e892cf89881b5",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "Another Day in Paradise - 2016 Remaster",
+        "artist": [
+          {
+            "name": "Phil Collins"
+          }
+        ],
+        "album": {
+          "name": "...But Seriously (Deluxe Edition)"
+        },
+        "duration": 322133,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "USRH11602150"
+          }
+        ]
+      }
+    }
+  }
+}

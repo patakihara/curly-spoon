@@ -246,6 +246,31 @@ fun SearchPage(navController: NavController, actions: PageActions) {
                             )
                             Section(
                                 SectionProps(
+                                    platform = Platform.MOBILE,
+                                    children = {
+                                        ResultRow(
+                                            ResultRowProps(
+                                                title = "Salt Road Drive",
+                                                meta = "Spotify playlist · 150 songs",
+                                                image = "/art/salt-and-static.jpg",
+                                                platform = Platform.MOBILE,
+                                                trailing = {
+                                                    Button(
+                                                        ButtonProps(
+                                                            variant = ButtonVariant.SECONDARY,
+                                                            size = SizeSmMdLg.SM,
+                                                            platform = Platform.MOBILE,
+                                                            children = { BasicText("Import") },
+                                                        ),
+                                                    )
+                                                },
+                                            ),
+                                        )
+                                    },
+                                ),
+                            )
+                            Section(
+                                SectionProps(
                                     title = "In your library",
                                     platform = Platform.MOBILE,
                                     children = {

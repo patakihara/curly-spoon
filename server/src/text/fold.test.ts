@@ -71,4 +71,22 @@ describe('folding text for search', () => {
     );
     expect(titleKey('Dreams - 2004 Remaster')).toBe('dreams');
   });
+
+  it('[M3.spotify/a] a title compared drops a soundtrack note, dashed or bracketed', () => {
+    for (const title of [
+      'Danger Zone - From "Top Gun" Original Soundtrack',
+      'Danger Zone (From "Top Gun" Original Soundtrack)',
+      'Danger Zone - From the Motion Picture Soundtrack',
+      'Danger Zone - Love Theme from “Top Gun”',
+    ]) {
+      expect(titleKey(title), title).toBe('danger zone');
+    }
+    expect(titleKey('Song - From Me to You')).toBe('song - from me to you');
+  });
+
+  it('[M3.spotify/a] a title compared reads an ellipsis the same with or without a space after it', () => {
+    expect(titleKey('Flashdance...What a Feeling - Radio Edit')).toBe(
+      titleKey('Flashdance… What a Feeling (Radio Mix)'),
+    );
+  });
 });

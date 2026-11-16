@@ -1,0 +1,42 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-109",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/fb049600b30d4fecb218c15ec7119e46",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "If You Don't Know Me by Now - 2008 Remaster",
+        "artist": [
+          {
+            "name": "Simply Red"
+          }
+        ],
+        "album": {
+          "name": "A New Flame (Expanded Version)"
+        },
+        "duration": 204000,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "GBCRL0800110"
+          }
+        ]
+      }
+    }
+  }
+}

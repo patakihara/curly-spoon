@@ -1,0 +1,42 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-080",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/c69beb989d9447f8b888b2ec61eba755",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "Kiss",
+        "artist": [
+          {
+            "name": "Prince"
+          }
+        ],
+        "album": {
+          "name": "Parade - Music from the Motion Picture Under the Cherry Moon"
+        },
+        "duration": 226240,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "USWB19903319"
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,7 +1,7 @@
 import { ListDetail, type ListSummary, type MediaRef } from '@auralis/schema';
 import { describe, expect, it } from 'vitest';
 import { createApiClient } from '../api/client';
-import { addMenu, type Ask, itemVerb, listMenu, listVerb } from './menus';
+import { addMenu, type Ask, importPlaylist, itemVerb, listMenu, listVerb } from './menus';
 import { SignedOut } from './store';
 
 /** An API answering each `METHOD path` from `answers` (anything else 404), recording each ask. */
@@ -45,11 +45,12 @@ const summary = (over: Partial<ListSummary>): ListSummary => ({
   count: 0,
   counts: { book: 0, show: 0, episode: 0 },
   covers: [],
+  importedFrom: null,
   ...over,
 });
 
 const detail = (over: Partial<ListDetail>): ListDetail =>
-  ListDetail.parse({ ...summary({}), shows: [], items: [], ...over });
+  ListDetail.parse({ ...summary({}), shows: [], items: [], import: null, ...over });
 
 const megacorp = {
   ref: show,
@@ -219,5 +220,57 @@ describe("[M2.lists] an item's menu adding it to your lists", () => {
     const none = api({});
     expect(await itemVerb(none.client, asking(null).ask, 'abs:e1', 'new:playlist')).toBeNull();
     expect(none.asked).toEqual([]);
+  });
+});
+
+describe('[M3.spotify] importing a Spotify playlist, and importing it again', () => {
+  const spotify = (state: 'reading' | 'matching' | 'done' | 'stopped') =>
+    detail({
+      kind: 'music',
+      name: 'All Out 80s',
+      import: {
+        source: 'spotify',
+        state,
+        done: 0,
+        total: 0,
+        unmatched: [],
+        duplicates: 0,
+        stopped: null,
+        importedAt: 0,
+      },
+    });
+
+  it('[M3.spotify] offers Import again first on an imported list once its import is not running', () => {
+    expect(listMenu(spotify('done'))).toEqual([
+      { key: 'reimport', label: 'Import again from Spotify', icon: 'sync' },
+      { key: 'rename', label: 'Rename', icon: 'edit' },
+      { key: 'delete', label: 'Delete playlist', icon: 'delete' },
+    ]);
+    expect(listMenu(spotify('stopped'))[0]!.key).toBe('reimport');
+    expect(listMenu(spotify('matching')).map((i) => i.key)).toEqual(['rename', 'delete']);
+    expect(listMenu(detail({ kind: 'music' })).map((i) => i.key)).toEqual(['rename', 'delete']);
+  });
+
+  it('[M3.spotify] imports again through POST /api/lists/{id}/import, and the list has changed', async () => {
+    const { client, asked } = api({
+      'GET /api/lists/l1': [200, spotify('done')],
+      'POST /api/lists/l1/import': [202, spotify('reading')],
+    });
+    expect(await listVerb(client, asking(null).ask, 'l1', 'reimport')).toBe('changed');
+    expect(asked.map((a) => a.call)).toEqual(['GET /api/lists/l1', 'POST /api/lists/l1/import']);
+  });
+
+  it('[M3.spotify] imports a pasted link through POST /api/lists/import, answering the new list', async () => {
+    const from = 'https://open.spotify.com/playlist/37i9dQZF1DX4UtSsGT1Sbe';
+    const { client, asked } = api({ 'POST /api/lists/import': [202, spotify('reading')] });
+    expect(await importPlaylist(client, from)).toBe('l1');
+    expect(asked).toEqual([{ call: 'POST /api/lists/import', body: { from } }]);
+  });
+
+  it('[M3.spotify] throws when the import is refused, and SignedOut for want of a sign-in', async () => {
+    const refused = api({ 'POST /api/lists/import': [409, { error: 'importing' }] });
+    await expect(importPlaylist(refused.client, 'x')).rejects.toThrow();
+    const out = api({ 'POST /api/lists/import': [401, { error: 'unauthorized' }] });
+    await expect(importPlaylist(out.client, 'x')).rejects.toBeInstanceOf(SignedOut);
   });
 });

@@ -298,7 +298,8 @@ class PageWriter extends KotlinValues {
           | 'choose'
           | 'act'
           | 'toggle'
-          | 'retry';
+          | 'retry'
+          | 'import';
       }
     >,
     scope: Scope,
@@ -369,6 +370,10 @@ class PageWriter extends KotlinValues {
       // Android loads no page's data until M5. A control asking again for nothing would seem to
       // work, so the prop is left out and Sonora draws the control disabled.
       case 'retry':
+        return undefined;
+      // Android imports nothing until M5. A control importing nothing would seem to work, so the
+      // prop is left out and Sonora draws the control disabled.
+      case 'import':
         return undefined;
       case 'literal':
         return this.value(type, value.value, where);

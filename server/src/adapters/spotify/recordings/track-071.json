@@ -1,0 +1,42 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-071",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/5a758614debe4a4d8604afc944ec1aae",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "Eye of the Tiger",
+        "artist": [
+          {
+            "name": "Survivor"
+          }
+        ],
+        "album": {
+          "name": "Rocky IV"
+        },
+        "duration": 245640,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "USVR19600010"
+          }
+        ]
+      }
+    }
+  }
+}

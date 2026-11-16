@@ -1,0 +1,42 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-050",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/dd69fa6b9abe4eceada200eb80a8cdf8",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "Self Control",
+        "artist": [
+          {
+            "name": "Laura Branigan"
+          }
+        ],
+        "album": {
+          "name": "Self Control"
+        },
+        "duration": 246440,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "USAT20903047"
+          }
+        ]
+      }
+    }
+  }
+}

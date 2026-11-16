@@ -1,0 +1,42 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-059",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/fd2e5659472c431dbc10836dcb53992e",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "Start Me Up - Remastered 2009",
+        "artist": [
+          {
+            "name": "The Rolling Stones"
+          }
+        ],
+        "album": {
+          "name": "Tattoo You (2009 Re-Mastered)"
+        },
+        "duration": 213066,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "GBUM70909474"
+          }
+        ]
+      }
+    }
+  }
+}

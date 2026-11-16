@@ -1,0 +1,45 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-146",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/fdbcb14c039a4190a2e57665525f4535",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "Easy Lover",
+        "artist": [
+          {
+            "name": "Philip Bailey"
+          },
+          {
+            "name": "Phil Collins"
+          }
+        ],
+        "album": {
+          "name": "Chinese Wall"
+        },
+        "duration": 304506,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "USSM19909991"
+          }
+        ]
+      }
+    }
+  }
+}

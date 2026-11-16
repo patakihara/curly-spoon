@@ -91,7 +91,8 @@ function readsData(tree: PageTree): boolean {
           value.kind === 'request' ||
           value.kind === 'play' ||
           value.kind === 'choose' ||
-          value.kind === 'act') &&
+          value.kind === 'act' ||
+          value.kind === 'import') &&
         Object.values(value.params).some(data)
       ) {
         return true;

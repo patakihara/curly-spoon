@@ -94,6 +94,30 @@ const placeholder = {
       "status": "Downloading · 64%",
       "tone": "progress"
     }
+  ],
+  "lists": [
+    {
+      "title": "Late walks",
+      "ref": "late-walks",
+      "sub": "Playlist · 8 songs",
+      "covers": [
+        "/art/deep-inertia.jpg",
+        "/art/salt-and-static.jpg",
+        "/art/golden-scars.jpg",
+        "/art/paper-lanterns.jpg"
+      ]
+    },
+    {
+      "title": "Salt Road Drive",
+      "ref": "salt-road-drive",
+      "sub": "From Spotify · 142 songs",
+      "covers": [
+        "/art/escapes-and-moons.jpg",
+        "/art/fragments-of-the-wind.jpg",
+        "/art/between-lines-of-light.jpg",
+        "/art/shadows-and-sighs.jpg"
+      ]
+    }
   ]
 };
 
@@ -347,7 +371,7 @@ export default function Music({ data = placeholder, state = 'full' }: MusicProps
               platform={platform}
             />
           </Section>
-          <Section last={true} platform={platform}>
+          <Section platform={platform}>
             <LayoutGrid platform={platform}>
               {data.library.map((item, i) => (
                 <Fragment key={i}>
@@ -356,6 +380,17 @@ export default function Music({ data = placeholder, state = 'full' }: MusicProps
               ))}
             </LayoutGrid>
           </Section>
+          {data.lists.length > 0 && (
+            <Section title="Playlists" last={true} platform={platform}>
+              <LayoutGrid platform={platform}>
+                {data.lists.map((list, i) => (
+                  <Fragment key={i}>
+                    <MediaCard width="100%" title={list.title} sub={list.sub} covers={list.covers} onClick={list.ref ? () => navigate(generatePath('/music/playlists/:ref', { ref: list.ref })) : undefined} platform={platform} />
+                  </Fragment>
+                ))}
+              </LayoutGrid>
+            </Section>
+          )}
         </>
       )}
     </PageBody>

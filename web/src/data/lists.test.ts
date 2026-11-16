@@ -1,7 +1,8 @@
-import { ListDetail, type ListItem, type ListSummary } from '@auralis/schema';
+import { ListDetail, type ListItem, type ListSummary, type ListUnmatched } from '@auralis/schema';
 import { describe, expect, it } from 'vitest';
 import { frame as list } from '../generated/pages/List';
-import { listCards, listData } from './lists';
+import { frame as playlist } from '../generated/pages/Playlist';
+import { listCards, listData, musicCards, playlistData } from './lists';
 
 const episode = (over: Partial<ListItem> = {}): ListItem => ({
   ref: { source: 'abs', id: 'ep-1' },
@@ -26,8 +27,10 @@ const detail = (over: Partial<ListDetail> = {}): ListDetail =>
     count: 1,
     counts: { book: 0, show: 0, episode: 1 },
     covers: ['/api/media/abs:s1/art'],
+    importedFrom: null,
     shows: [],
     items: [episode()],
+    import: null,
     ...over,
   });
 
@@ -79,6 +82,7 @@ describe('[M2.lists] a list page from GET /api/lists/{id}', () => {
         count: 2,
         counts: { book: 0, show: 0, episode: 2 },
         covers: ['/api/media/abs:s1/art'],
+        importedFrom: null,
         shows: [
           {
             ref: { source: 'abs', id: 's1' },
@@ -192,6 +196,7 @@ describe("[M2.lists] the Podcasts page's lists from GET /api/lists", () => {
       count: 1,
       counts: { book: 0, show: 0, episode: 1 },
       covers: ['/api/media/abs:s1/art'],
+      importedFrom: null,
       ...over,
     });
     const cards = listCards([
@@ -204,6 +209,7 @@ describe("[M2.lists] the Podcasts page's lists from GET /api/lists", () => {
         count: 0,
         counts: { book: 0, show: 0, episode: 0 },
         covers: [],
+        importedFrom: null,
       }),
       summary({}),
       summary({
@@ -229,5 +235,182 @@ describe("[M2.lists] the Podcasts page's lists from GET /api/lists", () => {
         covers: ['/api/media/abs:s1/art?size=medium'],
       },
     ]);
+  });
+});
+
+describe('[M3.spotify] a music playlist, imported from Spotify, and your playlists on Music', () => {
+  const song = (id: string, title: string, over: Partial<ListItem> = {}): ListItem => ({
+    ref: { source: 'ytmusic', id },
+    kind: 'song',
+    title,
+    sub: 'a-ha',
+    art: `/api/media/ytmusic:${id}/art`,
+    publishedAt: null,
+    duration: 225,
+    progress: null,
+    finished: false,
+    ...over,
+  });
+  const imported = (over: Partial<NonNullable<ListDetail['import']>>, items: ListItem[] = []) =>
+    detail({
+      id: 'm1',
+      kind: 'music',
+      name: 'All Out 80s',
+      count: items.length,
+      counts: { book: 0, show: 0, episode: 0 },
+      covers: ['/api/media/ytmusic:take-on-me/art'],
+      importedFrom: null,
+      items,
+      import: {
+        source: 'spotify',
+        state: 'done',
+        done: 150,
+        total: 150,
+        unmatched: [],
+        duplicates: 0,
+        stopped: null,
+        importedAt: 0,
+        ...over,
+      },
+    });
+
+  it('[M3.spotify] draws each song in the list’s order with its artists and length, playing it by its ref', () => {
+    const data = playlistData(
+      imported({}, [
+        song('take-on-me', 'Take on Me'),
+        song('gloria', 'Gloria', { sub: 'Laura Branigan', duration: 296 }),
+      ]),
+      playlist.placeholder,
+    );
+    expect(data).toMatchObject({
+      title: 'All Out 80s',
+      ref: 'm1',
+      kind: 'Playlist',
+      image: '/api/media/ytmusic:take-on-me/art?size=large',
+    });
+    expect(data.songs).toEqual([
+      {
+        title: 'Take on Me',
+        meta: 'a-ha · 3:45',
+        image: '/api/media/ytmusic:take-on-me/art?size=small',
+        status: null,
+        ref: 'ytmusic:take-on-me',
+      },
+      {
+        title: 'Gloria',
+        meta: 'Laura Branigan · 4:56',
+        image: '/api/media/ytmusic:gloria/art?size=small',
+        status: null,
+        ref: 'ytmusic:gloria',
+      },
+    ]);
+  });
+
+  it('[M3.spotify] says how far an import has come while it runs, and how many were found once done', () => {
+    const meta = (over: Partial<NonNullable<ListDetail['import']>>) =>
+      playlistData(imported(over), playlist.placeholder).meta;
+    expect(meta({ state: 'reading', done: 0, total: 0 })).toBe('Importing');
+    expect(meta({ state: 'matching', done: 40, total: 150 })).toBe('Importing 40 of 150');
+    const missing: ListUnmatched = {
+      position: 3,
+      reason: 'noMatch',
+      title: 'x',
+      artists: [],
+      album: null,
+      duration: null,
+    };
+    expect(meta({ unmatched: [missing, { ...missing, position: 9 }] })).toBe(
+      'From Spotify · 148 of 150 found',
+    );
+    expect(meta({ state: 'stopped', stopped: 'spotify_unavailable', done: 12 })).toBe(
+      'Import stopped: Spotify didn’t answer · 12 of 150 read',
+    );
+  });
+
+  it('[M3.spotify] lists last the songs left off, with their artists, album and length and why', () => {
+    const data = playlistData(
+      imported({
+        unmatched: [
+          {
+            position: 15,
+            reason: 'noMatch',
+            title: 'Heaven',
+            artists: ['Bryan Adams'],
+            album: 'Reckless',
+            duration: 243,
+          },
+          {
+            position: 40,
+            reason: 'notASong',
+            title: null,
+            artists: [],
+            album: null,
+            duration: null,
+          },
+          {
+            position: 1000,
+            reason: 'listFull',
+            title: 'Last',
+            artists: ['A', 'B'],
+            album: null,
+            duration: 60,
+          },
+        ],
+      }),
+      playlist.placeholder,
+    );
+    expect(data.unmatched).toEqual([
+      {
+        songs: [
+          {
+            title: 'Heaven',
+            meta: 'Bryan Adams · Reckless · 4:03',
+            image: '',
+            status: 'Not found',
+          },
+          { title: 'Unnamed', meta: '', image: '', status: 'Not a song' },
+          { title: 'Last', meta: 'A, B · 1:00', image: '', status: 'List full' },
+        ],
+      },
+    ]);
+    expect(playlistData(imported({}), playlist.placeholder).unmatched).toEqual([]);
+  });
+
+  it('[M3.spotify] draws a music list made by hand by its size, with no import to say', () => {
+    const data = playlistData(
+      { ...imported({}, [song('a', 'A')]), import: null },
+      playlist.placeholder,
+    );
+    expect(data.meta).toBe('1 song');
+    expect(data.menu.map((i) => i.key)).toEqual(['rename', 'delete']);
+  });
+
+  it('[M3.spotify] puts music lists on Music and every other list on Podcasts', () => {
+    const summary = (
+      id: string,
+      kind: ListSummary['kind'],
+      count = 0,
+      importedFrom: ListSummary['importedFrom'] = null,
+    ): ListSummary => ({
+      id,
+      kind,
+      name: id,
+      theDigest: false,
+      order: null,
+      count,
+      counts: { book: 0, show: 0, episode: 0 },
+      covers: [],
+      importedFrom,
+    });
+    const lists = [
+      summary('p', 'playlist'),
+      summary('m', 'music', 8),
+      summary('s', 'music', 142, 'spotify'),
+    ];
+    expect(musicCards(lists)).toEqual([
+      { title: 'm', ref: 'm', sub: 'Playlist · 8 songs', covers: [] },
+      { title: 's', ref: 's', sub: 'From Spotify · 142 songs', covers: [] },
+    ]);
+    expect(listCards(lists).map((card) => card.ref)).toEqual(['p']);
   });
 });

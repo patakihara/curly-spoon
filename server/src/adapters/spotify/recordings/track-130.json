@@ -1,0 +1,42 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-130",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/8a17c4d852184d718322e7032c36dad4",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "All Night Long (All Night) - Single Version",
+        "artist": [
+          {
+            "name": "Lionel Richie"
+          }
+        ],
+        "album": {
+          "name": "Back To Front"
+        },
+        "duration": 258665,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "USMO18390005"
+          }
+        ]
+      }
+    }
+  }
+}

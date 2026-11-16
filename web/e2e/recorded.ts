@@ -38,6 +38,7 @@ export async function serveRecorded(
     bookSource?: 'answers' | 'slow' | 'failing';
     music?: 'answers' | 'unavailable';
     keptAlbum?: boolean;
+    spotify?: boolean;
   } = {},
 ): Promise<Recorded> {
   const child = spawn('node_modules/.bin/tsx', ['e2e/serve.ts'], {
@@ -50,6 +51,7 @@ export async function serveRecorded(
       ...(options.bookSource ? { AURALIS_E2E_BOOK_SOURCE: options.bookSource } : {}),
       ...(options.music ? { AURALIS_E2E_MUSIC: options.music } : {}),
       ...(options.keptAlbum ? { AURALIS_E2E_KEPT_ALBUM: '1' } : {}),
+      ...(options.spotify ? { AURALIS_E2E_SPOTIFY: '1' } : {}),
     },
     stdio: ['ignore', 'pipe', 'inherit'],
   });

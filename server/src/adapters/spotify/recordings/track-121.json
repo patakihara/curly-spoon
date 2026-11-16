@@ -1,0 +1,42 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-121",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/7b03e7efd8824cd883b7fb389e910970",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "Celebration",
+        "artist": [
+          {
+            "name": "Kool & The Gang"
+          }
+        ],
+        "album": {
+          "name": "Celebrate!"
+        },
+        "duration": 298866,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "USPR38007190"
+          }
+        ]
+      }
+    }
+  }
+}

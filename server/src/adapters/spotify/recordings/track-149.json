@@ -1,0 +1,42 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-149",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/8cdd9223f6dc4e3ba5dcb28f1990e4ac",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "Don't Worry Be Happy",
+        "artist": [
+          {
+            "name": "Bobby McFerrin"
+          }
+        ],
+        "album": {
+          "name": "Simple Pleasures"
+        },
+        "duration": 294400,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "USEM38800361"
+          }
+        ]
+      }
+    }
+  }
+}

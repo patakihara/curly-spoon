@@ -1,0 +1,42 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-100",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/37475d78948248ca81061c864f7e92ba",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "Never Tear Us Apart",
+        "artist": [
+          {
+            "name": "INXS"
+          }
+        ],
+        "album": {
+          "name": "Kick (Remastered 2011)"
+        },
+        "duration": 184586,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "GBAMX8700005"
+          }
+        ]
+      }
+    }
+  }
+}

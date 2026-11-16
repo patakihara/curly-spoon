@@ -1,0 +1,42 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-045",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/feeeca9d12aa48de87bb9dcef2f7d907",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "Edge of Seventeen - 2016 Remaster",
+        "artist": [
+          {
+            "name": "Stevie Nicks"
+          }
+        ],
+        "album": {
+          "name": "Bella Donna (2016 Remastered)"
+        },
+        "duration": 329413,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "USRH11604198"
+          }
+        ]
+      }
+    }
+  }
+}

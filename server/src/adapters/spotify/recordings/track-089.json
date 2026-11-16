@@ -1,0 +1,42 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-089",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/eef22c0ebdb94cb59024d7ab2679716e",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "I Won't Back Down",
+        "artist": [
+          {
+            "name": "Tom Petty"
+          }
+        ],
+        "album": {
+          "name": "Full Moon Fever"
+        },
+        "duration": 178360,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "USMC18925675"
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "webapi-429",
+  "request": {
+    "method": "GET",
+    "path": "/v1/playlists/37i9dQZF1DX4UtSsGT1Sbe/tracks",
+    "query": {
+      "limit": "1"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 429,
+    "headers": {
+      "content-type": "application/json",
+      "retry-after": "27062"
+    },
+    "body": {
+      "json": {
+        "error": {
+          "status": 429,
+          "message": "Too many requests",
+          "reason": "QUOTA_EXCEEDED"
+        }
+      }
+    }
+  }
+}

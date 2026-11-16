@@ -1,0 +1,42 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-004",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/f73816630bb54fa388d90d290f015bf5",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "Total Eclipse of the Heart",
+        "artist": [
+          {
+            "name": "Bonnie Tyler"
+          }
+        ],
+        "album": {
+          "name": "The Very Best of Bonnie Tyler"
+        },
+        "duration": 267360,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "GBBBN8300002"
+          }
+        ]
+      }
+    }
+  }
+}

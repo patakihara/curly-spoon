@@ -1,0 +1,42 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-090",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/669aa5ce8e0441be946b4342ea829c53",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "Rosanna",
+        "artist": [
+          {
+            "name": "TOTO"
+          }
+        ],
+        "album": {
+          "name": "Toto IV"
+        },
+        "duration": 330943,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "USSM18200245"
+          }
+        ]
+      }
+    }
+  }
+}

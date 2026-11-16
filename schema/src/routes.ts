@@ -28,6 +28,7 @@ import { HealthResponse } from './health.js';
 import {
   AddListItemBody,
   CreateListBody,
+  ImportListBody,
   ListDetail,
   ListParams,
   ListSummaryList,
@@ -67,6 +68,7 @@ import {
 } from './requests.js';
 import {
   SearchAlbumParams,
+  SearchPlaylistParams,
   SearchBookParams,
   SearchQuery,
   SearchResults,
@@ -638,6 +640,19 @@ export const searchAlbumArt = {
   stream: 'image',
 } as const satisfies Route;
 
+export const searchPlaylistArt = {
+  method: 'GET',
+  path: '/api/search/playlists/{image}/art',
+  operationId: 'getSearchPlaylistArt',
+  summary: "The cover of a Spotify playlist a pasted link named, from Spotify's image host",
+  responseDescription: 'The image, as Spotify holds it.',
+  response: ImageBytes,
+  access: 'member',
+  params: SearchPlaylistParams,
+  query: ArtQuery,
+  stream: 'image',
+} as const satisfies Route;
+
 export const getLyrics = {
   method: 'GET',
   path: '/api/lyrics/{ref}',
@@ -748,6 +763,30 @@ export const playList = {
   body: PlayListBody,
 } as const satisfies Route;
 
+export const importList = {
+  method: 'POST',
+  path: '/api/lists/import',
+  operationId: 'importList',
+  summary: 'Import a public Spotify playlist as a music list of yours, in its order',
+  responseDescription:
+    "The list, made at once with the playlist's name and its import `reading`; its songs fill in, in Spotify's order, as each is found on YouTube Music, one import at a time across the server. Importing a playlist you imported before replaces that list's songs, keeping its id and name. 400 `not_a_spotify_playlist`, 404 `playlist_not_found` for a playlist gone or private, 409 `importing` while your import of it runs, `medium_unavailable` while YouTube Music streaming is off, 503 `spotify_unavailable`.",
+  response: ListDetail,
+  access: 'member',
+  body: ImportListBody,
+} as const satisfies Route;
+
+export const reimportList = {
+  method: 'POST',
+  path: '/api/lists/{id}/import',
+  operationId: 'reimportList',
+  summary: 'Import a list again from its Spotify playlist',
+  responseDescription:
+    "The list, its import `reading` again: its songs are replaced by the playlist's as it is now, in its order, and it keeps its id and name. 404 for a list not yours or not imported, 409 `importing` while its import runs, `medium_unavailable` while YouTube Music streaming is off.",
+  response: ListDetail,
+  access: 'member',
+  params: ListParams,
+} as const satisfies Route;
+
 /** Every route the API has. The generator and the server's route test both read this list. */
 export const routes: readonly Route[] = [
   health,
@@ -795,6 +834,7 @@ export const routes: readonly Route[] = [
   getSearch,
   searchBookArt,
   searchAlbumArt,
+  searchPlaylistArt,
   getLyrics,
   listLists,
   createList,
@@ -804,4 +844,6 @@ export const routes: readonly Route[] = [
   addListItem,
   setListItems,
   playList,
+  importList,
+  reimportList,
 ];

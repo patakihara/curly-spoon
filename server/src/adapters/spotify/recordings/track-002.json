@@ -1,0 +1,42 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-002",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/609499ef0d30444e8d5bd38d4b4e397b",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "Take on Me",
+        "artist": [
+          {
+            "name": "a-ha"
+          }
+        ],
+        "album": {
+          "name": "Hunting High and Low"
+        },
+        "duration": 225280,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "USWB19901214"
+          }
+        ]
+      }
+    }
+  }
+}

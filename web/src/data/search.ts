@@ -5,6 +5,7 @@ import {
   type SearchAlbum,
   type SearchBook,
   type SearchKind,
+  type SearchPlaylist,
   type SearchResult,
   type SearchResults,
   type SearchSong,
@@ -40,7 +41,8 @@ import { type Answer, SignedOut } from './store';
  * keep stands, the page looking again until it is done. A keep that failed moves no more, so the
  * page stops looking, and its menu offers Add to library again, which retries it. The page's own
  * words (its placeholder, its kinds) stay as given; what it says when a search finds nothing or
- * fails is written in the page, which this only chooses the state of.
+ * fails is written in the page, which this only chooses the state of. A pasted Spotify playlist
+ * link answers that playlist's row alone, its Import taking the link (`../import`).
  * The kinds' names and the meta lines are written here, as the library homes write theirs, until
  * M5.strings and M5.formats.
  */
@@ -50,6 +52,17 @@ type SuggestionRow = SearchData['suggestions'][number];
 type BookRow = SearchData['outside']['books'][number];
 type AlbumRow = SearchData['outside']['albums'][number];
 type SongRow = SearchData['outside']['music'][number];
+type PlaylistRow = SearchData['outside']['playlist'][number];
+
+/** A pasted Spotify playlist's row: its name, its size and cover, imported by its link. */
+export function playlistRowOf(playlist: SearchPlaylist): PlaylistRow {
+  return {
+    title: playlist.name,
+    meta: `Spotify playlist · ${playlist.count} ${playlist.count === 1 ? 'song' : 'songs'}`,
+    image: artAt(playlist.art, 'small'),
+    from: playlist.from,
+  };
+}
 
 /** What each kind of result or suggestion is called. */
 const KIND_LABELS: Record<SuggestionKind, string> = {
@@ -364,6 +377,7 @@ export function searchData(answer: SearchResults, page: SearchData): SearchData 
     library: rows(true),
     outside: {
       ...page.outside,
+      playlist: answer.playlists.map(playlistRowOf),
       household: rows(false),
       books: answer.books.map(bookRowOf),
       albums: answer.albums.map(albumRowOf),
@@ -433,7 +447,12 @@ export async function loadSearchPage(
   return {
     data: searchData(answer, page),
     found:
-      answer.results.length + answer.books.length + answer.albums.length + answer.songs.length > 0,
+      answer.results.length +
+        answer.books.length +
+        answer.albums.length +
+        answer.songs.length +
+        answer.playlists.length >
+      0,
     moving: answer.books.some(moves) || answer.albums.some(moves) || answer.songs.some(keeping),
   };
 }

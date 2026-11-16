@@ -211,6 +211,11 @@ enum class HealthResponseStatus {
 const val HLS_MIME = "application/vnd.apple.mpegurl"
 
 @Serializable
+data class ImportListBody(
+    val from: String,
+)
+
+@Serializable
 data class ItemDetail(
     val ref: MediaRef,
     val kind: ItemKind,
@@ -420,9 +425,57 @@ data class ListDetail(
     val count: Long,
     val counts: ListCounts,
     val covers: List<String>,
+    val importedFrom: ListDetailImportedFrom?,
     val shows: List<LibraryEntry>,
     val items: List<ListItem>,
+    val import: ListImport?,
 )
+
+@Serializable
+enum class ListDetailImportedFrom {
+    @SerialName("spotify")
+    SPOTIFY,
+}
+
+@Serializable
+data class ListImport(
+    val source: ListImportSource,
+    val state: ListImportState,
+    val done: Long,
+    val total: Long,
+    val unmatched: List<ListUnmatched>,
+    val duplicates: Long,
+    val stopped: ListImportStop?,
+    val importedAt: Long,
+)
+
+@Serializable
+enum class ListImportSource {
+    @SerialName("spotify")
+    SPOTIFY,
+}
+
+@Serializable
+enum class ListImportState {
+    @SerialName("reading")
+    READING,
+    @SerialName("matching")
+    MATCHING,
+    @SerialName("done")
+    DONE,
+    @SerialName("stopped")
+    STOPPED,
+}
+
+@Serializable
+enum class ListImportStop {
+    @SerialName("playlist_not_found")
+    PLAYLIST_NOT_FOUND,
+    @SerialName("spotify_unavailable")
+    SPOTIFY_UNAVAILABLE,
+    @SerialName("medium_unavailable")
+    MEDIUM_UNAVAILABLE,
+}
 
 @Serializable
 data class ListItem(
@@ -445,6 +498,8 @@ enum class ListItemKind {
     SHOW,
     @SerialName("episode")
     EPISODE,
+    @SerialName("song")
+    SONG,
 }
 
 @Serializable
@@ -455,6 +510,8 @@ enum class ListKind {
     PLAYLIST,
     @SerialName("digest")
     DIGEST,
+    @SerialName("music")
+    MUSIC,
 }
 
 @Serializable
@@ -467,11 +524,28 @@ data class ListSummary(
     val count: Long,
     val counts: ListCounts,
     val covers: List<String>,
+    val importedFrom: ListSummaryImportedFrom?,
 )
+
+@Serializable
+enum class ListSummaryImportedFrom {
+    @SerialName("spotify")
+    SPOTIFY,
+}
 
 @Serializable
 data class ListSummaryList(
     val lists: List<ListSummary>,
+)
+
+@Serializable
+data class ListUnmatched(
+    val position: Long,
+    val reason: UnmatchedReason,
+    val title: String?,
+    val artists: List<String>,
+    val album: String?,
+    val duration: Double?,
 )
 
 @Serializable
@@ -972,6 +1046,14 @@ data class SearchParent(
 )
 
 @Serializable
+data class SearchPlaylist(
+    val from: String,
+    val name: String,
+    val count: Long,
+    val art: String?,
+)
+
+@Serializable
 data class SearchResult(
     val ref: MediaRef,
     val kind: SearchKind,
@@ -993,6 +1075,7 @@ data class SearchResults(
     val books: List<SearchBook>,
     val albums: List<SearchAlbum>,
     val songs: List<SearchSong>,
+    val playlists: List<SearchPlaylist>,
     val streaming: StreamingState,
     val hasRequests: Boolean,
 )
@@ -1117,6 +1200,18 @@ data class TokenBody(
     val code: String,
     val codeVerifier: String,
 )
+
+@Serializable
+enum class UnmatchedReason {
+    @SerialName("noMatch")
+    NO_MATCH,
+    @SerialName("notASong")
+    NOT_ASONG,
+    @SerialName("unavailable")
+    UNAVAILABLE,
+    @SerialName("listFull")
+    LIST_FULL,
+}
 
 @Serializable
 data class UpdateListBody(

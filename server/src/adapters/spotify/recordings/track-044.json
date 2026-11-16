@@ -1,0 +1,42 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-044",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/0cd609fcb0924983a4f19c45fab0bc0f",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "Bette Davis Eyes",
+        "artist": [
+          {
+            "name": "Kim Carnes"
+          }
+        ],
+        "album": {
+          "name": "Mistaken Identity"
+        },
+        "duration": 228000,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "USCA28100081"
+          }
+        ]
+      }
+    }
+  }
+}

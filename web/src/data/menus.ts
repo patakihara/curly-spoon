@@ -11,7 +11,9 @@ import { answer } from './loads';
 
 /**
  * What the pages' menus do with your lists, through `/api/lists`. A list's own menu turns a digest
- * round, takes a show off a custom digest, and renames or deletes any list but The Digest. A book's,
+ * round, takes a show off a custom digest, imports a list from Spotify again once its import is
+ * not running, and renames or deletes any list but The Digest. A pasted playlist link imports a
+ * new one (`importPlaylist`). A book's,
  * a show's or an episode's menu adds it to each of your lists that takes it, or to a new one: a
  * playlist takes episodes, a listening list books and shows, a custom digest shows. The shell has
  * no field or dialog of its own, so a name is asked for, and a deletion confirmed, through `Ask`:
@@ -43,6 +45,7 @@ const NOUNS: Record<ListKind, string> = {
   listening: 'list',
   playlist: 'playlist',
   digest: 'digest',
+  music: 'playlist',
 };
 
 /** What a new list of each kind is called in a menu. */
@@ -50,11 +53,19 @@ const NEW: Record<ListKind, string> = {
   playlist: 'New playlist',
   listening: 'New listening list',
   digest: 'New digest',
+  music: 'New playlist',
 };
+
+/** Whether list `list` was imported and its import is not running, so it can be imported again. */
+const reimportable = (list: ListDetail) =>
+  list.import !== null && (list.import.state === 'done' || list.import.state === 'stopped');
 
 /** List `list`'s own menu. */
 export function listMenu(list: ListDetail): MenuItem[] {
   const items: MenuItem[] = [];
+  if (reimportable(list)) {
+    items.push({ key: 'reimport', label: 'Import again from Spotify', icon: 'sync' });
+  }
   if (list.kind === 'digest') {
     const turned = list.order === 'newest' ? 'Play oldest first' : 'Play newest first';
     items.push({ key: 'order', label: turned, icon: 'swap_vert' });
@@ -132,6 +143,12 @@ export async function listVerb(
     await answer(api.DELETE('/api/lists/{id}', { params: { path: { id } } }), (d) => d);
     return 'gone';
   }
+  if (key === 'reimport') {
+    await answer(api.POST('/api/lists/{id}/import', { params: { path: { id } } }), (d) =>
+      ListDetail.parse(d),
+    );
+    return 'changed';
+  }
   if (key === 'order') {
     await changed(api, id, { order: list.order === 'newest' ? 'oldest' : 'newest' });
     return 'changed';
@@ -143,6 +160,18 @@ export async function listVerb(
     return 'changed';
   }
   throw new Error(`no list verb ${key}`);
+}
+
+/**
+ * Imports the public Spotify playlist the link `from` names as one of your music lists, answering
+ * its id to open it: a new list, or the one an earlier import of it made, its songs to be replaced.
+ * Throws on a refusal; `SignedOut` for want of a sign-in.
+ */
+export async function importPlaylist(api: ApiClient, from: string): Promise<string> {
+  const list = await answer(api.POST('/api/lists/import', { body: { from } }), (d) =>
+    ListDetail.parse(d),
+  );
+  return list.id;
 }
 
 /**

@@ -1,0 +1,42 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-144",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/3524f8caa3f243e99d186f5f491b981a",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "You Spin Me Round (Like a Record)",
+        "artist": [
+          {
+            "name": "Dead Or Alive"
+          }
+        ],
+        "album": {
+          "name": "Evolution: The Hits"
+        },
+        "duration": 195146,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "GBBBM8400015"
+          }
+        ]
+      }
+    }
+  }
+}

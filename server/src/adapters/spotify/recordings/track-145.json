@@ -1,0 +1,45 @@
+{
+  "upstream": "spotify",
+  "upstreamVersion": "signed-out embed page, spclient playlist/v2 and metadata/4",
+  "call": "track-145",
+  "request": {
+    "method": "GET",
+    "path": "/metadata/4/track/ae1a07bbd9ba433680538b03624c3b42",
+    "query": {
+      "market": "from_token"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "name": "Endless Love",
+        "artist": [
+          {
+            "name": "Lionel Richie"
+          },
+          {
+            "name": "Diana Ross"
+          }
+        ],
+        "album": {
+          "name": "Back To Front"
+        },
+        "duration": 266800,
+        "external_id": [
+          {
+            "type": "isrc",
+            "id": "USMO18190008"
+          }
+        ]
+      }
+    }
+  }
+}

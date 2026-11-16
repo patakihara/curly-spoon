@@ -64,7 +64,12 @@ function remember<V>(kept: Map<string, V>, key: string, value: V): void {
 }
 
 /** Resolves to `fallback` once `ms` pass or `gone` aborts, whichever is first. */
-async function within<T>(work: Promise<T>, ms: number, gone: AbortSignal, fallback: T): Promise<T> {
+export async function within<T>(
+  work: Promise<T>,
+  ms: number,
+  gone: AbortSignal,
+  fallback: T,
+): Promise<T> {
   let timer: NodeJS.Timeout | undefined;
   let stop: () => void = () => undefined;
   // The injected fetch may ignore every signal, so the limit is held here as well.
