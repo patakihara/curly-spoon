@@ -425,10 +425,17 @@ data class ListDetail(
     val count: Long,
     val counts: ListCounts,
     val covers: List<String>,
+    val importedFrom: ListDetailImportedFrom?,
     val shows: List<LibraryEntry>,
     val items: List<ListItem>,
     val import: ListImport?,
 )
+
+@Serializable
+enum class ListDetailImportedFrom {
+    @SerialName("spotify")
+    SPOTIFY,
+}
 
 @Serializable
 data class ListImport(
@@ -517,7 +524,14 @@ data class ListSummary(
     val count: Long,
     val counts: ListCounts,
     val covers: List<String>,
+    val importedFrom: ListSummaryImportedFrom?,
 )
+
+@Serializable
+enum class ListSummaryImportedFrom {
+    @SerialName("spotify")
+    SPOTIFY,
+}
 
 @Serializable
 data class ListSummaryList(

@@ -1426,6 +1426,8 @@ export interface components {
             count: number;
             counts: components["schemas"]["ListCounts"];
             covers: string[];
+            /** @enum {string|null} */
+            importedFrom: "spotify" | null;
         };
         ListSummaryList: {
             lists: components["schemas"]["ListSummary"][];
@@ -1452,6 +1454,8 @@ export interface components {
             count: number;
             counts: components["schemas"]["ListCounts"];
             covers: string[];
+            /** @enum {string|null} */
+            importedFrom: "spotify" | null;
             shows: components["schemas"]["LibraryEntry"][];
             items: components["schemas"]["ListItem"][];
             import: components["schemas"]["ListImport"] | null;

@@ -27,6 +27,7 @@ const detail = (over: Partial<ListDetail> = {}): ListDetail =>
     count: 1,
     counts: { book: 0, show: 0, episode: 1 },
     covers: ['/api/media/abs:s1/art'],
+    importedFrom: null,
     shows: [],
     items: [episode()],
     import: null,
@@ -81,6 +82,7 @@ describe('[M2.lists] a list page from GET /api/lists/{id}', () => {
         count: 2,
         counts: { book: 0, show: 0, episode: 2 },
         covers: ['/api/media/abs:s1/art'],
+        importedFrom: null,
         shows: [
           {
             ref: { source: 'abs', id: 's1' },
@@ -194,6 +196,7 @@ describe("[M2.lists] the Podcasts page's lists from GET /api/lists", () => {
       count: 1,
       counts: { book: 0, show: 0, episode: 1 },
       covers: ['/api/media/abs:s1/art'],
+      importedFrom: null,
       ...over,
     });
     const cards = listCards([
@@ -206,6 +209,7 @@ describe("[M2.lists] the Podcasts page's lists from GET /api/lists", () => {
         count: 0,
         counts: { book: 0, show: 0, episode: 0 },
         covers: [],
+        importedFrom: null,
       }),
       summary({}),
       summary({
@@ -255,6 +259,7 @@ describe('[M3.spotify] a music playlist, imported from Spotify, and your playlis
       count: items.length,
       counts: { book: 0, show: 0, episode: 0 },
       covers: ['/api/media/ytmusic:take-on-me/art'],
+      importedFrom: null,
       items,
       import: {
         source: 'spotify',
@@ -381,7 +386,12 @@ describe('[M3.spotify] a music playlist, imported from Spotify, and your playlis
   });
 
   it('[M3.spotify] puts music lists on Music and every other list on Podcasts', () => {
-    const summary = (id: string, kind: ListSummary['kind'], count = 0): ListSummary => ({
+    const summary = (
+      id: string,
+      kind: ListSummary['kind'],
+      count = 0,
+      importedFrom: ListSummary['importedFrom'] = null,
+    ): ListSummary => ({
       id,
       kind,
       name: id,
@@ -390,10 +400,16 @@ describe('[M3.spotify] a music playlist, imported from Spotify, and your playlis
       count,
       counts: { book: 0, show: 0, episode: 0 },
       covers: [],
+      importedFrom,
     });
-    const lists = [summary('p', 'playlist'), summary('m', 'music', 142)];
+    const lists = [
+      summary('p', 'playlist'),
+      summary('m', 'music', 8),
+      summary('s', 'music', 142, 'spotify'),
+    ];
     expect(musicCards(lists)).toEqual([
-      { title: 'm', ref: 'm', sub: 'Playlist · 142 songs', covers: [] },
+      { title: 'm', ref: 'm', sub: 'Playlist · 8 songs', covers: [] },
+      { title: 's', ref: 's', sub: 'From Spotify · 142 songs', covers: [] },
     ]);
     expect(listCards(lists).map((card) => card.ref)).toEqual(['p']);
   });

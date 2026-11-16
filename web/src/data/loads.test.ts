@@ -179,6 +179,7 @@ const listOf = (id: string, name: string) => ({
   count: 0,
   counts: { book: 0, show: 0, episode: 0 },
   covers: [],
+  importedFrom: null,
 });
 
 describe('[M2.lists] what the list pages read from the API', () => {

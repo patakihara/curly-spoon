@@ -106,7 +106,7 @@ export function listData(list: ListDetail, page: ListData): ListData {
 const cardOf = (list: ListSummary) => ({
   title: list.name,
   ref: list.id,
-  sub: `${KINDS[list.kind]} · ${sizeOf(list)}`,
+  sub: `${list.importedFrom === 'spotify' ? 'From Spotify' : KINDS[list.kind]} · ${sizeOf(list)}`,
   covers: coversOf(list),
 });
 

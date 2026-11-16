@@ -2871,6 +2871,15 @@
               "type": "string"
             },
             "maxItems": 4
+          },
+          "importedFrom": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "spotify"
+            ]
           }
         },
         "required": [
@@ -2881,7 +2890,8 @@
           "order",
           "count",
           "counts",
-          "covers"
+          "covers",
+          "importedFrom"
         ]
       },
       "ListSummaryList": {
@@ -3007,6 +3017,15 @@
             },
             "maxItems": 4
           },
+          "importedFrom": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "spotify"
+            ]
+          },
           "shows": {
             "type": "array",
             "items": {
@@ -3039,6 +3058,7 @@
           "count",
           "counts",
           "covers",
+          "importedFrom",
           "shows",
           "items",
           "import"

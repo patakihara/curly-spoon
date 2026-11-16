@@ -45,6 +45,7 @@ const summary = (over: Partial<ListSummary>): ListSummary => ({
   count: 0,
   counts: { book: 0, show: 0, episode: 0 },
   covers: [],
+  importedFrom: null,
   ...over,
 });
 

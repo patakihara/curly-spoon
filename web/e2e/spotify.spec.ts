@@ -84,6 +84,6 @@ test('[M3.spotify] a pasted playlist imports from Search, fills in order, lists 
   await goWithin(page, '/music');
   await expect(page.getByText('Playlists', { exact: true })).toBeVisible();
   await expect(page.getByText(list.name, { exact: true })).toBeVisible();
-  await expect(page.getByText('Playlist · 145 songs', { exact: true })).toBeVisible();
+  await expect(page.getByText('From Spotify · 145 songs', { exact: true })).toBeVisible();
   await shot('music');
 });

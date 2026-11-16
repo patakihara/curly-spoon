@@ -49,7 +49,7 @@ export type ListCounts = z.infer<typeof ListCounts>;
  * One list as your lists show it: its kind, its name, whether it is The Digest, a digest's order
  * (null on any other list), how many entries it shows now and how many of each kind, and the
  * covers its card draws: its entries' art, a digest's its shows', each once, at most
- * `LIST_COVERS_MAX`.
+ * `LIST_COVERS_MAX`; and, for a music list imported, the service it came from.
  */
 export const ListSummary = z
   .object({
@@ -61,6 +61,8 @@ export const ListSummary = z
     count: Count,
     counts: ListCounts,
     covers: z.array(ArtUrl).max(LIST_COVERS_MAX),
+    /** The service a music list was imported from; null for one made here. */
+    importedFrom: z.literal('spotify').nullable(),
   })
   .openapi('ListSummary');
 export type ListSummary = z.infer<typeof ListSummary>;

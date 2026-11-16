@@ -309,6 +309,7 @@ export function shown(r: Reader, list: store.StoredList): ListDetail {
         : rows.map((row) => listeningItem(r, row));
   }
   const showEntries = shows.map((row) => entry(row, 'show', null));
+  const imported = list.kind === 'music' ? importOf(r.db, list.id) : null;
   const counted = (kind: ListItem['kind']) => items.filter((item) => item.kind === kind).length;
   return {
     id: list.id,
@@ -323,10 +324,8 @@ export function shown(r: Reader, list: store.StoredList): ListDetail {
     ].slice(0, LIST_COVERS_MAX),
     shows: showEntries,
     items,
-    import: (() => {
-      const imported = list.kind === 'music' ? importOf(r.db, list.id) : null;
-      return imported === null ? null : shownImport(imported);
-    })(),
+    importedFrom: imported === null ? null : 'spotify',
+    import: imported === null ? null : shownImport(imported),
   };
 }
 
