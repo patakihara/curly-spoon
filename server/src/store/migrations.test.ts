@@ -719,3 +719,26 @@ describe('[M3.spotify] the Spotify tracks migration', () => {
     expect(applied).toEqual({ n: 1 });
   });
 });
+
+describe('[M3.spotify] the Spotify matches migration', () => {
+  it('adds the empty match cache on top of everything before it, and applies once', () => {
+    const db = new Database(':memory:');
+    runMigrations(
+      db,
+      migrations.filter((m) => m.name !== 'spotify_matches'),
+    );
+    expect(db.prepare("SELECT name FROM sqlite_master WHERE name = 'spotify_matches'").get()).toBe(
+      undefined,
+    );
+    runMigrations(db);
+    const columns = (
+      db.prepare('PRAGMA table_info(spotify_matches)').all() as { name: string }[]
+    ).map((c) => c.name);
+    expect(columns).toEqual(['spotify_track_id', 'youtube_id', 'reason', 'near', 'at']);
+    runMigrations(db);
+    const applied = db
+      .prepare("SELECT COUNT(*) AS n FROM _migrations WHERE name = 'spotify_matches'")
+      .get();
+    expect(applied).toEqual({ n: 1 });
+  });
+});

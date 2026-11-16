@@ -1075,6 +1075,24 @@ export const migrations: readonly Migration[] = [
       `);
     },
   },
+  {
+    id: 34,
+    name: 'spotify_matches',
+    up: (db) => {
+      // What each Spotify track an import read resolved to on YouTube Music: youtube_id, or null
+      // with reason noMatch and near, the JSON of the row that got furthest and the rule it failed.
+      // A match is kept 30 days, no match 7.
+      db.exec(`
+        CREATE TABLE spotify_matches (
+          spotify_track_id TEXT PRIMARY KEY,
+          youtube_id       TEXT,
+          reason           TEXT NOT NULL CHECK (reason IN ('matched', 'noMatch')),
+          near             TEXT NOT NULL,
+          at               INTEGER NOT NULL
+        );
+      `);
+    },
+  },
 ];
 
 export function runMigrations(

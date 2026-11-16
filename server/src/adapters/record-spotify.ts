@@ -15,10 +15,20 @@
  * expiry kept. `spclient` answers are cut to the fields parsed; correlation and decision ids go
  * with the rest. No request's `Authorization` is written. The token is a recorder secret too.
  */
+import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { MATCH_ROWS } from '../music/import/match.js';
+import {
+  pacedSearch,
+  type ResolveDeps,
+  resolveEntries,
+  type Unmatched,
+} from '../music/import/resolve.js';
+import { openDatabase } from '../store/connection.js';
 import { type FetchLike } from './http/fetch.js';
 import { createRecorder } from './http/record.js';
-import { type Recording } from './http/recording.js';
+import { type Recording, recordingSchema } from './http/recording.js';
+import { replayFetch } from './http/replay.js';
 import { scanRecording } from './http/scan.js';
 import { type RawExchange } from './http/scrub.js';
 import {
@@ -28,6 +38,9 @@ import {
   SpotifyError,
 } from './spotify/client.js';
 import { embedPageSchema } from './spotify/schemas.js';
+import { ADDRESS_ECHO_URL, echoedAddress, YTMUSIC_VERSION } from './record-ytmusic.js';
+import { YtMusicClient } from './ytmusic/client.js';
+import { searchRowSchema } from './ytmusic/schemas.js';
 
 /** Spotify names no version of these routes; the recording names the routes it read. */
 export const SPOTIFY_VERSION = 'signed-out embed page, spclient playlist/v2 and metadata/4';
@@ -297,4 +310,200 @@ export async function recordSpotify(input: SpotifyRecordInput): Promise<{ writte
   if (busy === 'written') keep('webapi-429');
   out(`webapi-429: ${busy}`);
   return { written };
+}
+
+/** Where the YouTube Music answers to the recorded playlist's tracks are kept. */
+export const SPOTIFY_YTMUSIC_DIR = join('spotify', 'recordings', 'ytmusic');
+
+/** The call a search for the track at `position` (from 0) is recorded as; its ISRC search ends `-isrc`. */
+export const ytMusicCall = (position: number, isrc: boolean) =>
+  `ytmusic-${String(position + 1).padStart(3, '0')}${isrc ? '-isrc' : ''}`;
+
+/** The recorded token's expiry: a replayed reader starts 10 min before it, so it never renews. */
+function recordedExpiry(recordings: readonly Recording[]): number {
+  const embed = recordings.find((r) => r.call === 'embed-playlist');
+  const found = /accessTokenExpirationTimestampMs\\?":(\d+)/.exec(JSON.stringify(embed?.response));
+  if (!found?.[1]) throw new Error('the recorded embed page names no expiry');
+  return Number(found[1]);
+}
+
+/** A Spotify reader over the recorded answers, on a clock of its own that never waits. */
+export function replayedSpotify(recordings: Recording[]): SpotifyClient {
+  let at = recordedExpiry(recordings) - 10 * 60_000;
+  return new SpotifyClient({
+    embedUrl: 'http://upstream.invalid',
+    spclientUrl: 'http://upstream.invalid',
+    fetch: replayFetch(recordings),
+    clock: {
+      now: () => at,
+      sleep: async (ms) => {
+        at += ms;
+      },
+    },
+  });
+}
+
+/** YouTube Music's song search over recorded answers, each found by the query its request sent. */
+export function replayedYtMusic(recordings: Recording[]): Pick<YtMusicClient, 'search'> {
+  return {
+    search: (query) => {
+      const answer = recordings.find(
+        (r) => (r.request.body as { json?: { query?: string } } | null)?.json?.query === query,
+      );
+      if (answer === undefined) throw new Error(`no recorded search for ${query}`);
+      return new YtMusicClient({
+        baseUrl: 'http://upstream.invalid',
+        fetch: replayFetch([answer]),
+        now: () => 0,
+      }).search(query);
+    },
+  };
+}
+
+/** A search answer cut to its shelf's first `MATCH_ROWS` rows, each to the fields parsed, its art to the largest. */
+export function cutSearch(raw: RawExchange): RawExchange {
+  const body = raw.response.body;
+  if (body === null || !('json' in body)) return raw;
+  const tabs = obj(obj(obj(body.json).contents).tabbedSearchResultsRenderer).tabs;
+  const sections = (Array.isArray(tabs) ? tabs : []).flatMap((tab) => {
+    const list = obj(obj(obj(obj(tab).tabRenderer).content).sectionListRenderer).contents;
+    return Array.isArray(list) ? list : [];
+  });
+  const rows = sections
+    .flatMap((s) => {
+      const shelf = obj(obj(s).musicShelfRenderer).contents;
+      return Array.isArray(shelf) ? shelf : [];
+    })
+    .slice(0, MATCH_ROWS)
+    .map((row) => {
+      const parsed = searchRowSchema.safeParse(row);
+      if (!parsed.success) return { unread: true };
+      const item = parsed.data.musicResponsiveListItemRenderer;
+      const art = item.thumbnail.musicThumbnailRenderer.thumbnail.thumbnails.reduce((a, b) =>
+        b.width > a.width ? b : a,
+      );
+      return {
+        musicResponsiveListItemRenderer: {
+          ...item,
+          flexColumns: item.flexColumns.slice(0, 2),
+          thumbnail: { musicThumbnailRenderer: { thumbnail: { thumbnails: [art] } } },
+        },
+      };
+    });
+  const json = {
+    contents: {
+      tabbedSearchResultsRenderer: {
+        tabs: [
+          {
+            tabRenderer: {
+              content: {
+                sectionListRenderer: {
+                  contents: rows.length === 0 ? [] : [{ musicShelfRenderer: { contents: rows } }],
+                },
+              },
+            },
+          },
+        ],
+      },
+    },
+    trimmed: SPOTIFY_YTMUSIC_TRIMMED,
+  };
+  return { ...raw, response: { ...raw.response, body: { json } } };
+}
+
+export const SPOTIFY_YTMUSIC_TRIMMED =
+  'Trimmed by the recorder: the shelf of songs cut to the rows an import weighs, each row to the ' +
+  'fields Auralis parses and its largest art; everything else, the visitor id among it, taken out.';
+
+export interface SpotifyYtMusicRecordInput {
+  fetch: FetchLike;
+  out: (line: string) => void;
+  root: string;
+  baseUrl: string;
+  now: () => number;
+  /** The echo's page, as the server's own address reads it. */
+  serverEcho: () => Promise<string>;
+}
+
+/**
+ * Record mode's `spotify-ytmusic` part: YouTube Music's answers to the recorded playlist's tracks,
+ * searched as an import searches them (name, then ISRC when the name finds nothing), 2 s apart.
+ * Spotify is not asked: its tracks come from the `spotify` part's recordings. Prints how many
+ * matched and why the rest did not.
+ */
+export async function recordSpotifyYtMusic(
+  input: SpotifyYtMusicRecordInput,
+): Promise<{ written: string[]; matched: number; unmatched: Unmatched[] }> {
+  const { out } = input;
+  const address = echoedAddress(await (await input.fetch(ADDRESS_ECHO_URL)).text());
+  if (address !== echoedAddress(await input.serverEcho())) {
+    throw new Error("this machine does not leave by the server's public address: nothing recorded");
+  }
+  out("this machine leaves by the server's public address");
+
+  const spotifyDir = join(input.root, 'spotify', 'recordings');
+  const recorded = readdirSync(spotifyDir)
+    .filter((f) => f.endsWith('.json'))
+    .map((f) => recordingSchema.parse(JSON.parse(readFileSync(join(spotifyDir, f), 'utf8'))));
+  const spotify = replayedSpotify(recorded);
+  const playlist = await spotify.playlist(RECORDED_PLAYLIST);
+
+  const dir = join(input.root, SPOTIFY_YTMUSIC_DIR);
+  const rec = createRecorder({
+    fetch: input.fetch,
+    dir,
+    upstream: 'ytmusic',
+    upstreamVersion: YTMUSIC_VERSION,
+    secrets: [address],
+    baseUrl: input.baseUrl,
+    prepare: cutSearch,
+  });
+  const ytmusic = new YtMusicClient({
+    baseUrl: input.baseUrl,
+    fetch: rec.fetch,
+    now: input.now,
+    onBad: (what) => out(`InnerTube's answer: ${what}`),
+  });
+  const written: string[] = [];
+  let position = 0;
+  const search = pacedSearch(
+    async (query) => {
+      const call = ytMusicCall(position, /^[A-Z]{2}[A-Z0-9]{3}\d{7}$/.test(query));
+      let kept: Recording | undefined;
+      await rec.capture(call, () => ytmusic.search(query), {
+        verify: (_, recording) => {
+          scanned(recording);
+          kept = recording;
+        },
+      });
+      written.push(join(dir, `${call}.json`));
+      // The rows as the recording keeps them, so a replay resolves exactly as this run did.
+      return replayedYtMusic(kept ? [kept] : []).search(query);
+    },
+    { now: Date.now, sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)) },
+  );
+  const db = openDatabase(':memory:');
+  const deps: ResolveDeps = {
+    db,
+    clock: { now: Date.now },
+    track: (id) => spotify.track(id),
+    search,
+  };
+  let matched = 0;
+  const unmatched: Unmatched[] = [];
+  const steps = resolveEntries(deps, playlist.entries);
+  for (;;) {
+    const next = await steps.next();
+    if (next.done) break;
+    if (next.value.unmatched === null) matched += 1;
+    else {
+      unmatched.push(next.value.unmatched);
+      const u = next.value.unmatched;
+      out(`position ${u.position}: ${u.reason}, ${u.title ?? u.uri}, ${u.near?.failed ?? 'no row'}`);
+    }
+    position += 1;
+  }
+  db.close();
+  out(`spotify-ytmusic: ${matched} matched, ${unmatched.length} unmatched of ${playlist.entries.length}`);
+  return { written, matched, unmatched };
 }
