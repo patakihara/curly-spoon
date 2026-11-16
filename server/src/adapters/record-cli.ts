@@ -1376,6 +1376,7 @@ async function runSpotifyYtMusic(io: RecordIo, root: string): Promise<number> {
     root,
     baseUrl: YTMUSIC_URL,
     now: io.now ?? Date.now,
+    ...(io.names ? { names: io.names } : {}),
     serverEcho:
       io.serverEcho ??
       (async () => {

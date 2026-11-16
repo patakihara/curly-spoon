@@ -196,7 +196,12 @@ export async function* resolveEntries(
         const found = await resolveTrack(deps, entry.id, track);
         yield found.youtubeId === null
           ? unmatched(entry, 'noMatch', track, found.near)
-          : { position: entry.position, uri: entry.uri, youtubeId: found.youtubeId, unmatched: null };
+          : {
+              position: entry.position,
+              uri: entry.uri,
+              youtubeId: found.youtubeId,
+              unmatched: null,
+            };
       }
     }
   }

@@ -15,7 +15,7 @@
  * expiry kept. `spclient` answers are cut to the fields parsed; correlation and decision ids go
  * with the rest. No request's `Authorization` is written. The token is a recorder secret too.
  */
-import { readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { MATCH_ROWS } from '../music/import/match.js';
 import {
@@ -30,7 +30,7 @@ import { createRecorder } from './http/record.js';
 import { type Recording, recordingSchema } from './http/recording.js';
 import { replayFetch } from './http/replay.js';
 import { scanRecording } from './http/scan.js';
-import { type RawExchange } from './http/scrub.js';
+import { type RawExchange, scrub } from './http/scrub.js';
 import {
   SPOTIFY_EMBED_URL,
   SPOTIFY_SPCLIENT_URL,
@@ -160,8 +160,8 @@ export interface SpotifyRecordInput {
   playlist?: string;
 }
 
-function scanned(recording: Recording) {
-  const findings = scanRecording(recording);
+function scanned(recording: Recording, names: readonly string[] = []) {
+  const findings = scanRecording(recording, { names });
   if (findings.length > 0) {
     const found = findings.map((f) => `${f.kind} at ${f.path}`).join(', ');
     throw new Error(`${recording.call}: ${found}; not written`);
@@ -411,6 +411,54 @@ export function cutSearch(raw: RawExchange): RawExchange {
   return { ...raw, response: { ...raw.response, body: { json } } };
 }
 
+const SHELF_ROW = /\.musicShelfRenderer\.contents\[(\d+)\]/;
+
+/**
+ * A cut search answer without the rows the leak scan flags, such as an artist named like a host
+ * (`s.soo`) or sharing a name the recorder must not write: a row is public catalogue data, but the scan stays the last word on what is written.
+ * The recorder resolves on the rows kept, so a replay resolves as the run did.
+ */
+export function withoutFlaggedRows(
+  raw: RawExchange,
+  opts: { secrets: string[]; baseUrl: string; names?: readonly string[] },
+): RawExchange {
+  const cut = cutSearch(raw);
+  const flagged = new Set(
+    scanRecording(scrub(cut, opts), { names: opts.names ?? [] }).flatMap((f) => {
+      const row = SHELF_ROW.exec(f.path)?.[1];
+      return row === undefined ? [] : [Number(row)];
+    }),
+  );
+  if (flagged.size === 0) return cut;
+  // cutSearch's own shape: one tab, one section list, at most one shelf.
+  const { json } = cut.response.body as {
+    json: {
+      contents: {
+        tabbedSearchResultsRenderer: {
+          tabs: [
+            {
+              tabRenderer: {
+                content: {
+                  sectionListRenderer: {
+                    contents: { musicShelfRenderer: { contents: unknown[] } }[];
+                  };
+                };
+              };
+            },
+          ];
+        };
+      };
+      trimmed: string;
+    };
+  };
+  const shelf =
+    json.contents.tabbedSearchResultsRenderer.tabs[0].tabRenderer.content.sectionListRenderer
+      .contents[0]!.musicShelfRenderer;
+  shelf.contents = shelf.contents.filter((_, n) => !flagged.has(n));
+  json.trimmed = `${SPOTIFY_YTMUSIC_TRIMMED} ${flagged.size} row(s) the leak scan flagged dropped.`;
+  return cut;
+}
+
 export const SPOTIFY_YTMUSIC_TRIMMED =
   'Trimmed by the recorder: the shelf of songs cut to the rows an import weighs, each row to the ' +
   'fields Auralis parses and its largest art; everything else, the visitor id among it, taken out.';
@@ -423,12 +471,15 @@ export interface SpotifyYtMusicRecordInput {
   now: () => number;
   /** The echo's page, as the server's own address reads it. */
   serverEcho: () => Promise<string>;
+  /** People's names no recording may hold; a row naming one is dropped. */
+  names?: readonly string[];
 }
 
 /**
  * Record mode's `spotify-ytmusic` part: YouTube Music's answers to the recorded playlist's tracks,
  * searched as an import searches them (name, then ISRC when the name finds nothing), 2 s apart.
- * Spotify is not asked: its tracks come from the `spotify` part's recordings. Prints how many
+ * A search already recorded is replayed from its file, so a stopped run goes on. Spotify is not
+ * asked: its tracks come from the `spotify` part's recordings. Prints how many
  * matched and why the rest did not.
  */
 export async function recordSpotifyYtMusic(
@@ -456,7 +507,12 @@ export async function recordSpotifyYtMusic(
     upstreamVersion: YTMUSIC_VERSION,
     secrets: [address],
     baseUrl: input.baseUrl,
-    prepare: cutSearch,
+    prepare: (raw) =>
+      withoutFlaggedRows(raw, {
+        secrets: [address],
+        baseUrl: input.baseUrl,
+        ...(input.names ? { names: input.names } : {}),
+      }),
   });
   const ytmusic = new YtMusicClient({
     baseUrl: input.baseUrl,
@@ -466,13 +522,15 @@ export async function recordSpotifyYtMusic(
   });
   const written: string[] = [];
   let position = 0;
-  const search = pacedSearch(
+  const callFor = (query: string) =>
+    ytMusicCall(position, /^[A-Z]{2}[A-Z0-9]{3}\d{7}$/.test(query));
+  const live = pacedSearch(
     async (query) => {
-      const call = ytMusicCall(position, /^[A-Z]{2}[A-Z0-9]{3}\d{7}$/.test(query));
+      const call = callFor(query);
       let kept: Recording | undefined;
       await rec.capture(call, () => ytmusic.search(query), {
         verify: (_, recording) => {
-          scanned(recording);
+          scanned(recording, input.names);
           kept = recording;
         },
       });
@@ -482,6 +540,15 @@ export async function recordSpotifyYtMusic(
     },
     { now: Date.now, sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)) },
   );
+  /** A search an earlier run recorded is replayed from its file: a stopped run goes on where it stopped. */
+  const search = async (query: string) => {
+    const file = join(dir, `${callFor(query)}.json`);
+    if (!existsSync(file)) return live(query);
+    written.push(file);
+    return replayedYtMusic([recordingSchema.parse(JSON.parse(readFileSync(file, 'utf8')))]).search(
+      query,
+    );
+  };
   const db = openDatabase(':memory:');
   const deps: ResolveDeps = {
     db,
@@ -499,11 +566,15 @@ export async function recordSpotifyYtMusic(
     else {
       unmatched.push(next.value.unmatched);
       const u = next.value.unmatched;
-      out(`position ${u.position}: ${u.reason}, ${u.title ?? u.uri}, ${u.near?.failed ?? 'no row'}`);
+      out(
+        `position ${u.position}: ${u.reason}, ${u.title ?? u.uri}, ${u.near?.failed ?? 'no row'}`,
+      );
     }
     position += 1;
   }
   db.close();
-  out(`spotify-ytmusic: ${matched} matched, ${unmatched.length} unmatched of ${playlist.entries.length}`);
+  out(
+    `spotify-ytmusic: ${matched} matched, ${unmatched.length} unmatched of ${playlist.entries.length}`,
+  );
   return { written, matched, unmatched };
 }

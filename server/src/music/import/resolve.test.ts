@@ -12,6 +12,7 @@ import type { SpotifyTrack } from '../../adapters/spotify/schemas.js';
 import type { YtSong } from '../../adapters/ytmusic/client.js';
 import { openDatabase } from '../../store/connection.js';
 import { streamedTrack } from '../../store/streamedTracks.js';
+import { titleKey } from '../../text/fold.js';
 import { failedRule, matchSpotifyTrack, nameQuery } from './match.js';
 import {
   IMPORT_SEARCH_GAP_MS,
@@ -29,8 +30,10 @@ const read = (dir: string): Recording[] =>
 const spotifyRecordings = read(join(adapters, 'spotify', 'recordings'));
 const ytRecordings = read(join(adapters, 'spotify', 'recordings', 'ytmusic'));
 
-/** What the recorder printed for the recorded playlist. */
-const RECORDED_MATCHED = Number(process.env.NEVER ?? NaN);
+/** What the recorder printed for the recorded playlist (All Out 80s, 150 places): 137 matched. */
+const RECORDED_MATCHED = 137;
+/** The places it printed as unmatched, each `noMatch`. */
+const RECORDED_UNMATCHED = [12, 15, 28, 32, 55, 63, 75, 91, 94, 95, 110, 116, 129];
 
 function setUp() {
   const db = openDatabase(':memory:');
@@ -76,26 +79,42 @@ describe('[M3.spotify/a] a recorded public Spotify playlist, resolved on YouTube
         expect(['noMatch', 'notASong', 'unavailable', 'listFull']).toContain(r.unmatched.reason);
       }
     }
+    expect(out).toHaveLength(150);
     expect(out.filter((r) => r.unmatched === null)).toHaveLength(RECORDED_MATCHED);
   });
 
-  it('[M3.spotify/a] asks the ISRC only after the name query found no match', async () => {
-    const { out, queries, playlist } = await resolveAll();
-    const isrc = /^[A-Z]{2}[A-Z0-9]{3}\d{7}$/;
-    for (const [n, q] of queries.entries()) {
-      if (isrc.test(q)) expect(isrc.test(queries[n - 1] ?? '')).toBe(false);
+  it('[M3.spotify/a] reports the unmatched ones with what Spotify names and the nearest row', async () => {
+    const { out } = await resolveAll();
+    const unmatched = out.flatMap((r) => (r.unmatched === null ? [] : [r.unmatched]));
+    expect(unmatched.map((u) => u.position)).toEqual(RECORDED_UNMATCHED);
+    for (const u of unmatched) {
+      expect(u.reason).toBe('noMatch');
+      expect(u.title).not.toBe(null);
+      expect(u.artists.length).toBeGreaterThan(0);
+      expect(u.durationMs).toBeGreaterThan(0);
+      expect(['title', 'artist', 'length']).toContain(u.near?.failed);
     }
-    const tracks = playlist.entries.filter((e) => e.kind === 'track').length;
-    expect(queries.filter((q) => !isrc.test(q))).toHaveLength(tracks);
-    // A track whose name query matched never has its ISRC asked.
-    expect(queries.filter((q) => isrc.test(q)).length).toBeLessThanOrEqual(
-      out.length - out.filter((r) => r.unmatched === null).length + queries.length - tracks,
-    );
+  });
+
+  it('[M3.spotify/a] asks the ISRC only after the name query found no match', async () => {
+    const { queries, playlist, spotify } = await resolveAll();
+    const yt = replayedYtMusic(ytRecordings);
+    const expected: string[] = [];
+    for (const entry of playlist.entries) {
+      if (entry.kind !== 'track') continue;
+      const track = (await spotify.track(entry.id))!;
+      const byName = matchSpotifyTrack(track, await yt.search(nameQuery(track)));
+      expected.push(nameQuery(track));
+      if (byName.match === null && track.isrc !== null) expected.push(track.isrc);
+    }
+    expect(queries).toEqual(expected);
+    expect(queries.length).toBeGreaterThan(playlist.entries.length);
   });
 
   it('[M3.spotify/a] writes each match to streamed_tracks, so it may stream', async () => {
     const { out, db } = await resolveAll();
-    for (const r of out) if (r.youtubeId !== null) expect(streamedTrack(db, r.youtubeId)).toBeDefined();
+    for (const r of out)
+      if (r.youtubeId !== null) expect(streamedTrack(db, r.youtubeId)).toBeDefined();
   });
 
   it('[M3.spotify/a] a track resolved before asks nothing', async () => {
@@ -108,7 +127,11 @@ describe('[M3.spotify/a] a recorded public Spotify playlist, resolved on YouTube
   });
 
   it('[M3.spotify/a] import searches run one at a time, 2 s apart', async () => {
-    const clock = { at: 0, now: () => clock.at, sleep: async (ms: number) => void (clock.at += ms) };
+    const clock = {
+      at: 0,
+      now: () => clock.at,
+      sleep: async (ms: number) => void (clock.at += ms),
+    };
     const starts: number[] = [];
     const search = pacedSearch(async () => {
       starts.push(clock.at);
@@ -125,6 +148,18 @@ describe('[M3.spotify/a] the match rules, on recorded rows', () => {
     const track = await trackAt(position);
     return { track, rows: await replayedYtMusic(ytRecordings).search(nameQuery(track)) };
   };
+
+  it("[M3.spotify/a] picks the track's own album over a best-of that YouTube Music lists first", async () => {
+    // Edge of Seventeen (Bella Donna over Timespace) and Lovesong (Disintegration over Galore).
+    for (const position of [44, 127]) {
+      const { track, rows } = await rowsFor(position);
+      expect(failedRule(track, rows[0]!)).toBe(null);
+      expect(titleKey(rows[0]!.album ?? '')).not.toBe(titleKey(track.album!));
+      const { match } = matchSpotifyTrack(track, rows);
+      expect(match).not.toBe(null);
+      expect(titleKey(match!.album!)).toBe(titleKey(track.album!));
+    }
+  });
 
   it('[M3.spotify/a] a row of another title is not the track', async () => {
     const { track, rows } = await rowsFor(0);
