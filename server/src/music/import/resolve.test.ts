@@ -44,7 +44,10 @@ const RECORDED_PICKS = z
   .array(z.string().nullable())
   .parse(
     JSON.parse(
-      readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'recorded-picks.json'), 'utf8'),
+      readFileSync(
+        join(dirname(fileURLToPath(import.meta.url)), 'fixtures', 'recorded-picks.json'),
+        'utf8',
+      ),
     ),
   );
 
