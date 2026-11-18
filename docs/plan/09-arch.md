@@ -19,7 +19,7 @@ Features sit on a shared index and store; only adapters talk to the outside worl
 ::: card
 #### 1 · One schema, generated clients
 
-Server routes are declared with zod; an OpenAPI document is emitted from them. The web client (TypeScript) and Android models (Kotlin, kotlinx.serialization) are **generated** by `pnpm gen` and committed under `generated/` folders; CI regenerates them and fails on any difference or on a change that breaks either. The server parses every response through its zod schema, so clients needn't re-check.
+Server routes are declared with zod; an OpenAPI document is emitted from them. The web client (TypeScript) and Android models (Kotlin, kotlinx.serialization) are **generated** by `pnpm gen` and committed under `generated/` folders; CI regenerates them and fails on any difference or a change breaking either. The server parses every response through its zod schema, so clients needn't re-check.
 :::
 
 ::: card
@@ -37,19 +37,19 @@ A job mirrors the Audiobookshelf and Jellyfin libraries into SQLite as shared me
 ::: card
 #### 4 · Recorded reality, not guesses
 
-Each adapter's `record` mode captures real responses from mediaserver, secrets scrubbed, as fixtures. A nightly re-record turns upstream drift into a failing diff. Recordings are made from the laptop with Auralis's own API keys, named Auralis in each service, kept in a 0600 file on mediaserver; no other service's key is reused. The ABS key belongs to `auralis`, a listen-only non-admin user. A second ABS key, an admin's, kept only on mediaserver, creates a member's missing ABS account and mints each person's key at first sign-in; Jellyfin's key (always admin) mints each person's session through Quick Connect. Upstream calls carry the person's own token, encrypted at rest.
+Each adapter's `record` mode captures real responses from mediaserver, secrets scrubbed, as fixtures. A nightly re-record turns upstream drift into a failing diff. Recordings are made from the laptop with Auralis's own API keys, named Auralis in each service, kept in a 0600 file on mediaserver; no other service's key is reused. The ABS key belongs to `auralis`, a listen-only non-admin user. A second, admin ABS key, kept only on mediaserver, creates a member's missing ABS account and mints each person's key at first sign-in; Jellyfin's key (always admin) mints each person's session through Quick Connect. Upstream calls carry the person's own token, encrypted at rest.
 :::
 
 ::: card
 #### 5 · One request pipeline
 
-Books, music and podcasts share one state machine, table and status vocabulary. Only _search_ and _fulfil_ are per medium, and music has two fulfil routes: a song kept from YouTube Music, an album torrented in lossless.
+All three media share one state machine, table and status vocabulary. Only _search_ and _fulfil_ are per medium; music has two fulfil routes: a song kept from YouTube Music, an album torrented in lossless.
 :::
 
 ::: card
 #### 6 · Secure by default
 
-Setup claims the admin role once, with a one-time code the server writes to its data folder on first start; after that only an admin can run it. Download URLs come only from the server's own search results, never the client. Forwarded headers are trusted only from the proxy named in config, and the cookie is `Secure` whenever the request came in over HTTPS, so login works on plain LAN HTTP and behind Caddy. A signed-in write is refused unless its Origin, or failing that its Referer, is `PUBLIC_ORIGIN`, or, when that is unset (as in development), the request's own origin.
+Setup claims the admin role once, with a one-time code the server writes to its data folder on first start; after that only an admin can run it. Download URLs come only from the server's own search results, never the client. Forwarded headers are trusted only from the proxy named in config, and the cookie is `Secure` whenever the request came in over HTTPS, so login works on plain LAN HTTP and behind Caddy. A signed-in write is refused unless its Origin, or failing that its Referer, is `PUBLIC_ORIGIN`, or, if unset (as in development), the request's own origin.
 :::
 
 ::: card

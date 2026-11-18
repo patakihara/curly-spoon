@@ -1,7 +1,7 @@
 # When the last person unsubscribes from a show
 
 kind: product call
-default: nothing is deleted. The show leaves your library, but it and its episodes stay in Audiobookshelf, so the Audiobookshelf app and anyone who later subscribes still find it.
+default: nothing is deleted. The show leaves your library, even if you played it, but it and its episodes stay in Audiobookshelf, so the Audiobookshelf app and anyone who later subscribes still find it.
 
 Option A: keep the default. Say "keep unfollowed shows".
 Option B: when nobody in the household follows a show any more, delete it and its downloaded episodes from Audiobookshelf. Say "delete shows nobody follows".

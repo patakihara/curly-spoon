@@ -85,14 +85,14 @@ describe('[M3.podcasts] a feed address a client named', () => {
     expect(refusedFeedUrl(new URL('https://me@feeds.example/a.rss'))).toBe('credentials');
   });
 
-  it('never connects to a name with one private address among public ones', async () => {
+  it('[M3.podcasts/c] never connects to a name with one private address among public ones', async () => {
     const { hops, requests } = await upstream((_, res) => res.end('feed'));
     const fetch = feedFetch({ lookup: async () => [PUBLIC, '10.0.0.8'], requests });
     await expect(fetch('https://feeds.example/a.rss')).rejects.toThrow('a private address');
     expect(hops).toEqual([]);
   });
 
-  it('follows a redirect hop by hand and refuses one to a private address, never connecting to it', async () => {
+  it('[M3.podcasts/c] follows a redirect hop by hand and refuses one to a private address, never connecting to it', async () => {
     const { hops, requests } = await upstream((_, res) => {
       res.writeHead(302, { location: 'http://inside.example/feed' });
       res.end();

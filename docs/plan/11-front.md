@@ -45,7 +45,7 @@ This is M5's work; until then the frontend is M1.shell's minimal shell.
 - **Times, dates, counts and sizes have one format spec** beside the string table, generated for both apps; the server sends raw values and nothing else formats them (M5.formats).
 - **Icon names are one fixed list** in Sonora's tokens, generated for both apps as a closed type: `Icon`, every `icon` prop and the pages take only its names (M5.icons).
 - **Input hands its handler the text.** `Input`'s `onChange` gets the new string, like every other form component, so `FieldRow`'s handler does too.
-- **Controls show Material's states.** Every interactive component has enabled, disabled, hovered, focused (an outer ring) and pressed, a ripple spreading from the press point with no change of shape. One with no action attached is disabled, as is one set `disabled`.
+- **Controls show Material's states.** Every interactive component has enabled, disabled, hovered, focused (an outer ring) and pressed, a ripple spreading from the press point without changing shape. One with no action attached is disabled, as is one set `disabled`.
 
 ### From design to both apps
 
@@ -55,14 +55,14 @@ This is M5's work; until then the frontend is M1.shell's minimal shell.
 
 - **Components with typed props** (`export/component-api.md`, generated from each `.d.ts`): shell, media, player and status, TransportBar with a _spoken_ variant, Lyrics with three sync modes.
 - **A token exporter**: `export/web/sonora-tokens.css`, `sonora-theme.css` and `export/android/SonoraTokens.kt`, all generated. Motion, scrim, tone and layout families included.
-- **43 Spotify reference screens**, each mapped to the components it motivated, kept as reference pictures, not components.
+- **43 Spotify reference screens**, each mapped to the components it motivated, kept as pictures, not components.
 :::
 
 ::: card
 #### What the rebuild does with it
 
 - **Web uses Sonora's components directly, not ports**: real React with typed props. `pnpm gen` rewrites Sonora's global-namespace lookups as imports in `web/src/generated/ui`, the app's UI package. The `.d.ts` files are the props, unchanged.
-- **Android**: `SonoraTokens.kt` as the theme, plus one Compose component per Sonora component with the same name. Its props class is **generated from the same `.d.ts`**, so a required prop added in Sonora breaks the Android build until passed. Layout bodies are hand-written, as `export/README.md` spells out.
+- **Android**: `SonoraTokens.kt` as the theme, plus a same-named Compose component per Sonora component. Its props class is **generated from the same `.d.ts`**, so a required prop added in Sonora breaks the Android build until passed. Layout bodies are hand-written, as `export/README.md` spells out.
 :::
 :::
 
@@ -76,7 +76,7 @@ Your rule: Sonora, then the canvas, then code:
    - the app's routes must equal `nav.json` exactly;
    - every page must match its generated layout;
    - web and Android must build the same route set;
-   - each page's screenshot on both platforms is compared against the design's render of that page;
+   - each page's screenshot on both platforms is checked against the design's render;
    - the "Published artifacts are current" job, and the Stop hook, fail while either artifact, or the code building it, differs from its recorded publish, or the canvas installs another Sonora;
    - the `auralis/no-hand-ui` lint refuses HTML elements, `style` and `className` in `web/src` outside `generated/`, and a test refuses `@Composable` functions outside Android's `generated` and `ui/sonora` packages, each with a documented allowlist.
 6. **The frontend build starts with navigation.** Both apps navigate the full generated map with placeholder data, compared against the design (M0.canvas), before any screen gets real content; without a household sign-on (`/api/health` says), placeholders stay.
