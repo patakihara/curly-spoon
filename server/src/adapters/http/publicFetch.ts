@@ -53,6 +53,8 @@ const familyOf = (address: string) => (isIP(address) === 6 ? 6 : 4);
 const isPublicAddress = (address: string) =>
   !NOT_PUBLIC.check(address, familyOf(address) === 6 ? 'ipv6' : 'ipv4');
 
+const PRIVATE = 'a private address';
+
 const hostOf = (url: URL) => url.hostname.replace(/^\[|\]$/g, '').replace(/\.$/, '');
 
 /** Why the host alone rules this out, or null. A name with no dot is a container's or the LAN's. */
@@ -60,7 +62,7 @@ function refusedHost(url: URL): string | null {
   const host = hostOf(url);
   if (isIP(host) !== 0) return isPublicAddress(host) ? null : 'a private address';
   if (!host.includes('.') || /\.(?:localhost|local|internal|lan)$/i.test(host)) {
-    return 'a private address';
+    return PRIVATE;
   }
   return null;
 }
@@ -134,7 +136,7 @@ async function publicAddresses(url: URL, lookup: PublicFetchOptions['lookup']): 
   const host = hostOf(url);
   const addresses = isIP(host) !== 0 ? [host] : await lookup(host);
   if (addresses.length === 0 || !addresses.every(isPublicAddress)) {
-    throw new Error('a private address');
+    throw new Error(PRIVATE);
   }
   return addresses;
 }
@@ -147,6 +149,19 @@ export function publicFetch({ lookup, request }: PublicFetchOptions): FetchLike 
     if (refused !== null) throw new Error(refused);
     return pinnedGet(url, await publicAddresses(url, lookup), init, request);
   };
+}
+
+/**
+ * A feed address `feedFetch` refused without reading it: a hop off the public internet
+ * (`privateAddress`), or another scheme, credentials or too many redirects.
+ */
+export class FeedRefused extends Error {
+  override readonly name = 'FeedRefused';
+  readonly privateAddress: boolean;
+  constructor(reason: string) {
+    super(reason);
+    this.privateAddress = reason === PRIVATE;
+  }
 }
 
 /** At most this many redirects are followed before a feed is refused. */
@@ -180,8 +195,12 @@ export function feedFetch({
     let permanent = true;
     for (let hop = 0; ; hop++) {
       const refused = refusedFeedUrl(url);
-      if (refused !== null) throw new Error(refused);
-      const addresses = await publicAddresses(url, lookup);
+      if (refused !== null) throw new FeedRefused(refused);
+      const addresses = await publicAddresses(url, lookup).catch((error: unknown) => {
+        throw error instanceof Error && error.message === PRIVATE
+          ? new FeedRefused(PRIVATE)
+          : error;
+      });
       const request = requests[url.protocol as 'http:' | 'https:'];
       const response = await pinnedGet(url, addresses, init, request);
       const location = response.headers.get('location');
@@ -189,7 +208,7 @@ export function feedFetch({
         return { response, url: named.href };
       }
       await response.body?.cancel();
-      if (hop >= FEED_MAX_REDIRECTS) throw new Error('too many redirects');
+      if (hop >= FEED_MAX_REDIRECTS) throw new FeedRefused('too many redirects');
       permanent &&= response.status === 301 || response.status === 308;
       url = new URL(location, url);
       if (permanent) named = url;

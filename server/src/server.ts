@@ -31,6 +31,7 @@ import type { AlbumCatalogue } from './requests/albums/catalogue.js';
 import { bookSteps } from './requests/books/index.js';
 import { Wake } from './requests/job.js';
 import { musicBrainzOf } from './requests/musicBrainz.js';
+import { podcastSteps } from './requests/podcasts/index.js';
 import { prowlarrOf } from './requests/prowlarr.js';
 import { songSteps } from './requests/songs/index.js';
 import type { BookCatalogue } from './requests/books/catalogue.js';
@@ -174,6 +175,8 @@ export async function assembleServer(
     prowlarr,
   });
 
+  const podcasts = podcastSteps(config, { db, fetch, now: Date.now });
+
   // Makes no upstream call at start, so a server with no network still starts.
   const musicLog: MusicLog = {
     warn: (details, message) => app.log.warn(details, message),
@@ -232,6 +235,7 @@ export async function assembleServer(
         ...('steps' in books ? [books.steps] : []),
         ...('steps' in albums ? [albums.steps] : []),
         ...('steps' in songs ? [songs.steps] : []),
+        ...('steps' in podcasts ? [podcasts.steps] : []),
       ]),
       wake,
       everyMs: config.requests.everySeconds * 1_000,
@@ -257,6 +261,7 @@ export async function assembleServer(
   if ('off' in books) app.log.info({ missing: books.off }, 'Books cannot be requested');
   if ('off' in albums) app.log.info({ missing: albums.off }, 'Albums cannot be requested');
   if ('off' in songs) app.log.info({ missing: songs.off }, 'Songs cannot be kept');
+  if ('off' in podcasts) app.log.info({ missing: podcasts.off }, 'Shows cannot be requested');
 
   if (!hasAdmin(db)) {
     issueSetupCode(db, setupCodeFile);

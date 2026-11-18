@@ -57,7 +57,8 @@
           "importFailed",
           "notIndexed",
           "cancelledUpstream",
-          "wrongRelease"
+          "wrongRelease",
+          "privateAddress"
         ]
       },
       "QueueType": {
@@ -293,6 +294,10 @@
           "youtubeMusicId": {
             "type": "string",
             "pattern": "^[\\w-]{1,64}$"
+          },
+          "itunesId": {
+            "type": "string",
+            "pattern": "^\\d{1,20}$"
           }
         },
         "additionalProperties": false

@@ -37,6 +37,7 @@ const FAILURES: Record<RequestFailure, string> = {
   notIndexed: 'It never reached the library',
   cancelledUpstream: 'The download was cancelled',
   wrongRelease: 'The release was not this album',
+  privateAddress: 'The feed is not on the public internet',
 };
 
 const line = (...parts: (string | null)[]) =>

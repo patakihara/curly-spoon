@@ -18,7 +18,9 @@ export const librarySchema = z
     id: z.string(),
     name: z.string(),
     mediaType: mediaTypeSchema,
-    folders: z.array(z.object({ id: z.string(), fullPath: z.string() }).passthrough()).optional(),
+    folders: z
+      .array(z.object({ id: z.string().optional(), fullPath: z.string() }).passthrough())
+      .optional(),
     settings: z.object({ disableWatcher: z.boolean() }).passthrough().optional(),
   })
   .passthrough();

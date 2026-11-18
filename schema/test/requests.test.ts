@@ -37,6 +37,7 @@ describe('the request vocabulary', () => {
       'notIndexed',
       'cancelledUpstream',
       'wrongRelease',
+      'privateAddress',
     ]);
     expect(RequestFailure.safeParse('the tracker was down').success).toBe(false);
   });

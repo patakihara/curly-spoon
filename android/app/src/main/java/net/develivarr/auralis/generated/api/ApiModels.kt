@@ -886,6 +886,8 @@ enum class RequestFailure {
     CANCELLED_UPSTREAM,
     @SerialName("wrongRelease")
     WRONG_RELEASE,
+    @SerialName("privateAddress")
+    PRIVATE_ADDRESS,
 }
 
 @Serializable
@@ -895,6 +897,7 @@ data class RequestIds(
     val mbid: String? = null,
     val feedUrl: String? = null,
     val youtubeMusicId: String? = null,
+    val itunesId: String? = null,
 )
 
 @Serializable

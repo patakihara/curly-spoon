@@ -277,7 +277,8 @@ export async function recordAbsPodcasts(
   );
   const library = libraries.find(({ mediaType }) => mediaType === 'podcast')!;
   const folder = library.folders?.[0];
-  if (folder === undefined) throw new Error('podcasts-libraries: the library has no folder');
+  if (folder?.id === undefined) throw new Error('podcasts-libraries: the library has no folder');
+  const folderId = folder.id;
 
   const metadata = await step(
     'podcasts-feed',
@@ -292,7 +293,7 @@ export async function recordAbsPodcasts(
   );
   const podcast = {
     libraryId: library.id,
-    folderId: folder.id,
+    folderId,
     path: posix.join(folder.fullPath, podcastFolderName(metadata!.title)),
     media: {
       metadata: newPodcastMetadata(metadata!, { feedUrl: input.feedUrl, itunesId: input.itunesId }),

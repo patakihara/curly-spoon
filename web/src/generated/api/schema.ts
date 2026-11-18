@@ -850,7 +850,7 @@ export interface components {
             at: number;
         };
         /** @enum {string} */
-        RequestFailure: "noRelease" | "searchFailed" | "downloadFailed" | "downloadStalled" | "importFailed" | "notIndexed" | "cancelledUpstream" | "wrongRelease";
+        RequestFailure: "noRelease" | "searchFailed" | "downloadFailed" | "downloadStalled" | "importFailed" | "notIndexed" | "cancelledUpstream" | "wrongRelease" | "privateAddress";
         /** @enum {string} */
         QueueType: "music" | "spoken";
         /** @enum {string} */
@@ -909,6 +909,7 @@ export interface components {
             /** Format: uri */
             feedUrl?: string;
             youtubeMusicId?: string;
+            itunesId?: string;
         };
         RequestTarget: {
             title: string;

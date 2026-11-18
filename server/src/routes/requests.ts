@@ -28,7 +28,7 @@ import {
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { indexedRow, topLevelOf } from '../libraryIndex/store.js';
 import {
-  ARRIVAL_CLAIM,
+  claimArrival,
   cancelRequest,
   chooseRelease,
   otherReleases,
@@ -36,8 +36,8 @@ import {
   type RequestActDeps,
   retryRequest,
 } from '../requests/job.js';
+import { heldShow } from '../requests/podcasts/held.js';
 import { Refusal, serve } from '../route.js';
-import { addClaim } from '../store/claims.js';
 import {
   arrivedRequests,
   createRequest,
@@ -131,7 +131,7 @@ export function requestDoor(deps: RequestDoorDeps) {
       const { request } = createRequest(db, userId, ref, now(), log);
       const change = { state: { status: 'inLibrary' as const }, result: owned };
       saveRequest(db, request.id, change, now(), request.version);
-      addClaim(db, userId, topLevelOf(db, owned), ARRIVAL_CLAIM[ref.medium], now());
+      claimArrival(db, userId, ref.medium, topLevelOf(db, owned), now());
       return getRequest(db, request.id)!;
     })();
 
@@ -150,7 +150,7 @@ export function requestDoor(deps: RequestDoorDeps) {
     const there = arrived(ref);
     if (there?.result != null) {
       joinArrivedRequest(db, there.id, userId, ref, now());
-      addClaim(db, userId, topLevelOf(db, there.result), ARRIVAL_CLAIM[there.medium], now());
+      claimArrival(db, userId, there.medium, topLevelOf(db, there.result), now());
       return there;
     }
     const live = liveRequest(db, ref, log);
@@ -191,7 +191,9 @@ export function requestRoutes(app: FastifyInstance, deps: RequestDoorDeps): void
   // A song is kept by `POST /keep`, which names it as search did: one door per medium.
   serve(app, createRequestRoute, async (request, _reply, { ref }) => {
     if (ref.medium === 'song') throw new Refusal(400, 'use_keep');
-    return viewOf(await askFor(signedIn(request).id, ref));
+    // A show the household holds is followed at once, asking no upstream.
+    const owned = ref.medium === 'podcast' ? heldShow(db, ref.target.ids) : null;
+    return viewOf(await askFor(signedIn(request).id, ref, owned));
   });
 
   serve(app, listRequests, (request) => {

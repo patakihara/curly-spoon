@@ -32,6 +32,7 @@ export type RequestStatus = z.infer<typeof RequestStatus>;
 /**
  * Why a request failed, as a key the apps word themselves. `wrongRelease`: the release's files are
  * not what was asked for, as a torrent whose files fit none of an album's editions.
+ * `privateAddress`: a feed address that leads off the public internet, refused unread.
  */
 export const RequestFailure = z
   .enum([
@@ -43,6 +44,7 @@ export const RequestFailure = z
     'notIndexed',
     'cancelledUpstream',
     'wrongRelease',
+    'privateAddress',
   ])
   .openapi('RequestFailure');
 export type RequestFailure = z.infer<typeof RequestFailure>;
@@ -52,8 +54,8 @@ export const Asin = z.string().regex(/^[A-Z0-9]{10}$/);
 
 /**
  * The catalogue ids a request names its target by: an Audible ASIN, an ISBN-10 or ISBN-13, a
- * MusicBrainz release group id (an album, whichever its edition), a podcast's feed address, a
- * YouTube Music video id.
+ * MusicBrainz release group id (an album, whichever its edition), a podcast's feed address and its
+ * iTunes id, a YouTube Music video id.
  */
 export const RequestIds = z
   .object({
@@ -70,6 +72,7 @@ export const RequestIds = z
         return username === '' && password === '';
       }, 'a feed address carries no credentials'),
     youtubeMusicId: z.string().regex(/^[\w-]{1,64}$/),
+    itunesId: z.string().regex(/^\d{1,20}$/),
   })
   .partial()
   .strict()
