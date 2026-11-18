@@ -58,8 +58,9 @@ export interface Finding {
  * podcast's feed, episode enclosures and directory page on Audiobookshelf, and the iTunes
  * namespace a feed declares; the covers and author photos Audible and Audnexus name; YouTube Music's
  * art, the one stream host a scrubbed recording can name, and the Internet Archive, which the Cover
- * Art Archive redirects to, with the one node name a recording keeps; and Spotify's image host,
- * which a public playlist's cover names.
+ * Art Archive redirects to, with the one node name a recording keeps; Spotify's image host,
+ * which a public playlist's cover names; and the image host and podcast feed hosts iTunes' podcast
+ * search rows name (recorded).
  */
 export const PUBLIC_HOSTS: readonly string[] = [
   'musicbrainz.org',
@@ -76,6 +77,17 @@ export const PUBLIC_HOSTS: readonly string[] = [
   'archive.org',
   'i.scdn.co',
   RECORDED_ARCHIVE_NODE,
+  'is1-ssl.mzstatic.com',
+  'rss.buzzsprout.com',
+  'access.acast.com',
+  'feeds.acast.com',
+  'anchor.fm',
+  'audioboom.com',
+  'feeds.feedburner.com',
+  'feeds.megaphone.fm',
+  'feeds.npr.org',
+  'rss.amperwave.net',
+  'rss.art19.com',
 ];
 /**
  * Whole public addresses allowed where their host is not: Auralis's public homepage, which its

@@ -1,0 +1,28 @@
+{
+  "upstream": "itunes",
+  "upstreamVersion": "iTunes Search API, media=podcast entity=podcast",
+  "call": "search-maintenance-phase",
+  "request": {
+    "method": "GET",
+    "path": "/search",
+    "query": {
+      "entity": "podcast",
+      "limit": "25",
+      "media": "podcast",
+      "term": "maintenance phase"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "text/javascript; charset=utf-8"
+    },
+    "body": {
+      "text": "{\"resultCount\":1,\"results\":[{\"collectionId\":1535408667,\"artistName\":\"Aubrey Gordon & Michael Hobbes\",\"collectionName\":\"Maintenance Phase\",\"feedUrl\":\"https://rss.buzzsprout.com/1411126.rss\",\"trackCount\":162,\"artworkUrl600\":\"https://is1-ssl.mzstatic.com/image/thumb/Podcasts211/v4/d3/23/3c/d3233ce4-e1e6-710c-141a-dad45b263c7d/mza_17331100152243008221.jpg/600x600bb.jpg\"}]}"
+    }
+  }
+}

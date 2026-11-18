@@ -109,6 +109,10 @@
  * asked. `--only spotify-misfires` records the four tracks Rock Classics' live import left
  * unmatched: their metadata, 1 s apart, and their YouTube Music searches, 2 s apart.
  *
+ * `--only itunes` records M3.podcasts' iTunes podcast searches, with no key: a show by name, a
+ * broad word whose rows include some without a feed, and words nothing matches, each 3 s after the
+ * last, every row cut to the fields parsed (record-podcasts.ts).
+ *
  * `--only albums-live --log <file> --pick <call=line,..>` turns the lines named of a live album
  * run's proxy log into recordings of qBittorrent, Prowlarr and Jellyfin, and asks the Cover Art
  * Archive for The Slip's release-group front (record-albums-live.ts). Nothing goes on stdin.
@@ -159,6 +163,8 @@ import {
 } from './record-musicbrainz.js';
 import { MUSICBRAINZ_URL } from './musicbrainz/client.js';
 import { COVERART_URL } from './coverart/client.js';
+import { ITUNES_URL } from './itunes/client.js';
+import { recordItunes } from './record-podcasts.js';
 
 /**
  * The index calls record one page of two items from each library. The fifth page holds the
@@ -183,7 +189,7 @@ Records Audiobookshelf's and Jellyfin's calls into server/src/adapters/*/recordi
   --only <name>      record only abs, jellyfin, index, play, episode, jfplay, progress,
                      sessions, shell, lyrics, lists, played, books, albums, shelf, qbit, ytmusic,
                      extractor, musicbrainz, albums-musicbrainz, albums-qbit, albums-live, spotify,
-                     spotify-ytmusic, spotify-misfires, coverart or keep; or
+                     spotify-ytmusic, spotify-misfires, coverart, keep or itunes; or
                      oidc, a sign-in and its links
   --lrclib <url>     LRCLIB's base URL, for --only lyrics
   --prowlarr <url>   Prowlarr's base URL, for --only books and albums
@@ -779,10 +785,11 @@ export async function runRecord(io: RecordIo): Promise<number> {
       'spotify',
       'spotify-ytmusic',
       'spotify-misfires',
+      'itunes',
     ].includes(only)
   ) {
     io.err(
-      `--only is abs, jellyfin, index, play, episode, jfplay, progress, sessions, shell, lyrics, lists, played, household, books, albums, shelf, qbit, ytmusic, extractor, github, musicbrainz, albums-musicbrainz, albums-qbit, albums-live, coverart, keep, oidc, spotify, spotify-ytmusic or spotify-misfires, not ${only}`,
+      `--only is abs, jellyfin, index, play, episode, jfplay, progress, sessions, shell, lyrics, lists, played, household, books, albums, shelf, qbit, ytmusic, extractor, github, musicbrainz, albums-musicbrainz, albums-qbit, albums-live, coverart, keep, oidc, spotify, spotify-ytmusic, spotify-misfires or itunes, not ${only}`,
     );
     return 2;
   }
@@ -818,6 +825,7 @@ export async function runRecord(io: RecordIo): Promise<number> {
   if (only === 'albums-qbit') return runAlbumsQbit(io, values, parseKeys(io.stdin), root);
   if (only === 'albums-live') return runAlbumsLive(io, values, root);
   if (only === 'coverart') return runCoverArt(io, root);
+  if (only === 'itunes') return runItunes(io, root);
   if (only === 'keep') return runKeep(io, values, parseKeys(io.stdin), root);
   const wantIndex = only === undefined || only === 'index';
   const wantAbs = only !== 'jellyfin';
@@ -1390,6 +1398,16 @@ async function runSpotifyYtMusic(
         const [file, ...args] = SERVER_ECHO_ARGV as [string, ...string[]];
         return (await promisify(execFile)(file, args, { timeout: 120_000 })).stdout;
       }),
+  });
+  return scanWritten(io, written, []);
+}
+
+async function runItunes(io: RecordIo, root: string): Promise<number> {
+  const { written } = await recordItunes({
+    fetch: io.fetch,
+    out: io.out,
+    root,
+    itunesUrl: ITUNES_URL,
   });
   return scanWritten(io, written, []);
 }

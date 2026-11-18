@@ -1,0 +1,28 @@
+{
+  "upstream": "itunes",
+  "upstreamVersion": "iTunes Search API, media=podcast entity=podcast",
+  "call": "search-none",
+  "request": {
+    "method": "GET",
+    "path": "/search",
+    "query": {
+      "entity": "podcast",
+      "limit": "25",
+      "media": "podcast",
+      "term": "zqxv plorb wendigast"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "text/javascript; charset=utf-8"
+    },
+    "body": {
+      "text": "{\"resultCount\":0,\"results\":[]}"
+    }
+  }
+}
