@@ -1,0 +1,96 @@
+{
+  "upstream": "audiobookshelf",
+  "upstreamVersion": "2.37.2",
+  "call": "podcasts-libraries",
+  "request": {
+    "method": "GET",
+    "path": "/api/libraries",
+    "query": {},
+    "headers": {
+      "accept": "application/json",
+      "authorization": "Bearer <token>"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "libraries": [
+          {
+            "id": "237433db-7af2-429d-84e0-c3daf12417b3",
+            "name": "Books",
+            "folders": [
+              {
+                "id": "02c4b117-9765-4135-9a79-8b9d3b22bd1f",
+                "fullPath": "/tmp/abs-d/books",
+                "libraryId": "237433db-7af2-429d-84e0-c3daf12417b3",
+                "addedAt": 1794973951475
+              }
+            ],
+            "displayOrder": 1,
+            "icon": "database",
+            "mediaType": "book",
+            "provider": "google",
+            "settings": {
+              "coverAspectRatio": 1,
+              "disableWatcher": false,
+              "autoScanCronExpression": null,
+              "skipMatchingMediaWithAsin": false,
+              "skipMatchingMediaWithIsbn": false,
+              "audiobooksOnly": false,
+              "epubsAllowScriptedContent": false,
+              "hideSingleBookSeries": false,
+              "onlyShowLaterBooksInContinueSeries": false,
+              "metadataPrecedence": [
+                "folderStructure",
+                "audioMetatags",
+                "nfoFile",
+                "txtFiles",
+                "opfFile",
+                "absMetadata"
+              ],
+              "markAsFinishedPercentComplete": null,
+              "markAsFinishedTimeRemaining": 10
+            },
+            "lastScan": null,
+            "lastScanVersion": null,
+            "createdAt": 1794973951474,
+            "lastUpdate": 1794973951474
+          },
+          {
+            "id": "3b9134b6-929c-46bd-935b-c8b72fbd88a5",
+            "name": "Podcasts",
+            "folders": [
+              {
+                "id": "d34b6034-eb96-4092-8024-2d72521126a1",
+                "fullPath": "/data/Podcasts",
+                "libraryId": "3b9134b6-929c-46bd-935b-c8b72fbd88a5",
+                "addedAt": 1794973951493
+              }
+            ],
+            "displayOrder": 2,
+            "icon": "database",
+            "mediaType": "podcast",
+            "provider": "google",
+            "settings": {
+              "coverAspectRatio": 1,
+              "disableWatcher": false,
+              "autoScanCronExpression": null,
+              "podcastSearchRegion": "us",
+              "markAsFinishedPercentComplete": null,
+              "markAsFinishedTimeRemaining": 10
+            },
+            "lastScan": null,
+            "lastScanVersion": null,
+            "createdAt": 1794973951492,
+            "lastUpdate": 1794973951492
+          }
+        ]
+      }
+    }
+  }
+}

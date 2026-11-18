@@ -1,0 +1,122 @@
+{
+  "upstream": "audiobookshelf",
+  "upstreamVersion": "2.37.2",
+  "call": "podcasts-create",
+  "request": {
+    "method": "POST",
+    "path": "/api/podcasts",
+    "query": {},
+    "headers": {
+      "authorization": "Bearer <token>",
+      "content-type": "application/json"
+    },
+    "body": {
+      "json": {
+        "libraryId": "3b9134b6-929c-46bd-935b-c8b72fbd88a5",
+        "folderId": "d34b6034-eb96-4092-8024-2d72521126a1",
+        "path": "/data/Podcasts/Not What You Thought You Knew",
+        "media": {
+          "metadata": {
+            "title": "Not What You Thought You Knew",
+            "author": "HISTORY",
+            "description": "Cut by the recorder: show notes name third-party sites.",
+            "genres": [
+              "History",
+              "Education",
+              "Society & Culture:Documentary"
+            ],
+            "feedUrl": "https://feeds.acast.com/public/shows/7db8dbf2-4b79-4d64-892a-d0d87f255834",
+            "imageUrl": "https://assets.pippa.io/shows/611e679406c05edcf9f4089c/show-cover.png",
+            "itunesId": "1472870897",
+            "language": "en",
+            "explicit": false,
+            "type": "serial"
+          },
+          "autoDownloadEpisodes": false,
+          "autoDownloadSchedule": "0 * * * *"
+        }
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "id": "6711185b-13c4-4055-938e-8bde1e66ef56",
+        "ino": "1263901",
+        "oldLibraryItemId": null,
+        "libraryId": "3b9134b6-929c-46bd-935b-c8b72fbd88a5",
+        "folderId": "d34b6034-eb96-4092-8024-2d72521126a1",
+        "path": "/data/Podcasts/Not What You Thought You Knew",
+        "relPath": "Not What You Thought You Knew",
+        "isFile": false,
+        "mtimeMs": 1794974283002,
+        "ctimeMs": 1794974283002,
+        "birthtimeMs": 1794974283002,
+        "addedAt": 1794974283010,
+        "updatedAt": 1794974283524,
+        "isMissing": false,
+        "isInvalid": false,
+        "mediaType": "podcast",
+        "media": {
+          "id": "fab191dd-b6c0-4b28-8fd8-89722686b7f7",
+          "metadata": {
+            "title": "Not What You Thought You Knew",
+            "author": "HISTORY",
+            "description": "Cut by the recorder: show notes name third-party sites.",
+            "releaseDate": null,
+            "genres": [
+              "History",
+              "Education",
+              "Society & Culture:Documentary"
+            ],
+            "feedUrl": "https://feeds.acast.com/public/shows/7db8dbf2-4b79-4d64-892a-d0d87f255834",
+            "imageUrl": "https://assets.pippa.io/shows/611e679406c05edcf9f4089c/show-cover.png",
+            "itunesPageUrl": null,
+            "itunesId": "1472870897",
+            "itunesArtistId": null,
+            "explicit": false,
+            "language": "en",
+            "type": "serial",
+            "titleIgnorePrefix": "Not What You Thought You Knew"
+          },
+          "coverPath": "/data/Podcasts/Not What You Thought You Knew/cover.png",
+          "tags": [],
+          "numEpisodes": 0,
+          "autoDownloadEpisodes": false,
+          "autoDownloadSchedule": "0 * * * *",
+          "lastEpisodeCheck": 1794974283008,
+          "maxEpisodesToKeep": 0,
+          "maxNewEpisodesToDownload": 3,
+          "size": 0,
+          "libraryItemId": "6711185b-13c4-4055-938e-8bde1e66ef56",
+          "episodes": []
+        },
+        "numFiles": 1,
+        "size": 0,
+        "libraryFiles": [
+          {
+            "ino": "1263903",
+            "metadata": {
+              "filename": "cover.png",
+              "ext": "png",
+              "path": "/data/Podcasts/Not What You Thought You Knew/cover.png",
+              "relPath": "cover.png",
+              "size": 4346947,
+              "mtimeMs": 1794974283518,
+              "ctimeMs": 1794974283518,
+              "birthtimeMs": 1794974283240
+            },
+            "isSupplementary": null,
+            "addedAt": 1794974283524,
+            "updatedAt": 1794974283524,
+            "fileType": "unknown"
+          }
+        ]
+      }
+    }
+  }
+}

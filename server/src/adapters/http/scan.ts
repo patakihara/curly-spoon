@@ -88,6 +88,9 @@ export const PUBLIC_HOSTS: readonly string[] = [
   'feeds.npr.org',
   'rss.amperwave.net',
   'rss.art19.com',
+  'assets.pippa.io',
+  'sphinx.acast.com',
+  'shows.acast.com',
 ];
 /**
  * Whole public addresses allowed where their host is not: Auralis's public homepage, which its
