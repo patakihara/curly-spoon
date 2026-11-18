@@ -22,6 +22,7 @@ import { bookmarkRoutes } from './routes/bookmarks.js';
 import { deviceRoutes } from './routes/devices.js';
 import { feedRoutes } from './routes/feed.js';
 import { itemRoutes } from './routes/items.js';
+import { subscriptionRoutes } from './routes/subscriptions.js';
 import { libraryRoutes } from './routes/library.js';
 import { type ListImports, listRoutes } from './routes/lists.js';
 import type { Clock } from './adapters/musicbrainz/client.js';
@@ -303,6 +304,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     music: options.music ?? null,
     albumRequests: requestDeps.steps.has('album'),
   });
+  subscriptionRoutes(app, { db, now: options.now ?? Date.now });
   const imports = listImports(options, app);
   listRoutes(app, {
     db,

@@ -2131,6 +2131,9 @@
           },
           "finished": {
             "type": "boolean"
+          },
+          "absent": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -2140,7 +2143,8 @@
           "publishedAt",
           "duration",
           "progress",
-          "finished"
+          "finished",
+          "absent"
         ]
       },
       "ItemTrack": {
@@ -2275,6 +2279,9 @@
           },
           "sort": {
             "$ref": "#/components/schemas/EpisodeOrder"
+          },
+          "following": {
+            "type": "boolean"
           },
           "request": {
             "anyOf": [
@@ -5775,6 +5782,138 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ItemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request does not parse, or was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Without the role this route needs, or sent from another site.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/subscriptions/{ref}": {
+      "put": {
+        "summary": "Follow a show the household holds: it joins your library and The Digest",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "operationId": "followShow",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:abs:[\\w-]{1,64}|jellyfin:[0-9a-f]{32}|ytmusic:[\\w-]{11})$"
+            },
+            "required": true,
+            "name": "ref",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "You follow the show; 404 for anything but an indexed show. No upstream is asked.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ok"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request does not parse, or was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Without the role this route needs, or sent from another site.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Unfollow a show: it leaves your library and your digests, for you alone",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "operationId": "unfollowShow",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:abs:[\\w-]{1,64}|jellyfin:[0-9a-f]{32}|ytmusic:[\\w-]{11})$"
+            },
+            "required": true,
+            "name": "ref",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "You no longer follow the show, and a play read from Audiobookshelf does not bring it back; it stays in the household for everyone else. 404 for anything but an indexed show. No upstream is asked.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ok"
                 }
               }
             }

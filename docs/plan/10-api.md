@@ -59,7 +59,7 @@ Each takes `?refresh` (pull to refresh)
 
 `POST/DELETE /favorites/{ref}`\
 `/lists` (CRUD) · `POST /lists/import` · `POST /lists/{id}/play`\
-`POST/DELETE /subscriptions` (a podcast feed, or a YouTube channel)\
+`PUT/DELETE /subscriptions/{ref}` (a show held; a new feed or channel is a request)\
 `GET /feeds/youtube/{channel}.xml` · `/feeds/youtube/{channel}/{video}` (audio only)\
 `PUT /items/{ref}/played`
 :::

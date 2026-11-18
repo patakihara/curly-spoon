@@ -575,6 +575,30 @@ export const getItem = {
   query: ItemQuery,
 } as const satisfies Route;
 
+export const followShow = {
+  method: 'PUT',
+  path: '/api/subscriptions/{ref}',
+  operationId: 'followShow',
+  summary: 'Follow a show the household holds: it joins your library and The Digest',
+  responseDescription:
+    'You follow the show; 404 for anything but an indexed show. No upstream is asked.',
+  response: Ok,
+  access: 'member',
+  params: ItemParams,
+} as const satisfies Route;
+
+export const unfollowShow = {
+  method: 'DELETE',
+  path: '/api/subscriptions/{ref}',
+  operationId: 'unfollowShow',
+  summary: 'Unfollow a show: it leaves your library and your digests, for you alone',
+  responseDescription:
+    'You no longer follow the show, and a play read from Audiobookshelf does not bring it back; it stays in the household for everyone else. 404 for anything but an indexed show. No upstream is asked.',
+  response: Ok,
+  access: 'member',
+  params: ItemParams,
+} as const satisfies Route;
+
 export const mediaArt = {
   method: 'GET',
   path: '/api/media/{ref}/art',
@@ -829,6 +853,8 @@ export const routes: readonly Route[] = [
   listLibrary,
   getFeed,
   getItem,
+  followShow,
+  unfollowShow,
   mediaArt,
   getSearchSuggest,
   getSearch,

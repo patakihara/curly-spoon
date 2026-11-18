@@ -67,7 +67,7 @@ import { RangeNotSatisfiable, type UpstreamFile } from '../adapters/stream.js';
 import { indexedRow, topLevelOf } from '../libraryIndex/store.js';
 import type { Caller, HeldPlan, PlanEntry, Sessions } from '../queues/sessions.js';
 import { Refusal, serve, serveStream, type StreamAnswer } from '../route.js';
-import { addClaim } from '../store/claims.js';
+import { addClaim, followShow } from '../store/claims.js';
 import type { Db } from '../store/connection.js';
 import { dropHeld, heldOf, keepHeld } from '../store/heldProgress.js';
 import { type Linker, type UpstreamConfig, type Upstreams } from '../upstream/links.js';
@@ -503,9 +503,15 @@ export function playRoutes(
     }
   };
 
-  /** Playing a thing makes it the person's own: a track's album, an episode's show, or itself. */
+  /**
+   * Playing a thing makes it the person's own: a track's album, or itself, as played. Playing an
+   * episode follows its show, even one they unfollowed.
+   */
   const claimPlayed = (ref: MediaRef, userId: string) => {
-    addClaim(db, userId, topLevelOf(db, ref), 'played', (options.now ?? Date.now)());
+    const top = topLevelOf(db, ref);
+    const now = (options.now ?? Date.now)();
+    if (indexedRow(db, top.source, top.id)?.kind === 'show') followShow(db, userId, top, now);
+    else addClaim(db, userId, top, 'played', now);
   };
 
   /**

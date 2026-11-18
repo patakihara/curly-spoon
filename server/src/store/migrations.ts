@@ -1161,6 +1161,23 @@ export const migrations: readonly Migration[] = [
       `);
     },
   },
+  {
+    id: 36,
+    name: 'show_unfollows',
+    up: (db) => {
+      db.exec(`
+        -- A show a person unfollowed (store/claims.ts): a play Audiobookshelf reports for them
+        -- claims it no more, until they follow it again, which deletes the row.
+        CREATE TABLE show_unfollows (
+          user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          source  TEXT NOT NULL CHECK (source IN ('abs')),
+          item_id TEXT NOT NULL,
+          at      INTEGER NOT NULL,
+          PRIMARY KEY (user_id, source, item_id)
+        );
+      `);
+    },
+  },
 ];
 
 export function runMigrations(

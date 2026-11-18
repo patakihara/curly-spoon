@@ -4,8 +4,8 @@
  * Audiobookshelf nor marked played by Auralis since Audiobookshelf last changed it, so marking an
  * episode unplayed there brings it back; a mark Audiobookshelf never took holds regardless. An episode in progress stays in. A digest plays across
  * its shows by when each episode came out, oldest or newest first; episodes of one moment follow
- * show id, then the show's own order. The Digest's shows, until subscriptions arrive with
- * M3.podcasts, are the Audiobookshelf shows in the person's own library.
+ * show id, then the show's own order. The Digest's shows are the shows the person follows: the
+ * Audiobookshelf shows in their own library (`store/claims.ts`).
  */
 import type { EpisodeOrder } from '@auralis/schema';
 import { personalRows } from '../library/personal.js';
@@ -37,7 +37,7 @@ export function isPlayed(standing: Standing, mark: PlayedMark | undefined): bool
   return !mark.confirmed || standing.updatedAt === null || mark.at >= standing.updatedAt;
 }
 
-/** The shows The Digest covers: the Audiobookshelf shows in the person's own library. */
+/** The shows The Digest covers, the ones the person follows: the Audiobookshelf shows in their own library. */
 export function subscribedShows(db: Db, userId: string): StoredRow[] {
   return personalRows(db, userId, 'show').filter((row) => row.source === 'abs');
 }

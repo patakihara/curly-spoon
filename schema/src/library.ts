@@ -167,7 +167,8 @@ export const ImageBytes = z.string().openapi({ format: 'binary' });
 
 /**
  * One episode of a show: its description, when it was published (milliseconds since the epoch),
- * its length in seconds, how far through it you are, and whether you finished it.
+ * its length in seconds, how far through it you are, whether you finished it, and whether it is
+ * greyed out (`absent`) because you do not follow its show; playing it follows the show.
  */
 export const ItemEpisode = z
   .object({
@@ -178,6 +179,7 @@ export const ItemEpisode = z
     duration: z.number().nonnegative().nullable(),
     progress: Fraction.nullable(),
     finished: z.boolean(),
+    absent: z.boolean(),
   })
   .openapi('ItemEpisode');
 export type ItemEpisode = z.infer<typeof ItemEpisode>;
@@ -217,8 +219,9 @@ export type ItemEpisodeAbout = z.infer<typeof ItemEpisodeAbout>;
  * far through it you are, its length in seconds, where you stand with it), then a book's
  * chapters, a show's episodes in the order asked (`sort`, which a show's page alone carries:
  * the show's own order unless the other was asked, the episodes then exactly reversed), or an
- * album's tracks. The other two lists are empty. An episode's page lists none and carries
- * `episode`; no other page does. `request` is what asks for an album's lossless copy, on an album
+ * album's tracks. The other two lists are empty. A show's page alone says whether you follow it
+ * (`following`); everything counts as followed while you see everyone's library. An episode's page
+ * lists none and carries `episode`; no other page does. `request` is what asks for an album's lossless copy, on an album
  * whose every track is a song kept from YouTube Music by its MusicBrainz release group, while albums
  * can be requested; null on every other page.
  */
@@ -237,6 +240,7 @@ export const ItemDetail = z
     tracks: z.array(ItemTrack),
     episode: ItemEpisodeAbout.optional(),
     sort: EpisodeOrder.optional(),
+    following: z.boolean().optional(),
     request: RequestRef.nullable(),
   })
   .superRefine((value, ctx) => {
@@ -248,6 +252,13 @@ export const ItemDetail = z
     }
     if ((value.kind === 'show') !== (value.sort !== undefined)) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['sort'], message: 'only a show has' });
+    }
+    if ((value.kind === 'show') !== (value.following !== undefined)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['following'],
+        message: 'only a show has',
+      });
     }
     if (value.request !== null && value.kind !== 'album') {
       ctx.addIssue({

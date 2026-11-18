@@ -587,6 +587,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/subscriptions/{ref}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Follow a show the household holds: it joins your library and The Digest */
+        put: operations["followShow"];
+        post?: never;
+        /** Unfollow a show: it leaves your library and your digests, for you alone */
+        delete: operations["unfollowShow"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/media/{ref}/art": {
         parameters: {
             query?: never;
@@ -1290,6 +1308,7 @@ export interface components {
             duration: number | null;
             progress: number | null;
             finished: boolean;
+            absent: boolean;
         };
         ItemTrack: {
             ref: components["schemas"]["MediaRef"];
@@ -1318,6 +1337,7 @@ export interface components {
             tracks: components["schemas"]["ItemTrack"][];
             episode?: components["schemas"]["ItemEpisodeAbout"];
             sort?: components["schemas"]["EpisodeOrder"];
+            following?: boolean;
             request: components["schemas"]["RequestRef"] | null;
         };
         /** @enum {string} */
@@ -3442,6 +3462,104 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ItemDetail"];
+                };
+            };
+            /** @description The request does not parse, or was refused. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description No session. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Without the role this route needs, or sent from another site. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    followShow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description You follow the show; 404 for anything but an indexed show. No upstream is asked. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Ok"];
+                };
+            };
+            /** @description The request does not parse, or was refused. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description No session. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Without the role this route needs, or sent from another site. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    unfollowShow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description You no longer follow the show, and a play read from Audiobookshelf does not bring it back; it stays in the household for everyone else. 404 for anything but an indexed show. No upstream is asked. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Ok"];
                 };
             };
             /** @description The request does not parse, or was refused. */

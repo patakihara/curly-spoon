@@ -230,6 +230,7 @@ data class ItemDetail(
     val tracks: List<ItemTrack>,
     val episode: ItemEpisodeAbout? = null,
     val sort: EpisodeOrder? = null,
+    val following: Boolean? = null,
     val request: RequestRef?,
 )
 
@@ -242,6 +243,7 @@ data class ItemEpisode(
     val duration: Double?,
     val progress: Double?,
     val finished: Boolean,
+    val absent: Boolean,
 )
 
 @Serializable

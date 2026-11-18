@@ -90,6 +90,7 @@ describe('[M1.shell] a show’s page from GET /api/items/{ref}', () => {
       title: 'Megacorp',
       art: '/api/media/abs:s1/art',
       sort: 'newest',
+      following: true,
       episodes: [
         {
           ref: { source: 'abs', id: 'e2' },
@@ -99,6 +100,7 @@ describe('[M1.shell] a show’s page from GET /api/items/{ref}', () => {
           duration: 3120,
           progress: 0.4,
           finished: false,
+          absent: false,
         },
         {
           ref: { source: 'abs', id: 'e1' },
@@ -108,6 +110,7 @@ describe('[M1.shell] a show’s page from GET /api/items/{ref}', () => {
           duration: null,
           progress: null,
           finished: true,
+          absent: false,
         },
       ],
     }),
@@ -161,7 +164,7 @@ describe('[M1.shell] a show’s page from GET /api/items/{ref}', () => {
       options: show.placeholder.sort.options,
     });
     const serial = showData(
-      detail({ ref: { source: 'abs', id: 's1' }, kind: 'show', sort: 'oldest' }),
+      detail({ ref: { source: 'abs', id: 's1' }, kind: 'show', sort: 'oldest', following: true }),
       show.placeholder,
     );
     expect(serial.sort.value).toBe('Oldest first');

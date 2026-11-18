@@ -12,7 +12,16 @@
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { ItemDetail, LibraryList, type MediaRef, type RequestRef } from '@auralis/schema';
+import {
+  ItemDetail,
+  LibraryList,
+  ListDetail,
+  ListSummaryList,
+  type MediaRef,
+  mediaRefKey,
+  parseMediaRefKey,
+  type RequestRef,
+} from '@auralis/schema';
 import { type FastifyInstance } from 'fastify';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AbsClient } from './adapters/audiobookshelf/client.js';
@@ -27,7 +36,7 @@ import { albumTracks, episodesInOrder } from './libraryIndex/store.js';
 import { advanceRequests } from './requests/job.js';
 import { stepsRegistry } from './requests/steps.js';
 import { ART_WIDTH } from './routes/items.js';
-import { addClaim } from './store/claims.js';
+import { addClaim, claimsOf } from './store/claims.js';
 import { openDatabase, type Db } from './store/connection.js';
 import { createDevice } from './store/devices.js';
 import { createRequest, saveRequest } from './store/requests.js';
@@ -939,6 +948,7 @@ describe('[M1.shell] a book, show or album page, from the index and the person�
         duration: e.duration,
         progress: e.id === finished.episodeId ? 1 : null,
         finished: e.id === finished.episodeId,
+        absent: false,
       })),
     );
     expect(page.episodes.filter((e) => e.finished)).toHaveLength(1);
@@ -1338,5 +1348,186 @@ describe('[M1.shell] art, passed on from the upstream with the person’s own ac
 
     expect(res.statusCode).toBe(400);
     expect(s.asked).toEqual([]);
+  });
+});
+
+const episodePlay = json<{ libraryItemId: string; episodeId: string }>(abs('episode-play'));
+const playedShow = absRef(episodePlay.libraryItemId);
+const playedEpisode = absRef(episodePlay.episodeId);
+
+/** The server, with each person's lists and subscriptions as they read them. */
+async function following(...args: Parameters<typeof server>) {
+  const s = await server(...args);
+  const call = (
+    method: 'GET' | 'POST' | 'PUT' | 'DELETE',
+    url: string,
+    name: string,
+    payload?: object,
+  ) =>
+    s.app.inject({
+      method,
+      url,
+      headers: { authorization: `Bearer ${bearerOf(s, name)}` },
+      ...(payload === undefined ? {} : { payload }),
+    });
+  const listShows = async (id: string, name: string) => {
+    const res = await call('GET', `/api/lists/${id}`, name);
+    expect(res.statusCode, res.body).toBe(200);
+    return ListDetail.parse(res.json()).shows.map((show) => show.ref.id);
+  };
+  const theDigest = async (name: string) => {
+    const res = await call('GET', '/api/lists', name);
+    expect(res.statusCode, res.body).toBe(200);
+    const digest = ListSummaryList.parse(res.json()).lists.find((l) => l.theDigest)!;
+    return listShows(digest.id, name);
+  };
+  const shows = async (name: string) => (await s.items('podcasts', name)).map((e) => e.ref.id);
+  return {
+    ...s,
+    call,
+    listShows,
+    theDigest,
+    shows,
+    follow: (ref: MediaRef, name: string) =>
+      call('PUT', `/api/subscriptions/${mediaRefKey(ref)}`, name),
+    unfollow: (ref: MediaRef, name: string) =>
+      call('DELETE', `/api/subscriptions/${mediaRefKey(ref)}`, name),
+  };
+}
+
+/** A person's bearer token, from a session made for them now. */
+function bearerOf(s: Awaited<ReturnType<typeof server>>, name: string) {
+  const userId = s.person(name);
+  const device = createDevice(db, { userId, kind: 'web' });
+  return createSession(db, { userId, deviceId: device.id, kind: 'bearer' }).token;
+}
+
+describe('[M3.podcasts/b] following a household show: playing a greyed-out episode subscribes you', () => {
+  it('[M3.podcasts/b] greys the episodes of a show nora does not follow; playing one through Auralis’s account subscribes her, into her library and The Digest', async () => {
+    await index(db);
+    const s = await following();
+
+    const before = await s.page(mediaRefKey(playedShow), 'nora');
+    expect(before.following).toBe(false);
+    expect(before.episodes.length).toBeGreaterThan(0);
+    expect(before.episodes.every((e) => e.absent)).toBe(true);
+    expect(await s.shows('nora')).not.toContain(playedShow.id);
+
+    // nora is linked to no upstream: the episode plays through Auralis's own account.
+    const played = await s.play(playedEpisode, 'nora');
+    expect(played.statusCode, played.body).toBe(200);
+
+    expect(claimsOf(db, s.person('nora'))).toContainEqual({
+      ref: playedShow,
+      reason: 'subscribed',
+    });
+    const after = await s.page(mediaRefKey(playedShow), 'nora');
+    expect(after.following).toBe(true);
+    expect(after.episodes.some((e) => e.absent)).toBe(false);
+    expect(await s.shows('nora')).toContain(playedShow.id);
+    expect(await s.theDigest('nora')).toContain(playedShow.id);
+  });
+
+  it('[M3.podcasts/b] unsubscribing takes the show out of nora’s library, The Digest and her own digests, asks no upstream, and leaves kara following it', async () => {
+    await index(db);
+    const s = await following();
+    expect((await s.play(playedEpisode, 'nora')).statusCode).toBe(200);
+    const made = await s.call('POST', '/api/lists', 'nora', {
+      kind: 'digest',
+      name: 'Mornings',
+      shows: [playedShow],
+    });
+    expect(made.statusCode, made.body).toBe(200);
+    const mornings = ListDetail.parse(made.json()).id;
+    expect(await s.listShows(mornings, 'nora')).toEqual([playedShow.id]);
+    expect((await s.follow(playedShow, 'kara')).statusCode).toBe(200);
+
+    s.asked.length = 0;
+    const gone = await s.unfollow(playedShow, 'nora');
+    expect(gone.statusCode, gone.body).toBe(200);
+    expect(gone.json()).toEqual({ ok: true });
+    expect(s.asked).toEqual([]);
+
+    expect(await s.shows('nora')).not.toContain(playedShow.id);
+    expect(await s.theDigest('nora')).not.toContain(playedShow.id);
+    expect(await s.listShows(mornings, 'nora')).toEqual([]);
+    const greyed = await s.page(mediaRefKey(playedShow), 'nora');
+    expect(greyed.following).toBe(false);
+    expect(greyed.episodes.every((e) => e.absent)).toBe(true);
+
+    expect((await s.page(mediaRefKey(playedShow), 'kara')).following).toBe(true);
+    expect(await s.shows('kara')).toContain(playedShow.id);
+    expect(claimsOf(db, s.person('kara'))).toContainEqual({
+      ref: playedShow,
+      reason: 'subscribed',
+    });
+  });
+
+  it('[M3.podcasts/b] keeps an unfollowed show out though Audiobookshelf says kara has played it, until she follows it again', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      await index(db);
+      const s = await following(karaFinished);
+      const show = absRef(finished.libraryItemId);
+      expect(await s.shows('kara')).toContain(show.id);
+      expect((await s.page(mediaRefKey(show), 'kara')).following).toBe(true);
+
+      expect((await s.unfollow(show, 'kara')).statusCode).toBe(200);
+      vi.advanceTimersByTime(61_000);
+      s.asked.length = 0;
+
+      expect(await s.shows('kara')).not.toContain(show.id);
+      expect(s.asked, 'the read that would claim it again').toContain('/api/me');
+      expect(await s.theDigest('kara')).not.toContain(show.id);
+      expect((await s.page(mediaRefKey(show), 'kara')).following).toBe(false);
+
+      expect((await s.follow(show, 'kara')).statusCode).toBe(200);
+      expect(await s.shows('kara')).toContain(show.id);
+      expect(await s.theDigest('kara')).toContain(show.id);
+      const back = await s.page(mediaRefKey(show), 'kara');
+      expect(back.following).toBe(true);
+      expect(back.episodes.some((e) => e.absent)).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('[M3.podcasts/b] counts every show followed for someone shown everyone’s library', async () => {
+    await index(db);
+    const s = await following();
+    s.seesEveryones('nora');
+
+    const page = await s.page(mediaRefKey(playedShow), 'nora');
+    expect(page.following).toBe(true);
+    expect(page.episodes.some((e) => e.absent)).toBe(false);
+  });
+
+  it('[M3.podcasts/b] answers 404 to following or unfollowing anything but an indexed show, asking no upstream', async () => {
+    await index(db);
+    const s = await following();
+
+    for (const key of [
+      `abs:${fourFiles.id}`,
+      mediaRefKey(playedEpisode),
+      'abs:not-indexed',
+      `jellyfin:${album.Id}`,
+    ]) {
+      const ref = parseMediaRefKey(key)!;
+      expect((await s.follow(ref, 'nora')).statusCode, key).toBe(404);
+      expect((await s.unfollow(ref, 'nora')).statusCode, key).toBe(404);
+    }
+    expect(s.asked).toEqual([]);
+    expect(claimsOf(db, s.person('nora'))).toEqual([]);
+  });
+
+  it('[M3.podcasts/b] following a show is a claim the library lists, without playing anything', async () => {
+    await index(db);
+    const s = await following();
+
+    expect((await s.follow(playedShow, 'nora')).statusCode).toBe(200);
+
+    expect(s.asked.filter((a) => a.includes('/play'))).toEqual([]);
+    expect(claimsOf(db, s.person('nora'))).toEqual([{ ref: playedShow, reason: 'subscribed' }]);
+    expect(await s.shows('nora')).toContain(playedShow.id);
   });
 });
