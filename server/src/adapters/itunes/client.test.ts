@@ -84,14 +84,15 @@ describe("[M3.podcasts] iTunes' podcast search, on recorded answers", () => {
     expect(shows.every((s) => s.feedUrl.startsWith('https://'))).toBe(true);
   });
 
-  it('[M3.podcasts] a row whose feed address is private or not https is left out, with no lookup', async () => {
+  it('[M3.podcasts] a row whose feed address is private, not http or https, or carries credentials is left out, with no lookup', async () => {
     const refused = [
       'https://192.168.1.20/feed.xml',
       'https://10.0.0.5:8443/rss',
       'https://[::1]/rss',
       'https://nas/feed.xml',
       'https://feeds.local/rss',
-      'http://feeds.npr.org/510289/podcast.xml',
+      'http://10.0.0.5/rss',
+      'ftp://feeds.example.com/podcast.xml',
       'https://user:pass@feeds.example.com/podcast.xml',
     ];
     const recording = withRows(byCall('search-history'), (rows) => {
@@ -107,6 +108,16 @@ describe("[M3.podcasts] iTunes' podcast search, on recorded answers", () => {
     }).searchShows('history');
     expect(shows.map((s) => s.feedUrl)).toEqual(kept.map((row) => row.feedUrl));
     expect(asked).toEqual(['upstream.invalid']);
+  });
+
+  it('[M3.podcasts] a row whose feed is on plain http is kept, as feeds may be', async () => {
+    const plain = 'http://feeds.npr.org/510289/podcast.xml';
+    const recording = withRows(byCall('search-history'), (rows) => {
+      const withFeed = rows.filter((row) => row.feedUrl !== undefined);
+      return withFeed.map((row, i) => (i === 0 ? { ...row, feedUrl: plain } : row));
+    });
+    const shows = await client(replayFetch([recording])).searchShows('history');
+    expect(shows[0]?.feedUrl).toBe(plain);
   });
 
   it('[M3.podcasts] words nothing matches give no shows', async () => {

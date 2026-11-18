@@ -3,7 +3,8 @@
  * art for: a book, show or album the library index holds at the top level (`items.ts`), which
  * serves their pages, an episode's under its show, and a streamed song's where its row names any. A
  * kept song's art is its Jellyfin track's: its album's. A Spotify playlist Search names has its
- * cover served by Spotify image id, from `i.scdn.co` only.
+ * cover served by Spotify image id, from `i.scdn.co` only, and a show iTunes found its cover by
+ * iTunes collection id, from Apple's image hosts only.
  */
 import { type ArtUrl, type LibraryEntryKind, type MediaRef, mediaRefKey } from '@auralis/schema';
 import { indexedRow, topLevelOf } from '../libraryIndex/store.js';
@@ -43,3 +44,6 @@ export function spotifyArtUrl(cover: string | null): ArtUrl | null {
   const image = cover === null ? null : spotifyImageId(cover);
   return image === null ? null : `/api/search/playlists/${image}/art`;
 }
+
+/** Where Search serves the cover of a show iTunes found, by its collection id. */
+export const itunesArtUrl = (itunesId: string): ArtUrl => `/api/search/shows/${itunesId}/art`;

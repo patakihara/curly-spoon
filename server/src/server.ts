@@ -175,7 +175,12 @@ export async function assembleServer(
     prowlarr,
   });
 
-  const podcasts = podcastSteps(config, { db, fetch, now: Date.now });
+  const podcasts = podcastSteps(config, {
+    db,
+    fetch,
+    now: Date.now,
+    log: { error: (details, message) => app.log.error(details, message) },
+  });
 
   // Makes no upstream call at start, so a server with no network still starts.
   const musicLog: MusicLog = {
@@ -255,6 +260,7 @@ export async function assembleServer(
       : 'steps' in albums
         ? { albumCatalogue: albums.catalogue }
         : {}),
+    ...('steps' in podcasts ? { showCatalogue: podcasts.catalogue } : {}),
     logger: deps.logger ?? true,
   });
 

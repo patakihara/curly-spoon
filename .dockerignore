@@ -36,5 +36,3 @@ server/src/adapters/http/*
 !server/src/adapters/http/fetch.ts
 !server/src/adapters/http/publicFetch.ts
 !server/src/adapters/http/unavailable.ts
-# The iTunes search adapter: the server does not run it until Search asks it (M3.podcasts part E).
-server/src/adapters/itunes

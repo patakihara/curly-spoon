@@ -1081,10 +1081,23 @@ data class SearchResults(
     val results: List<SearchResult>,
     val books: List<SearchBook>,
     val albums: List<SearchAlbum>,
+    val podcasts: List<SearchShow>,
     val songs: List<SearchSong>,
     val playlists: List<SearchPlaylist>,
     val streaming: StreamingState,
     val hasRequests: Boolean,
+)
+
+@Serializable
+data class SearchShow(
+    val ref: RequestRef,
+    val title: String,
+    val host: String?,
+    val episodes: Long?,
+    val art: String?,
+    val status: RequestStatus?,
+    val item: MediaRef?,
+    val following: Boolean,
 )
 
 @Serializable

@@ -8,12 +8,12 @@
  * turns it into no rows.
  *
  * A row is dropped when it has no `feedUrl`, or when its feed's address alone is refused
- * (`refusedUrl`: https to a public host; and, as a request's feed may hold none, no credentials,
- * `refusedFeedUrl`'s further rule). No name is looked up per row. Art is kept only from
+ * (`refusedFeedUrl`: http or https to a public host, no credentials), as a request for it would
+ * be. No name is looked up per row. Art is kept only from
  * Apple's image hosts.
  */
 import { type FetchLike, requestJson } from '../http/fetch.js';
-import { refusedFeedUrl, refusedUrl } from '../http/publicFetch.js';
+import { refusedFeedUrl } from '../http/publicFetch.js';
 import { type ItunesRow, searchAnswerSchema } from './schemas.js';
 
 export const ITUNES_URL = 'https://itunes.apple.com';
@@ -81,7 +81,7 @@ function feedOf(address: string | undefined): string | null {
   if (address === undefined) return null;
   try {
     const url = new URL(address);
-    return refusedUrl(url) === null && refusedFeedUrl(url) === null ? url.toString() : null;
+    return refusedFeedUrl(url) === null ? url.toString() : null;
   } catch {
     return null;
   }

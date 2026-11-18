@@ -69,6 +69,7 @@ import {
 import {
   SearchAlbumParams,
   SearchPlaylistParams,
+  SearchShowParams,
   SearchBookParams,
   SearchQuery,
   SearchResults,
@@ -677,6 +678,19 @@ export const searchPlaylistArt = {
   stream: 'image',
 } as const satisfies Route;
 
+export const searchShowArt = {
+  method: 'GET',
+  path: '/api/search/shows/{itunesId}/art',
+  operationId: 'getSearchShowArt',
+  summary: "The cover of a podcast iTunes' search found, from Apple's image hosts",
+  responseDescription: 'The image, as Apple holds it.',
+  response: ImageBytes,
+  access: 'member',
+  params: SearchShowParams,
+  query: ArtQuery,
+  stream: 'image',
+} as const satisfies Route;
+
 export const getLyrics = {
   method: 'GET',
   path: '/api/lyrics/{ref}',
@@ -861,6 +875,7 @@ export const routes: readonly Route[] = [
   searchBookArt,
   searchAlbumArt,
   searchPlaylistArt,
+  searchShowArt,
   getLyrics,
   listLists,
   createList,
