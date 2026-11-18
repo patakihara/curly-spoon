@@ -33,6 +33,7 @@ export type RequestStatus = z.infer<typeof RequestStatus>;
  * Why a request failed, as a key the apps word themselves. `wrongRelease`: the release's files are
  * not what was asked for, as a torrent whose files fit none of an album's editions.
  * `privateAddress`: a feed address that leads off the public internet, refused unread.
+ * `noPodcastLibrary`: Audiobookshelf has no Podcasts library to subscribe a show into.
  */
 export const RequestFailure = z
   .enum([
@@ -45,6 +46,7 @@ export const RequestFailure = z
     'cancelledUpstream',
     'wrongRelease',
     'privateAddress',
+    'noPodcastLibrary',
   ])
   .openapi('RequestFailure');
 export type RequestFailure = z.infer<typeof RequestFailure>;

@@ -38,6 +38,7 @@ const FAILURES: Record<RequestFailure, string> = {
   cancelledUpstream: 'The download was cancelled',
   wrongRelease: 'The release was not this album',
   privateAddress: 'The feed is not on the public internet',
+  noPodcastLibrary: 'Audiobookshelf has no Podcasts library',
 };
 
 const line = (...parts: (string | null)[]) =>

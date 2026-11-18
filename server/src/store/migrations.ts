@@ -1145,6 +1145,12 @@ export const migrations: readonly Migration[] = [
     // A podcast request may fail privateAddress: its feed address leads off the public internet.
     up: (db) => addRequestReason(db, 'wrongRelease', 'privateAddress'),
   },
+  {
+    id: 38,
+    name: 'request_no_podcast_library',
+    // A podcast request may fail noPodcastLibrary: Audiobookshelf has no Podcasts library.
+    up: (db) => addRequestReason(db, 'privateAddress', 'noPodcastLibrary'),
+  },
 ];
 
 /**

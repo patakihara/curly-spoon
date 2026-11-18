@@ -850,7 +850,7 @@ export interface components {
             at: number;
         };
         /** @enum {string} */
-        RequestFailure: "noRelease" | "searchFailed" | "downloadFailed" | "downloadStalled" | "importFailed" | "notIndexed" | "cancelledUpstream" | "wrongRelease" | "privateAddress";
+        RequestFailure: "noRelease" | "searchFailed" | "downloadFailed" | "downloadStalled" | "importFailed" | "notIndexed" | "cancelledUpstream" | "wrongRelease" | "privateAddress" | "noPodcastLibrary";
         /** @enum {string} */
         QueueType: "music" | "spoken";
         /** @enum {string} */

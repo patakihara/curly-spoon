@@ -92,7 +92,7 @@ describe("[M3.podcasts] iTunes' podcast search, on recorded answers", () => {
       'https://nas/feed.xml',
       'https://feeds.local/rss',
       'http://feeds.npr.org/510289/podcast.xml',
-      'https://user:pass@feeds.npr.org/510289/podcast.xml',
+      'https://user:pass@feeds.example.com/podcast.xml',
     ];
     const recording = withRows(byCall('search-history'), (rows) => {
       const withFeed = rows.filter((row) => row.feedUrl !== undefined);

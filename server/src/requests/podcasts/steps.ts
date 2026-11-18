@@ -8,8 +8,15 @@
  *   read after Auralis could: its own filter refuses an address that resolves privately when it
  *   connects (recorded), as a name that answers differently a moment later would.
  * - `import` makes the show in the one Podcasts library's folder, auto-download off and checked on
- *   the hour as every household show, then indexes it. When an item sits at the path already, the
- *   next path is tried.
+ *   the hour as every household show, then indexes it. With no Podcasts library it fails
+ *   `noPodcastLibrary`, making nothing.
+ *
+ * A repeated import must make nothing twice, and a stop between Audiobookshelf making the show and
+ * Auralis saving the answer leaves a show Auralis never heard of. So the import first looks in the
+ * index for a show with this feed address or iTunes id, and answers with it when there is one. When
+ * Audiobookshelf says an item sits at the path already, that item may be this request's own lost
+ * show, not yet indexed: the import waits for a whole index pass begun since the request was last
+ * saved, which finds it by its feed if it is, and only then tries the next path.
  */
 import { z } from 'zod';
 import type { AbsClient } from '../../adapters/audiobookshelf/client.js';
@@ -22,9 +29,11 @@ import { readNamedFeed } from '../../adapters/feed/client.js';
 import { AdapterError } from '../../adapters/http/fetch.js';
 import { type FeedFetch, FeedRefused } from '../../adapters/http/publicFetch.js';
 import { indexOneAbsItem } from '../../libraryIndex/job.js';
+import { absIndexedSince } from '../../libraryIndex/store.js';
 import type { Db } from '../../store/connection.js';
 import type { StoredRequest } from '../../store/requests.js';
 import { type ImportOutcome, type SearchOutcome, StepUnavailable } from '../steps.js';
+import { heldShow } from './held.js';
 import { PODCAST_SCHEDULE, podcastPaths } from './place.js';
 
 /** What a podcast's one release keeps: the address read, and the show as Audiobookshelf read it. */
@@ -91,11 +100,15 @@ export function podcastImport({ db, abs, provisioner, now }: PodcastImportDeps) 
     const details = PodcastDetails.safeParse(request.release?.details);
     if (!details.success) return { kind: 'failed', reason: 'importFailed' };
     const { feedUrl, show } = details.data;
+    const { ids } = request.target;
+    const held = heldShow(db, ids) ?? heldShow(db, { feedUrl });
+    if (held !== null) return { kind: 'arrived', ref: held };
     const libraries = (await abs.getLibraries()).filter(({ mediaType }) => mediaType === 'podcast');
+    if (libraries.length === 0) return { kind: 'failed', reason: 'noPodcastLibrary' };
     const folder = libraries.length === 1 ? libraries[0]!.folders?.[0] : undefined;
     if (folder?.id === undefined) return { kind: 'failed', reason: 'importFailed' };
     const folderId = folder.id;
-    const itunesId = request.target.ids.itunesId ?? null;
+    const itunesId = ids.itunesId ?? null;
     for (const path of podcastPaths(folder.fullPath, show.title)) {
       const made = await provisioner.createPodcast({
         libraryId: libraries[0]!.id,
@@ -107,7 +120,10 @@ export function podcastImport({ db, abs, provisioner, now }: PodcastImportDeps) 
           autoDownloadSchedule: PODCAST_SCHEDULE,
         },
       });
-      if (made === 'exists') continue;
+      if (made === 'exists') {
+        if (absIndexedSince(db, request.updatedAt)) continue;
+        return { kind: 'waiting' };
+      }
       await indexOneAbsItem(db, abs, made.id, now());
       return { kind: 'arrived', ref: { source: 'abs', id: made.id } };
     }

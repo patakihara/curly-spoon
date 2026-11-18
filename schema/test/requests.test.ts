@@ -38,6 +38,7 @@ describe('the request vocabulary', () => {
       'cancelledUpstream',
       'wrongRelease',
       'privateAddress',
+      'noPodcastLibrary',
     ]);
     expect(RequestFailure.safeParse('the tracker was down').success).toBe(false);
   });

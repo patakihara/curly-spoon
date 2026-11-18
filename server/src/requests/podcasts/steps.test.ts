@@ -14,12 +14,13 @@ import { type FeedFetch, feedFetch } from '../../adapters/http/publicFetch.js';
 import { type Recording, recordingSchema } from '../../adapters/http/recording.js';
 import { replayFetch } from '../../adapters/http/replay.js';
 import { ItunesClient } from '../../adapters/itunes/client.js';
-import { indexedRow } from '../../libraryIndex/store.js';
+import { indexOneAbsItem } from '../../libraryIndex/job.js';
+import { emptyCounts, indexedRow, listIndexed, recordRun } from '../../libraryIndex/store.js';
 import { claimsOf, unfollowShow } from '../../store/claims.js';
 import { type Db, openDatabase } from '../../store/connection.js';
 import { createRequest, getRequest, peopleOn } from '../../store/requests.js';
 import { upsertUser } from '../../store/users.js';
-import { advanceRequests, type RequestJobDeps } from '../job.js';
+import { advanceRequests, type RequestJobDeps, retryRequest } from '../job.js';
 import { stepsRegistry } from '../steps.js';
 import { heldShow } from './held.js';
 import { podcastImport, podcastSearch } from './steps.js';
@@ -59,16 +60,32 @@ const recordedFeed: FeedFetch = async (url, init) => ({
   url,
 });
 
-/** Audiobookshelf as recorded, each create answered in turn; every call is kept. */
-function absServer(creates: string[]) {
+/** The recorded libraries answer with its Podcasts library taken out, as a household without one. */
+function withoutPodcastLibrary(): Recording {
+  const recording = abs('podcasts-libraries');
+  const body = recording.response.body as { json: { libraries: { mediaType: string }[] } };
+  const libraries = body.json.libraries.filter(({ mediaType }) => mediaType !== 'podcast');
+  return { ...recording, response: { ...recording.response, body: { json: { libraries } } } };
+}
+
+/**
+ * Audiobookshelf as recorded, each create answered in turn and the last again after; every call is kept. `stops` names
+ * how many reads of the made item fail first, as when the server stops before the answer is saved.
+ */
+function absServer(creates: string[], { stops = 0, libraries = abs('podcasts-libraries') } = {}) {
   const calls: { method: string; path: string; body: unknown }[] = [];
-  const reads = replayFetch(['podcasts-libraries', 'podcasts-feed', 'podcasts-item'].map(abs));
+  const reads = replayFetch([libraries, abs('podcasts-feed'), abs('podcasts-item')]);
+  let stopsLeft = stops;
   const fetch: FetchLike = async (url, init) => {
     const { pathname } = new URL(url);
     const body = typeof init?.body === 'string' ? JSON.parse(init.body) : null;
     calls.push({ method: init?.method ?? 'GET', path: pathname, body });
+    if (pathname === `/api/items/${ITEM}` && stopsLeft > 0) {
+      stopsLeft -= 1;
+      throw new Error('the server stopped');
+    }
     if (pathname === '/api/podcasts') {
-      const next = creates.shift();
+      const next = creates.length > 1 ? creates.shift() : creates[0];
       if (next === undefined) throw new Error('no create left');
       return replayFetch([abs(next)])(url, init);
     }
@@ -123,6 +140,38 @@ async function settle(deps: RequestJobDeps, id: string) {
     await advanceRequests(deps);
   }
   throw new Error(`never settled: ${JSON.stringify(getRequest(db, id)!.state)}`);
+}
+
+/** A whole index pass over Audiobookshelf, finding the recorded show where it was made. */
+async function indexPass() {
+  const reads = new AbsClient({
+    baseUrl: BASE,
+    token: '<token>',
+    fetch: replayFetch([abs('podcasts-item')]),
+  });
+  await indexOneAbsItem(db, reads, ITEM, clock);
+  const counts = emptyCounts();
+  recordRun(db, {
+    source: 'abs',
+    startedAt: clock,
+    finishedAt: clock,
+    complete: true,
+    error: null,
+    counts,
+  });
+}
+
+const createdPaths = (calls: { path: string; body: unknown }[]) =>
+  calls
+    .filter(({ path }) => path === '/api/podcasts')
+    .map(({ body }) => (body as { path: string }).path);
+
+/** Turns of the job, a second apart. */
+async function turns(deps: RequestJobDeps, count: number) {
+  for (let turn = 0; turn < count; turn += 1) {
+    clock += 1_000;
+    await advanceRequests(deps);
+  }
 }
 
 const recordedBody = (call: string) => (abs(call).request.body as { json: unknown }).json;
@@ -184,18 +233,88 @@ describe('[M3.podcasts/a] subscribing to a show the household lacks', () => {
     expect(heldShow(db, { feedUrl: 'https://feeds.example.com/another' })).toBeNull();
   });
 
-  it('[M3.podcasts/a] takes the next folder when Audiobookshelf says the show already exists', async () => {
-    const server = absServer(['podcasts-create-exists', 'podcasts-create']);
+  it('[M3.podcasts/a] takes the next folder when Audiobookshelf says the show already exists and an index pass since shows it is another show', async () => {
+    const server = absServer([
+      'podcasts-create-exists',
+      'podcasts-create-exists',
+      'podcasts-create',
+    ]);
+    const deps = job(server.fetch);
     const { request } = createRequest(db, ana, await searchedRef(), clock);
 
-    expect((await settle(job(server.fetch), request.id)).state.status).toBe('inLibrary');
-    const paths = server.calls
-      .filter(({ path }) => path === '/api/podcasts')
-      .map(({ body }) => (body as { path: string }).path);
-    expect(paths).toEqual([
+    await turns(deps, 3);
+    expect(getRequest(db, request.id)!.state.status).toBe('importing');
+    expect(createdPaths(server.calls)).toEqual(['/data/Podcasts/Not What You Thought You Knew']);
+    clock += 60_000;
+    recordRun(db, {
+      source: 'abs',
+      startedAt: clock,
+      finishedAt: clock,
+      complete: true,
+      error: null,
+      counts: emptyCounts(),
+    });
+
+    expect((await settle(deps, request.id)).state.status).toBe('inLibrary');
+    expect(createdPaths(server.calls)).toEqual([
+      '/data/Podcasts/Not What You Thought You Knew',
       '/data/Podcasts/Not What You Thought You Knew',
       '/data/Podcasts/Not What You Thought You Knew (2)',
     ]);
+  });
+
+  it('[M3.podcasts/a] makes no second show when a retry follows a create whose answer was lost, and ends in the library with the one show', async () => {
+    const server = absServer(['podcasts-create', 'podcasts-create-exists'], { stops: 1 });
+    const deps = job(server.fetch);
+    const { request } = createRequest(db, ana, await searchedRef(), clock);
+    expect((await settle(deps, request.id)).state).toMatchObject({
+      status: 'failed',
+      reason: 'importFailed',
+    });
+
+    await retryRequest(deps, request.id);
+    await turns(deps, 1);
+    expect(getRequest(db, request.id)!.state.status).toBe('importing');
+    clock += 60_000;
+    await indexPass();
+    const done = await settle(deps, request.id);
+
+    expect(done.state.status).toBe('inLibrary');
+    expect(done.result).toEqual({ source: 'abs', id: ITEM });
+    expect(createdPaths(server.calls)).toEqual([
+      '/data/Podcasts/Not What You Thought You Knew',
+      '/data/Podcasts/Not What You Thought You Knew',
+    ]);
+    expect(listIndexed(db, { source: 'abs' }).filter(({ kind }) => kind === 'show')).toHaveLength(
+      1,
+    );
+    expect(claimsOf(db, ana)).toEqual([{ ref: { source: 'abs', id: ITEM }, reason: 'subscribed' }]);
+  });
+
+  it('[M3.podcasts/a] answers a retry from the index when the lost create was already indexed, asking Audiobookshelf to make nothing', async () => {
+    const server = absServer(['podcasts-create'], { stops: 1 });
+    const deps = job(server.fetch);
+    const { request } = createRequest(db, ana, await searchedRef(), clock);
+    await settle(deps, request.id);
+    await indexPass();
+    const asked = createdPaths(server.calls).length;
+
+    await retryRequest(deps, request.id);
+    const done = await settle(deps, request.id);
+
+    expect(done.state.status).toBe('inLibrary');
+    expect(done.result).toEqual({ source: 'abs', id: ITEM });
+    expect(createdPaths(server.calls)).toHaveLength(asked);
+  });
+
+  it('[M3.podcasts/a] fails as noPodcastLibrary when Audiobookshelf has no Podcasts library, making nothing', async () => {
+    const server = absServer([], { libraries: withoutPodcastLibrary() });
+    const { request } = createRequest(db, ana, await searchedRef(), clock);
+
+    const done = await settle(job(server.fetch), request.id);
+
+    expect(done.state).toMatchObject({ status: 'failed', reason: 'noPodcastLibrary' });
+    expect(createdPaths(server.calls)).toEqual([]);
   });
 
   it('[M3.podcasts/a] fails a feed address that resolves privately as privateAddress, before Audiobookshelf hears it', async () => {

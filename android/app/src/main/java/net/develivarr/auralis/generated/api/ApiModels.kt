@@ -888,6 +888,8 @@ enum class RequestFailure {
     WRONG_RELEASE,
     @SerialName("privateAddress")
     PRIVATE_ADDRESS,
+    @SerialName("noPodcastLibrary")
+    NO_PODCAST_LIBRARY,
 }
 
 @Serializable

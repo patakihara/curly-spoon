@@ -58,7 +58,8 @@
           "notIndexed",
           "cancelledUpstream",
           "wrongRelease",
-          "privateAddress"
+          "privateAddress",
+          "noPodcastLibrary"
         ]
       },
       "QueueType": {
