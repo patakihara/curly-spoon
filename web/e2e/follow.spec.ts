@@ -3,9 +3,12 @@ import { type Recorded, serveRecorded } from './recorded';
 import { keyOf, signIn, titlePlaying } from './shell-steps';
 
 /**
- * Following a show from its page, on the server with recorded upstreams: its Subscribe control
- * unfollows the show, which greys its episodes, and playing a greyed episode follows the show again.
- * Following asks no upstream, so the recorded Audiobookshelf answers only the episode's play.
+ * Following a show, on the server with recorded upstreams. From Search, a show the household lacks
+ * is subscribed to through a request: iTunes answers from its recordings, and the stand-in podcast
+ * medium (`server/e2e/standInShows.ts`, never in the image) brings it as a recorded show. From a
+ * show's page, its Subscribe control unfollows the show, which greys its episodes, and playing a
+ * greyed episode follows the show again. Following asks no upstream, so the recorded Audiobookshelf
+ * answers only the episode's play.
  */
 
 test.use({ launchOptions: { args: ['--autoplay-policy=no-user-gesture-required'] } });
@@ -13,7 +16,7 @@ test.use({ launchOptions: { args: ['--autoplay-policy=no-user-gesture-required']
 let recorded: Recorded;
 test.beforeAll(async () => {
   test.setTimeout(120_000);
-  recorded = await serveRecorded();
+  recorded = await serveRecorded({ shows: true });
 });
 test.afterAll(() => recorded?.stop());
 
@@ -79,4 +82,29 @@ test('[M3.podcasts/b] unfollowing a show greys its episodes, and playing one fol
   );
   await expect.poll(() => colourOf(page, playable.title)).toBe(ownColour);
   await page.screenshot({ path: info.outputPath('followed-again.png'), fullPage: true });
+});
+
+test('[M3.podcasts] a show the household lacks is subscribed to from Search, and its row opens the show', async ({
+  page,
+}, info) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await signIn(page, recorded.origin, '/search?q=maintenance%20phase', { everyone: false });
+  const row = page
+    .getByText('Maintenance Phase', { exact: true })
+    .first()
+    .locator('xpath=ancestor::div[3]');
+  await expect(row).toContainText('Podcast · Aubrey Gordon & Michael Hobbes · 162 episodes');
+  await page.screenshot({ path: info.outputPath('search-lacks.png'), fullPage: true });
+
+  await row.getByRole('button', { name: 'Subscribe', exact: true }).click();
+  const subscribed = row.getByRole('button', { name: 'Subscribed', exact: true });
+  await expect(subscribed).toHaveAttribute('aria-pressed', 'true', { timeout: 15_000 });
+  await page.screenshot({ path: info.outputPath('search-held.png'), fullPage: true });
+
+  await page.getByText('Maintenance Phase', { exact: true }).first().click();
+  await expect(page).toHaveURL(/\/podcasts\/abs(:|%3A)/);
+  await expect(page.getByRole('button', { name: 'Subscribed', exact: true })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
 });

@@ -32,6 +32,7 @@ import { bookSteps } from './requests/books/index.js';
 import { Wake } from './requests/job.js';
 import { musicBrainzOf } from './requests/musicBrainz.js';
 import { podcastSteps } from './requests/podcasts/index.js';
+import type { ShowCatalogue } from './search/podcasts.js';
 import { prowlarrOf } from './requests/prowlarr.js';
 import { songSteps } from './requests/songs/index.js';
 import type { BookCatalogue } from './requests/books/catalogue.js';
@@ -90,6 +91,8 @@ export async function assembleServer(
     bookCatalogue?: BookCatalogue;
     /** What Search lists of the albums the library lacks, in place of the configured one. */
     albumCatalogue?: AlbumCatalogue;
+    /** What Search lists of the shows the household lacks, in place of the configured one. */
+    showCatalogue?: ShowCatalogue;
     /** Songs from outside the library, in place of the configured extractor, as a harness brings. */
     music?: (log: MusicLog, db: Db) => { music: Music; stop: () => void | Promise<void> };
     /** Spotify playlist import's reader, search and pace, in place of Spotify's own, as a harness brings. */
@@ -260,7 +263,11 @@ export async function assembleServer(
       : 'steps' in albums
         ? { albumCatalogue: albums.catalogue }
         : {}),
-    ...('steps' in podcasts ? { showCatalogue: podcasts.catalogue } : {}),
+    ...(deps.showCatalogue !== undefined
+      ? { showCatalogue: deps.showCatalogue }
+      : 'steps' in podcasts
+        ? { showCatalogue: podcasts.catalogue }
+        : {}),
     logger: deps.logger ?? true,
   });
 
