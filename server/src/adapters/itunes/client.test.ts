@@ -6,7 +6,7 @@ import { AdapterError, type FetchLike } from '../http/fetch.js';
 import { type Recording, recordingSchema } from '../http/recording.js';
 import { replayFetch } from '../http/replay.js';
 import { ITUNES_SEARCHES } from '../record-podcasts.js';
-import { ITUNES_CACHE_MS, ITUNES_GAP_MS, ItunesClient } from './client.js';
+import { ITUNES_CACHE_MS, ITUNES_GAP_MS, ITUNES_MOST_WAITING, ItunesClient } from './client.js';
 
 const dir = join(dirname(fileURLToPath(import.meta.url)), 'recordings');
 const all: Recording[] = readdirSync(dir)
@@ -135,6 +135,21 @@ describe("[M3.podcasts] iTunes' podcast search, on recorded answers", () => {
     for (let i = 1; i < started.length; i += 1) {
       expect(started[i]! - started[i - 1]!).toBeGreaterThanOrEqual(ITUNES_GAP_MS);
     }
+  });
+
+  it('[M3.podcasts] refuses a search at once while three are already waiting their turn, asking iTunes nothing for it', async () => {
+    const asked: string[] = [];
+    const hung: FetchLike = (url) => {
+      asked.push(new URL(url).searchParams.get('term')!);
+      return new Promise(() => undefined);
+    };
+    const itunes = client(hung);
+    for (const words of ['one', 'two', 'three']) void itunes.searchShows(words);
+
+    await expect(itunes.searchShows('four')).rejects.toThrow('busy');
+    expect(ITUNES_MOST_WAITING).toBe(3);
+    await new Promise((done) => setTimeout(done, 10));
+    expect(asked).not.toContain('four');
   });
 
   it('[M3.podcasts] the same words ask nothing again for a day, whatever their case or spacing', async () => {

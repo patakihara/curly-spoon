@@ -25,6 +25,11 @@ export const ITUNES_CACHE_MS = 86_400_000;
 export const ITUNES_SEARCH_LIMIT = 25;
 /** How many searches are kept at once; the oldest goes first. */
 export const ITUNES_CACHE_ENTRIES = 500;
+/**
+ * Calls asked and not yet answered, past which a search is refused at once: at one a second, a
+ * further one would start after Search had given up on it, and nothing would ever cancel it.
+ */
+export const ITUNES_MOST_WAITING = 3;
 /** One call's limit. */
 const ITUNES_LIMIT_MS = 10_000;
 /** A 25-row answer is about 50 KB. */
@@ -107,6 +112,7 @@ export class ItunesClient {
   private readonly clock: Clock;
   private tail: Promise<void> = Promise.resolve();
   private nextAt = 0;
+  private waiting = 0;
   private readonly cache = new Map<string, { at: number; shows: Promise<ItunesShow[]> }>();
   private readonly listedShows = new Map<string, { at: number; show: ItunesShow }>();
 
@@ -121,7 +127,11 @@ export class ItunesClient {
     const kept = this.cache.get(key);
     if (kept !== undefined && this.clock.now() - kept.at < ITUNES_CACHE_MS) return kept.shows;
     this.cache.delete(key);
-    const shows = this.ask(key);
+    if (this.waiting >= ITUNES_MOST_WAITING) return Promise.reject(new Error('iTunes is busy'));
+    this.waiting += 1;
+    const shows = this.ask(key).finally(() => {
+      this.waiting -= 1;
+    });
     this.cache.set(key, { at: this.clock.now(), shows });
     while (this.cache.size > ITUNES_CACHE_ENTRIES) {
       this.cache.delete(this.cache.keys().next().value!);
