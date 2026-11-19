@@ -890,6 +890,8 @@ enum class RequestFailure {
     PRIVATE_ADDRESS,
     @SerialName("noPodcastLibrary")
     NO_PODCAST_LIBRARY,
+    @SerialName("feedUnreachable")
+    FEED_UNREACHABLE,
 }
 
 @Serializable

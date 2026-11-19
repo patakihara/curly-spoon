@@ -328,6 +328,22 @@ describe('[M3.podcasts/a] subscribing to a show the household lacks', () => {
     expect(server.calls).toEqual([]);
   });
 
+  it('[M3.podcasts/a] fails a feed address whose host does not exist as feedUnreachable at once, before Audiobookshelf hears it', async () => {
+    const server = absServer([]);
+    const missing = Object.assign(new Error('getaddrinfo ENOTFOUND'), { code: 'ENOTFOUND' });
+    const guarded = feedFetch({ lookup: async () => Promise.reject(missing) });
+    const { request } = createRequest(db, ana, await searchedRef(), clock);
+    const deps = job(server.fetch, guarded);
+
+    await turns(deps, 2);
+
+    expect(getRequest(db, request.id)!.state).toMatchObject({
+      status: 'failed',
+      reason: 'feedUnreachable',
+    });
+    expect(server.calls).toEqual([]);
+  });
+
   it("[M3.podcasts/a] fails as privateAddress when Audiobookshelf's filter refuses the address (recorded) and the guard now finds it private", async () => {
     const refused = replayFetch([abs('podcasts-feed-private')]);
     const calls: string[] = [];

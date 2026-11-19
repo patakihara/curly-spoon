@@ -34,6 +34,8 @@ export type RequestStatus = z.infer<typeof RequestStatus>;
  * not what was asked for, as a torrent whose files fit none of an album's editions.
  * `privateAddress`: a feed address that leads off the public internet, refused unread.
  * `noPodcastLibrary`: Audiobookshelf has no Podcasts library to subscribe a show into.
+ * `feedUnreachable`: a feed address that cannot be read: an unknown host, a refused connection, a
+ * malformed or endless redirect, another scheme or credentials.
  */
 export const RequestFailure = z
   .enum([
@@ -47,6 +49,7 @@ export const RequestFailure = z
     'wrongRelease',
     'privateAddress',
     'noPodcastLibrary',
+    'feedUnreachable',
   ])
   .openapi('RequestFailure');
 export type RequestFailure = z.infer<typeof RequestFailure>;

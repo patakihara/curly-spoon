@@ -1151,6 +1151,12 @@ export const migrations: readonly Migration[] = [
     // A podcast request may fail noPodcastLibrary: Audiobookshelf has no Podcasts library.
     up: (db) => addRequestReason(db, 'privateAddress', 'noPodcastLibrary'),
   },
+  {
+    id: 39,
+    name: 'request_feed_unreachable',
+    // A podcast request may fail feedUnreachable: its feed address cannot be read, for good.
+    up: (db) => addRequestReason(db, 'noPodcastLibrary', 'feedUnreachable'),
+  },
 ];
 
 /**

@@ -39,6 +39,7 @@ const FAILURES: Record<RequestFailure, string> = {
   wrongRelease: 'The release was not this album',
   privateAddress: 'The feed is not on the public internet',
   noPodcastLibrary: 'Audiobookshelf has no Podcasts library',
+  feedUnreachable: 'The feed address could not be reached',
 };
 
 const line = (...parts: (string | null)[]) =>

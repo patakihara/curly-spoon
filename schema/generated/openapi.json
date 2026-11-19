@@ -59,7 +59,8 @@
           "cancelledUpstream",
           "wrongRelease",
           "privateAddress",
-          "noPodcastLibrary"
+          "noPodcastLibrary",
+          "feedUnreachable"
         ]
       },
       "QueueType": {

@@ -868,7 +868,7 @@ export interface components {
             at: number;
         };
         /** @enum {string} */
-        RequestFailure: "noRelease" | "searchFailed" | "downloadFailed" | "downloadStalled" | "importFailed" | "notIndexed" | "cancelledUpstream" | "wrongRelease" | "privateAddress" | "noPodcastLibrary";
+        RequestFailure: "noRelease" | "searchFailed" | "downloadFailed" | "downloadStalled" | "importFailed" | "notIndexed" | "cancelledUpstream" | "wrongRelease" | "privateAddress" | "noPodcastLibrary" | "feedUnreachable";
         /** @enum {string} */
         QueueType: "music" | "spoken";
         /** @enum {string} */

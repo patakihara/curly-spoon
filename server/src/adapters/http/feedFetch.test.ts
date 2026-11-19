@@ -151,6 +151,46 @@ describe('[M3.podcasts] a feed address a client named', () => {
     ]);
   });
 
+  it('refuses a name that does not exist as an unknown host, at once', async () => {
+    const { hops, requests } = await upstream((_, res) => res.end('feed'));
+    const missing = Object.assign(new Error('getaddrinfo ENOTFOUND feeds.exmaple'), {
+      code: 'ENOTFOUND',
+    });
+    const fetch = feedFetch({ lookup: async () => Promise.reject(missing), requests });
+    await expect(fetch('https://feeds.exmaple/a.rss')).rejects.toMatchObject({
+      name: 'FeedRefused',
+      message: 'an unknown host',
+      privateAddress: false,
+    });
+    expect(hops).toEqual([]);
+  });
+
+  it('refuses a host that refuses the connection, at once', async () => {
+    const { requests } = await upstream((_, res) => res.end('feed'));
+    await new Promise((done) => server!.close(done));
+    server = undefined;
+    const fetch = feedFetch({ lookup: async () => [PUBLIC], requests });
+    await expect(fetch('https://feeds.example/a.rss')).rejects.toMatchObject({
+      name: 'FeedRefused',
+      message: 'the connection was refused',
+      privateAddress: false,
+    });
+  });
+
+  it('refuses a redirect to a malformed address, connecting no further', async () => {
+    const { hops, requests } = await upstream((_, res) => {
+      res.writeHead(302, { location: 'http://[not-an-address/b.rss' });
+      res.end();
+    });
+    const fetch = feedFetch({ lookup: async () => [PUBLIC], requests });
+    await expect(fetch('https://feeds.example/a.rss')).rejects.toMatchObject({
+      name: 'FeedRefused',
+      message: 'a malformed redirect',
+      privateAddress: false,
+    });
+    expect(hops).toHaveLength(1);
+  });
+
   it('gives up when its signal does', async () => {
     const { requests } = await upstream(() => undefined);
     const fetch = feedFetch({ lookup: async () => [PUBLIC], requests });

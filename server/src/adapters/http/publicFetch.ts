@@ -153,7 +153,8 @@ export function publicFetch({ lookup, request }: PublicFetchOptions): FetchLike 
 
 /**
  * A feed address `feedFetch` refused without reading it: a hop off the public internet
- * (`privateAddress`), or another scheme, credentials or too many redirects.
+ * (`privateAddress`), or another scheme, credentials, too many redirects, a malformed redirect, a
+ * name that does not exist or a host that refuses the connection. None of these mends itself soon.
  */
 export class FeedRefused extends Error {
   override readonly name = 'FeedRefused';
@@ -163,6 +164,10 @@ export class FeedRefused extends Error {
     this.privateAddress = reason === PRIVATE;
   }
 }
+
+/** A system error's code, such as `ENOTFOUND`, or undefined. */
+const codeOf = (error: unknown) =>
+  error instanceof Error ? (error as NodeJS.ErrnoException).code : undefined;
 
 /** At most this many redirects are followed before a feed is refused. */
 export const FEED_MAX_REDIRECTS = 5;
@@ -197,12 +202,15 @@ export function feedFetch({
       const refused = refusedFeedUrl(url);
       if (refused !== null) throw new FeedRefused(refused);
       const addresses = await publicAddresses(url, lookup).catch((error: unknown) => {
-        throw error instanceof Error && error.message === PRIVATE
-          ? new FeedRefused(PRIVATE)
-          : error;
+        if (error instanceof Error && error.message === PRIVATE) throw new FeedRefused(PRIVATE);
+        throw codeOf(error) === 'ENOTFOUND' ? new FeedRefused('an unknown host') : error;
       });
       const request = requests[url.protocol as 'http:' | 'https:'];
-      const response = await pinnedGet(url, addresses, init, request);
+      const response = await pinnedGet(url, addresses, init, request).catch((error: unknown) => {
+        throw codeOf(error) === 'ECONNREFUSED'
+          ? new FeedRefused('the connection was refused')
+          : error;
+      });
       const location = response.headers.get('location');
       if (response.status < 300 || response.status > 399 || location === null) {
         return { response, url: named.href };
@@ -210,6 +218,7 @@ export function feedFetch({
       await response.body?.cancel();
       if (hop >= FEED_MAX_REDIRECTS) throw new FeedRefused('too many redirects');
       permanent &&= response.status === 301 || response.status === 308;
+      if (!URL.canParse(location, url)) throw new FeedRefused('a malformed redirect');
       url = new URL(location, url);
       if (permanent) named = url;
     }

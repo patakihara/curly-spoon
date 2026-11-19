@@ -4,7 +4,8 @@
  * - `search` reads the feed address the request names through Auralis's own guarded fetch, which
  *   refuses any hop off the public internet and follows redirects by hand; then asks Audiobookshelf
  *   to read the address it ended at, as the provisioning key (only an admin may). A refused address
- *   fails as `privateAddress` before Audiobookshelf hears it. One Audiobookshelf could not read
+ *   fails as `privateAddress` before Audiobookshelf hears it, and one that cannot be read for good (an
+ *   unknown host, a refused connection, a malformed redirect) as `feedUnreachable`. One Audiobookshelf could not read
  *   after Auralis could fails the same only when the guard, reading it again, now finds it private:
  *   Audiobookshelf's own filter refuses such an address (recorded), but answers the same 404 for
  *   any failed read, so otherwise it is held as away.
@@ -64,7 +65,10 @@ export function podcastSearch({ feed, provisioner }: PodcastSearchDeps) {
       ({ url } = await readNamedFeed(feed, address));
     } catch (error) {
       if (error instanceof FeedRefused) {
-        return { kind: 'none', reason: error.privateAddress ? 'privateAddress' : 'noRelease' };
+        return {
+          kind: 'none',
+          reason: error.privateAddress ? 'privateAddress' : 'feedUnreachable',
+        };
       }
       if (away(error)) throw new StepUnavailable('the feed could not be reached', { cause: error });
       return { kind: 'none', reason: 'noRelease' };
