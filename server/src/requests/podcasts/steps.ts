@@ -4,9 +4,10 @@
  * - `search` reads the feed address the request names through Auralis's own guarded fetch, which
  *   refuses any hop off the public internet and follows redirects by hand; then asks Audiobookshelf
  *   to read the address it ended at, as the provisioning key (only an admin may). A refused address
- *   fails as `privateAddress` before Audiobookshelf hears it. So does one Audiobookshelf could not
- *   read after Auralis could: its own filter refuses an address that resolves privately when it
- *   connects (recorded), as a name that answers differently a moment later would.
+ *   fails as `privateAddress` before Audiobookshelf hears it. One Audiobookshelf could not read
+ *   after Auralis could fails the same only when the guard, reading it again, now finds it private:
+ *   Audiobookshelf's own filter refuses such an address (recorded), but answers the same 404 for
+ *   any failed read, so otherwise it is held as away.
  * - `import` makes the show in the one Podcasts library's folder, auto-download off and checked on
  *   the hour as every household show, then indexes it. With no Podcasts library it fails
  *   `noPodcastLibrary`, making nothing.
@@ -75,7 +76,7 @@ export function podcastSearch({ feed, provisioner }: PodcastSearchDeps) {
       if (away(error)) throw new StepUnavailable('Audiobookshelf is away', { cause: error });
       throw error;
     }
-    if (show === null) return { kind: 'none', reason: 'privateAddress' };
+    if (show === null) return couldNotRead(feed, url);
     const release = {
       id: 'feed',
       title: show.title,
@@ -85,6 +86,22 @@ export function podcastSearch({ feed, provisioner }: PodcastSearchDeps) {
     };
     return { kind: 'picked', release, others: [] };
   };
+}
+
+/**
+ * Audiobookshelf answers one 404 for any feed it could not read: its filter refusing a private
+ * address, or the host failing it a moment after Auralis read it. The guard reads the address again
+ * to tell them apart: private now, the request fails; still public, Audiobookshelf is held as away.
+ */
+async function couldNotRead(feed: FeedFetch, url: string): Promise<SearchOutcome> {
+  try {
+    await readNamedFeed(feed, url);
+  } catch (error) {
+    if (error instanceof FeedRefused && error.privateAddress) {
+      return { kind: 'none', reason: 'privateAddress' };
+    }
+  }
+  throw new StepUnavailable('Audiobookshelf could not read the feed');
 }
 
 export interface PodcastImportDeps {

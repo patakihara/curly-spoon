@@ -328,18 +328,46 @@ describe('[M3.podcasts/a] subscribing to a show the household lacks', () => {
     expect(server.calls).toEqual([]);
   });
 
-  it("[M3.podcasts/a] fails the request the same way when Audiobookshelf's own filter refuses the address (recorded)", async () => {
+  it("[M3.podcasts/a] fails as privateAddress when Audiobookshelf's filter refuses the address (recorded) and the guard now finds it private", async () => {
     const refused = replayFetch([abs('podcasts-feed-private')]);
     const calls: string[] = [];
     const fetch: FetchLike = async (url, init) => {
       calls.push(new URL(url).pathname);
       return refused(url, init);
     };
+    const guarded = feedFetch({ lookup: async () => ['10.0.0.5'] });
+    let reads = 0;
+    const turnsPrivate: FeedFetch = async (url, init) =>
+      (reads += 1) === 1 ? recordedFeed(url, init) : guarded(url, init);
     const { request } = createRequest(db, ana, await searchedRef(), clock);
 
-    const done = await settle(job(fetch), request.id);
+    const done = await settle(job(fetch, turnsPrivate), request.id);
 
     expect(done.state).toMatchObject({ status: 'failed', reason: 'privateAddress' });
     expect(calls).toEqual(['/api/podcasts/feed']);
+  });
+
+  it("[M3.podcasts/a] holds the request as away when Audiobookshelf cannot read a feed Auralis's guard still reads as public, and subscribes once it can", async () => {
+    const refused = replayFetch([abs('podcasts-feed-private')]);
+    const server = absServer(['podcasts-create']);
+    let failing = 1;
+    const fetch: FetchLike = async (url, init) => {
+      if (new URL(url).pathname === '/api/podcasts/feed' && failing > 0) {
+        failing -= 1;
+        return refused(url, init);
+      }
+      return server.fetch(url, init);
+    };
+    const deps = job(fetch);
+    const { request } = createRequest(db, ana, await searchedRef(), clock);
+
+    await turns(deps, 2);
+    expect(failing).toBe(0);
+    const held = getRequest(db, request.id)!;
+    expect(held.state.status).toBe('searching');
+    expect(held.heldSince).not.toBeNull();
+
+    const done = await settle(deps, request.id);
+    expect(done.state.status).toBe('inLibrary');
   });
 });
