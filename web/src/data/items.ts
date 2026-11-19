@@ -1,4 +1,4 @@
-import { type EpisodeOrder, type ItemDetail, mediaRefKey } from '@auralis/schema';
+import { type EpisodeOrder, type ItemDetail, mediaRefKey, parseMediaRefKey } from '@auralis/schema';
 import { type ApiClient } from '../api/client';
 import { type AlbumData } from '../generated/pages/Album';
 import { type BookData } from '../generated/pages/Book';
@@ -7,6 +7,7 @@ import { type ShowData } from '../generated/pages/Show';
 import { artAt, clock, day, emptied, span } from './format';
 import { loadItem } from './loads';
 import { makeRequest } from './requests';
+import { SignedOut } from './store';
 
 /**
  * A book's, show's, episode's or album's page from `GET /api/items/{ref}`: its header, then a
@@ -15,7 +16,8 @@ import { makeRequest } from './requests';
  * other episodes, an album's editions and more by the artist, every About) stays empty, so its
  * section draws with nothing in it. An author's or artist's ref stays empty too: there is no
  * such page to open yet, so the name draws as plain text. The page's own words (its kind, a
- * show's subscribe labels and its sorts) stay as the canvas has them; a show's sort bar names, in
+ * show's subscribe labels and its sorts) stay as the canvas has them; a show draws Subscribed while
+ * you follow it, its episodes greyed while you do not, as the server says. A show's sort bar names, in
  * those words, the order its episodes came in, and chooses by the show's ref. An album whose every
  * track is a song kept from YouTube Music offers its lossless copy in its menu, in the canvas's
  * words, which asks for it with the request the server gave its page.
@@ -89,7 +91,7 @@ export function showData(detail: ItemDetail, page: ShowData): ShowData {
     host: detail.sub ?? '',
     meta: [`${count} ${count === 1 ? 'episode' : 'episodes'}`, `${unplayed} unplayed`].join(' · '),
     image: artAt(detail.art, 'medium'),
-    following: true,
+    following: detail.following ?? true,
     subscribe: page.subscribe,
     sort: {
       ref: mediaRefKey(detail.ref),
@@ -110,9 +112,24 @@ export function showData(detail: ItemDetail, page: ShowData): ShowData {
       image: artAt(detail.art, 'small'),
       progress: episode.finished ? null : episode.progress,
       finished: episode.finished,
-      absent: false,
+      absent: episode.absent,
     })),
   };
+}
+
+/**
+ * Following the show `ref` names (`PUT /api/subscriptions/{ref}`), or unfollowing it (`DELETE`), by
+ * what its subscribe control says. A ref naming no item asks nothing and throws; a refusal for want
+ * of a sign-in throws `SignedOut`, and any other refusal throws too.
+ */
+export async function followShow(api: ApiClient, ref: string, following: boolean): Promise<void> {
+  if (parseMediaRefKey(ref) === null) throw new Error(`no show at ${ref}`);
+  const params = { params: { path: { ref } } };
+  const { response } = following
+    ? await api.PUT('/api/subscriptions/{ref}', params)
+    : await api.DELETE('/api/subscriptions/{ref}', params);
+  if (response.status === 401) throw new SignedOut();
+  if (!response.ok) throw new Error(`a follow answered ${response.status}`);
 }
 
 /** An album's one verb: asking for its lossless copy. */

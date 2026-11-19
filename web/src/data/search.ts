@@ -8,12 +8,13 @@ import {
   type SearchPlaylist,
   type SearchResult,
   type SearchResults,
+  type SearchShow,
   type SearchSong,
   type SuggestionKind,
   type SuggestionList,
 } from '@auralis/schema';
 import { type ApiClient } from '../api/client';
-import { type SearchData } from '../generated/pages/Search';
+import { frame as searchFrame, type SearchData } from '../generated/pages/Search';
 import { type PlayerHeard, type PlayQueue } from '../player';
 import { type Refused } from '../player/store';
 import { type Draft, searchText } from '../query';
@@ -42,7 +43,9 @@ import { type Answer, SignedOut } from './store';
  * page stops looking, and its menu offers Add to library again, which retries it. The page's own
  * words (its placeholder, its kinds) stay as given; what it says when a search finds nothing or
  * fails is written in the page, which this only chooses the state of. A pasted Spotify playlist
- * link answers that playlist's row alone, its Import taking the link (`../import`).
+ * link answers that playlist's row alone, its Import taking the link (`../import`). A podcast the
+ * household lacks is subscribed to by a request, as a book is asked for; one it holds opens its page
+ * and is followed or unfollowed from its own button (`../follow`).
  * The kinds' names and the meta lines are written here, as the library homes write theirs, until
  * M5.strings and M5.formats.
  */
@@ -53,6 +56,7 @@ type BookRow = SearchData['outside']['books'][number];
 type AlbumRow = SearchData['outside']['albums'][number];
 type SongRow = SearchData['outside']['music'][number];
 type PlaylistRow = SearchData['outside']['playlist'][number];
+type ShowRow = SearchData['outside']['podcasts'][number];
 
 /** A pasted Spotify playlist's row: its name, its size and cover, imported by its link. */
 export function playlistRowOf(playlist: SearchPlaylist): PlaylistRow {
@@ -210,13 +214,63 @@ export function albumRowOf(album: SearchAlbum): AlbumRow {
   ) as AlbumRow;
 }
 
+/** A held show's subscribe labels, in the canvas's words. */
+const SUBSCRIBE = searchFrame.placeholder.outside.podcasts.flatMap(({ follows }) => follows)[0]!
+  .subscribe;
+
 /**
- * Search's data saying what a tap asking for a book or an album left: on the row `failure` names,
+ * One podcast from iTunes as its row, in the list of the two that says what its button does. A show
+ * the household lacks is asked for with Subscribe; while that request is on its way the row says
+ * where it stands and asks nothing more, and once it failed its button asks again. A show the
+ * household holds, already or brought by the request, opens its page and follows from its button.
+ */
+export function showRowOf(show: SearchShow): ShowRow {
+  const row = {
+    title: show.title,
+    meta: [
+      'Podcast',
+      show.host,
+      show.episodes === null
+        ? null
+        : `${show.episodes} ${show.episodes === 1 ? 'episode' : 'episodes'}`,
+    ]
+      .filter((part) => part !== null && part !== '')
+      .join(' · '),
+    image: artAt(show.art, 'small'),
+  };
+  if (show.item !== null) {
+    const follows = {
+      ...row,
+      item: mediaRefKey(show.item),
+      status: null,
+      tone: null,
+      following: show.following,
+      subscribe: SUBSCRIBE,
+    };
+    return { asking: [], follows: [follows] } as ShowRow;
+  }
+  const { status, tone } =
+    show.status === null
+      ? { status: null, tone: null }
+      : statusOf({ kind: 'requested', status: show.status });
+  const asks = show.status === null || show.status === 'failed';
+  const asking = {
+    ...row,
+    ref: asks ? requestKey(show.ref) : '',
+    status,
+    tone,
+    action: 'Subscribe',
+  };
+  return { asking: [asking], follows: [] } as ShowRow;
+}
+
+/**
+ * Search's data saying what a tap asking for a book, an album or a show left: on the row `failure` names,
  * that it did not go through; a failure naming no row, in the page's banner.
  */
 export function searchRequestFailed(data: SearchData, failure: string): SearchData {
   if (requestOf(failure) === null) return { ...data, errors: [{ message: failure }] };
-  const said = <R extends BookRow | AlbumRow>(asked: R): R => ({
+  const said = <R extends BookRow | AlbumRow | ShowRow>(asked: R): R => ({
     ...asked,
     asking: asked.asking.map((row) =>
       row.ref === failure ? { ...row, status: 'Request failed', tone: 'error' } : row,
@@ -228,6 +282,7 @@ export function searchRequestFailed(data: SearchData, failure: string): SearchDa
       ...data.outside,
       books: data.outside.books.map(said),
       albums: data.outside.albums.map(said),
+      podcasts: data.outside.podcasts.map(said),
     },
   };
 }
@@ -382,6 +437,7 @@ export function searchData(answer: SearchResults, page: SearchData): SearchData 
       books: answer.books.map(bookRowOf),
       albums: answer.albums.map(albumRowOf),
       music: answer.songs.map(songRowOf),
+      podcasts: answer.podcasts.map(showRowOf),
     },
     errors: answer.streaming === 'unavailable' ? [{ message: STREAMING_UNAVAILABLE }] : [],
   };
@@ -422,7 +478,7 @@ export function searchView(q: string, draft: Draft | null): SearchView {
 
 /**
  * What Search loaded: the page's data, whether a search found anything, and whether a book or an
- * album it lists is on its way, or a song it lists is being kept, so the page should look again.
+ * album or a show it lists is on its way, or a song it lists is being kept, so the page should look again.
  */
 export interface SearchLoaded {
   data: SearchData;
@@ -430,7 +486,7 @@ export interface SearchLoaded {
   moving: boolean;
 }
 
-const moves = ({ status }: SearchBook | SearchAlbum) =>
+const moves = ({ status }: SearchBook | SearchAlbum | SearchShow) =>
   status !== null && status !== 'failed' && status !== 'inLibrary';
 
 /** Loads what Search asks for, over `page`: suggestions alone, or a search's results. */
@@ -451,9 +507,14 @@ export async function loadSearchPage(
         answer.books.length +
         answer.albums.length +
         answer.songs.length +
+        answer.podcasts.length +
         answer.playlists.length >
       0,
-    moving: answer.books.some(moves) || answer.albums.some(moves) || answer.songs.some(keeping),
+    moving:
+      answer.books.some(moves) ||
+      answer.albums.some(moves) ||
+      answer.podcasts.some(moves) ||
+      answer.songs.some(keeping),
   };
 }
 

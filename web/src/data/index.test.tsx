@@ -12,6 +12,7 @@ import { frame as podcastsFrame } from '../generated/pages/Podcasts';
 import Music from '../generated/pages/Music';
 import Queue from '../generated/pages/Queue';
 import { frame as searchFrame } from '../generated/pages/Search';
+import { frame as showFrame } from '../generated/pages/Show';
 import { drafts, SETTLE_MS } from '../query';
 import { type Access, type AccessStore } from './access';
 import { PageDepsContext, type PageDeps } from './deps';
@@ -269,6 +270,31 @@ describe('[M2.sorting] a library home before its list answers', () => {
     const at = (url: string) => sortLabel(renderAt(url, { ...given, pages }));
     expect(at('/podcasts/abs:s1?sort=oldest')).toBe('Oldest first');
     expect(at('/podcasts/abs:s1?sort=newest')).toBe('Newest first');
+  });
+});
+
+describe('[M3.podcasts] a show’s subscribe control given its data', () => {
+  /** The opening tag of the button whose words end on `label`. */
+  const button = (html: string, label: string) =>
+    html
+      .split('<button')
+      .map((part) => part.slice(0, part.indexOf('</button>')))
+      .find((part) => part.replace(/<[^>]*>/g, '').endsWith(label))
+      ?.split('>')[0] ?? '';
+  const show = (following: boolean) => ({ ...showFrame.placeholder, ref: 'abs:s1', following });
+
+  it('follows or unfollows the show for a member, in the words of where they stand', () => {
+    const followed = renderAt('/podcasts/abs:s1', deps('member', { show: show(true) }).given);
+    expect(button(followed, 'Subscribed')).not.toBe('');
+    expect(button(followed, 'Subscribed')).not.toContain('disabled');
+    const not = renderAt('/podcasts/abs:s1', deps('member', { show: show(false) }).given);
+    expect(button(not, 'Subscribe')).not.toBe('');
+    expect(button(not, 'Subscribe')).not.toContain('disabled');
+  });
+
+  it('draws it disabled on the canvas, where nothing follows', () => {
+    const html = renderAt('/podcasts/abs:s1', deps('canvas', { show: show(true) }).given);
+    expect(button(html, 'Subscribed')).toContain('disabled');
   });
 });
 
