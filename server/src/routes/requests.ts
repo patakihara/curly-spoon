@@ -38,6 +38,7 @@ import {
 } from '../requests/job.js';
 import { heldShow } from '../requests/podcasts/held.js';
 import { Refusal, serve } from '../route.js';
+import type { ShowCatalogue } from '../search/podcasts.js';
 import {
   arrivedRequests,
   createRequest,
@@ -82,7 +83,11 @@ const pastCancel = ({ medium, state }: StoredRequest) =>
   medium === 'song' && state.status === 'importing';
 
 /** What asking for something takes. */
-export type RequestDoorDeps = RequestActDeps & { maxLive: number };
+export type RequestDoorDeps = RequestActDeps & {
+  maxLive: number;
+  /** Vouches for a podcast request's iTunes id; with none, no client's iTunes id is kept. */
+  shows?: Pick<ShowCatalogue, 'confirmed'>;
+};
 
 /**
  * The one way in to a request, which `POST /requests` and `POST /keep` share: asking for a thing
@@ -191,9 +196,13 @@ export function requestRoutes(app: FastifyInstance, deps: RequestDoorDeps): void
   // A song is kept by `POST /keep`, which names it as search did: one door per medium.
   serve(app, createRequestRoute, async (request, _reply, { ref }) => {
     if (ref.medium === 'song') throw new Refusal(400, 'use_keep');
+    if (ref.medium !== 'podcast') return viewOf(await askFor(signedIn(request).id, ref, null));
+    // Only an iTunes id the server's own iTunes answer gave with this feed is kept.
+    const { itunesId: _unvouched, ...feedOnly } = ref.target.ids;
+    const ids = deps.shows?.confirmed(ref.target.ids) ?? feedOnly;
+    const vouched = { ...ref, target: { ...ref.target, ids } };
     // A show the household holds is followed at once, asking no upstream.
-    const owned = ref.medium === 'podcast' ? heldShow(db, ref.target.ids) : null;
-    return viewOf(await askFor(signedIn(request).id, ref, owned));
+    return viewOf(await askFor(signedIn(request).id, vouched, heldShow(db, ids)));
   });
 
   serve(app, listRequests, (request) => {

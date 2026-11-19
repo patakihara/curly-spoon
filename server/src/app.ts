@@ -271,6 +271,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     // With no steps registered, no step ever runs against this.
     stepTimeoutMs: options.requests?.stepTimeoutMs ?? 0,
     maxLive: options.requests?.maxLive ?? MOST_LIVE_REQUESTS,
+    ...(options.showCatalogue === undefined ? {} : { shows: options.showCatalogue }),
   };
   playRoutes(app, {
     db,

@@ -13,6 +13,7 @@
  */
 import {
   type MediaRef,
+  type RequestIds,
   RequestRef as RequestRefSchema,
   type RequestStatus,
   type SearchShow,
@@ -23,7 +24,7 @@ import { type FeedFetch, FeedRefused, readCapped } from '../adapters/http/public
 import { type ItunesClient, isItunesArtHost } from '../adapters/itunes/client.js';
 import type { JobLog } from '../jobs/schedule.js';
 import { personalView } from '../library/personal.js';
-import { heldShow } from '../requests/podcasts/held.js';
+import { feedKey, heldShow } from '../requests/podcasts/held.js';
 import { requestStanding } from '../requests/standing.js';
 import { itunesArtUrl } from '../routes/art.js';
 import type { Db } from '../store/connection.js';
@@ -57,10 +58,15 @@ export interface ShowCatalogue {
   pasted(address: string, gone: AbortSignal): Promise<FoundShow[]>;
   /** A found show's cover, by its iTunes id; null when there is none to give. */
   art(itunesId: string, gone: AbortSignal): Promise<ShowArt | null>;
+  /**
+   * A request's ids as the server can vouch for them: the iTunes id only when Auralis's own iTunes
+   * answer listed it with this feed, so a client cannot pin one show's id on another's feed.
+   */
+  confirmed(ids: RequestIds): RequestIds;
 }
 
 export interface ShowCatalogueDeps {
-  itunes: Pick<ItunesClient, 'searchShows'>;
+  itunes: Pick<ItunesClient, 'searchShows' | 'listed'>;
   /** Reads a feed address a client named: `feedFetch` where it runs. */
   feed: FeedFetch;
   /** Asks an address iTunes wrote: `publicFetch` where it runs. */
@@ -154,6 +160,15 @@ export function showCatalogue(deps: ShowCatalogueDeps): ShowCatalogue {
         log.error({ reason }, 'no row for a pasted feed');
         return [];
       }
+    },
+
+    confirmed({ itunesId, ...ids }) {
+      const listed = itunesId === undefined ? null : itunes.listed(itunesId);
+      const vouched =
+        listed !== null &&
+        ids.feedUrl !== undefined &&
+        feedKey(listed.feedUrl) === feedKey(ids.feedUrl);
+      return vouched ? { ...ids, itunesId } : ids;
     },
 
     async art(itunesId, gone) {

@@ -20,9 +20,10 @@ import { type IndexRow } from './libraryIndex/rows.js';
 import { applyRow, emptyCounts } from './libraryIndex/store.js';
 import { stepsRegistry } from './requests/steps.js';
 import { showCatalogue, type ShowCatalogue } from './search/podcasts.js';
-import { followShow } from './store/claims.js';
+import { claimsOf, followShow } from './store/claims.js';
 import { openDatabase, type Db } from './store/connection.js';
 import { createDevice } from './store/devices.js';
+import { getRequest } from './store/requests.js';
 import { createSession } from './store/sessions.js';
 import { upsertUser } from './store/users.js';
 
@@ -229,6 +230,49 @@ describe('[M3.podcasts] podcast rows in Search', () => {
     expect(listed.statusCode).toBe(200);
     expect(JSON.stringify(listed.json())).not.toContain('podcast');
     expect((await search('maintenance phase')).hasRequests).toBe(false);
+  });
+
+  it("[M3.podcasts] a request keeps an iTunes id only when the server's own iTunes answer gave it with that feed", async () => {
+    const { app, db, headers, search } = await server();
+    const [row] = (await search('maintenance phase')).podcasts;
+    const ask = async (ids: { feedUrl: string; itunesId: string }) => {
+      const answer = await app.inject({
+        method: 'POST',
+        url: '/api/requests',
+        headers,
+        payload: { ref: { ...row!.ref, target: { ...row!.ref.target, ids } } },
+      });
+      expect(answer.statusCode).toBeLessThan(300);
+      return getRequest(db, (answer.json() as { id: string }).id)!.target.ids;
+    };
+
+    expect(await ask({ feedUrl: MAINTENANCE_FEED, itunesId: MAINTENANCE_PHASE })).toEqual({
+      feedUrl: MAINTENANCE_FEED,
+      itunesId: MAINTENANCE_PHASE,
+    });
+    expect(await ask({ feedUrl: PASTED, itunesId: MAINTENANCE_PHASE })).toEqual({
+      feedUrl: PASTED,
+    });
+  });
+
+  it("[M3.podcasts] a request naming a held show's iTunes id beside another feed follows no held show", async () => {
+    const { app, db, user, headers, search } = await server();
+    indexedShow(db, 'show-1', 'Maintenance Phase', { itunes_id: MAINTENANCE_PHASE });
+    const [row] = (await search('maintenance phase')).podcasts;
+    const answer = await app.inject({
+      method: 'POST',
+      url: '/api/requests',
+      headers,
+      payload: {
+        ref: {
+          ...row!.ref,
+          target: { ...row!.ref.target, ids: { feedUrl: PASTED, itunesId: MAINTENANCE_PHASE } },
+        },
+      },
+    });
+    expect(answer.statusCode).toBeLessThan(300);
+    expect((answer.json() as { status: string }).status).not.toBe('inLibrary');
+    expect(claimsOf(db, user.id)).toEqual([]);
   });
 
   it('[M3.podcasts] a pasted feed address answers that show alone, once its feed is read', async () => {

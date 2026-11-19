@@ -108,6 +108,7 @@ export class ItunesClient {
   private tail: Promise<void> = Promise.resolve();
   private nextAt = 0;
   private readonly cache = new Map<string, { at: number; shows: Promise<ItunesShow[]> }>();
+  private readonly listedShows = new Map<string, { at: number; show: ItunesShow }>();
 
   constructor(private readonly opts: ItunesClientOptions) {
     this.clock = opts.clock ?? realClock;
@@ -131,6 +132,13 @@ export class ItunesClient {
     return shows;
   }
 
+  /** The show with this iTunes id as an answer within the cache's time listed it; else null. */
+  listed(itunesId: string): ItunesShow | null {
+    const kept = this.listedShows.get(itunesId);
+    if (kept === undefined || this.clock.now() - kept.at >= ITUNES_CACHE_MS) return null;
+    return kept.show;
+  }
+
   private async ask(term: string): Promise<ItunesShow[]> {
     await this.turn();
     const base = this.opts.baseUrl.endsWith('/') ? this.opts.baseUrl : `${this.opts.baseUrl}/`;
@@ -145,10 +153,18 @@ export class ItunesClient {
       { maxBytes: ITUNES_MAX_BYTES, timeoutMs: this.opts.timeoutMs ?? ITUNES_LIMIT_MS },
       searchAnswerSchema,
     );
-    return rows.flatMap((row) => {
+    const shows = rows.flatMap((row) => {
       const show = showOf(row);
       return show === null ? [] : [show];
     });
+    for (const show of shows) {
+      this.listedShows.delete(show.itunesId);
+      this.listedShows.set(show.itunesId, { at: this.clock.now(), show });
+    }
+    while (this.listedShows.size > ITUNES_CACHE_ENTRIES * ITUNES_SEARCH_LIMIT) {
+      this.listedShows.delete(this.listedShows.keys().next().value!);
+    }
+    return shows;
   }
 
   /** Waits until this call may start, and keeps the next one 1 s behind it. */
