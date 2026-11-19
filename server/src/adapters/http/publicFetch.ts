@@ -31,19 +31,18 @@ for (const [address, prefix] of [
 ] as const) {
   NOT_PUBLIC.addSubnet(address, prefix, 'ipv4');
 }
+
+/**
+ * IPv6's global unicast range, the only IPv6 that is the public internet. Reserved `::/8` (the IPv4
+ * mapped and translated forms among it), unique local, link local and multicast all lie outside.
+ */
+const GLOBAL_V6 = new BlockList();
+GLOBAL_V6.addSubnet('2000::', 3, 'ipv6');
+/** The special ranges inside it: Teredo and other IETF use, documentation, 6to4. */
 for (const [address, prefix] of [
-  ['::', 96],
-  ['::1', 128],
-  ['64:ff9b::', 96],
-  ['64:ff9b:1::', 48],
-  ['100::', 64],
   ['2001::', 32],
   ['2001:db8::', 32],
   ['2002::', 16],
-  ['fc00::', 7],
-  ['fe80::', 10],
-  ['fec0::', 10],
-  ['ff00::', 8],
 ] as const) {
   NOT_PUBLIC.addSubnet(address, prefix, 'ipv6');
 }
@@ -51,7 +50,9 @@ for (const [address, prefix] of [
 const familyOf = (address: string) => (isIP(address) === 6 ? 6 : 4);
 
 const isPublicAddress = (address: string) =>
-  !NOT_PUBLIC.check(address, familyOf(address) === 6 ? 'ipv6' : 'ipv4');
+  familyOf(address) === 6
+    ? GLOBAL_V6.check(address, 'ipv6') && !NOT_PUBLIC.check(address, 'ipv6')
+    : !NOT_PUBLIC.check(address, 'ipv4');
 
 const PRIVATE = 'a private address';
 

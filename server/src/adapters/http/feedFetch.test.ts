@@ -62,6 +62,11 @@ describe('[M3.podcasts] a feed address a client named', () => {
     'http://[fec0::1]/feed',
     'http://[::ffff:127.0.0.1]/feed',
     'http://[::127.0.0.1]/feed',
+    'http://[::ffff:0:7f00:1]/feed',
+    'http://[::ffff:ffff:7f00:1]/feed',
+    'http://[::2:1]/feed',
+    'http://[1::1]/feed',
+    'http://[4000::1]/feed',
     'http://[64:ff9b::7f00:1]/feed',
     'http://[64:ff9b:1::1]/feed',
     'http://[100::1]/feed',
@@ -75,6 +80,10 @@ describe('[M3.podcasts] a feed address a client named', () => {
     'http://nas.local/feed',
   ])('refuses %s from the address alone', (url) => {
     expect(refusedFeedUrl(new URL(url))).toBe('a private address');
+  });
+
+  it('allows a global unicast IPv6 address', () => {
+    expect(refusedFeedUrl(new URL('http://[2606:4700::1111]/feed'))).toBeNull();
   });
 
   it('allows http and https on any port, and refuses another scheme or credentials', () => {
