@@ -270,6 +270,16 @@ export function writeSync(
   ).run(source, id, upstreamVersion, now);
 }
 
+/** Whether a whole Audiobookshelf index pass began at or after `at`, so it saw what was there then. */
+export function absIndexedSince(db: Db, at: number): boolean {
+  const row = db
+    .prepare(
+      `SELECT 1 FROM index_runs WHERE source = 'abs' AND complete = 1 AND started_at >= ? LIMIT 1`,
+    )
+    .get(at);
+  return row !== undefined;
+}
+
 export function recordRun(
   db: Db,
   run: {

@@ -57,7 +57,10 @@
           "importFailed",
           "notIndexed",
           "cancelledUpstream",
-          "wrongRelease"
+          "wrongRelease",
+          "privateAddress",
+          "noPodcastLibrary",
+          "feedUnreachable"
         ]
       },
       "QueueType": {
@@ -293,6 +296,10 @@
           "youtubeMusicId": {
             "type": "string",
             "pattern": "^[\\w-]{1,64}$"
+          },
+          "itunesId": {
+            "type": "string",
+            "pattern": "^\\d{1,20}$"
           }
         },
         "additionalProperties": false
@@ -2131,6 +2138,9 @@
           },
           "finished": {
             "type": "boolean"
+          },
+          "absent": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -2140,7 +2150,8 @@
           "publishedAt",
           "duration",
           "progress",
-          "finished"
+          "finished",
+          "absent"
         ]
       },
       "ItemTrack": {
@@ -2275,6 +2286,9 @@
           },
           "sort": {
             "$ref": "#/components/schemas/EpisodeOrder"
+          },
+          "following": {
+            "type": "boolean"
           },
           "request": {
             "anyOf": [
@@ -2608,6 +2622,69 @@
           "kept"
         ]
       },
+      "SearchShow": {
+        "type": "object",
+        "properties": {
+          "ref": {
+            "$ref": "#/components/schemas/RequestRef"
+          },
+          "title": {
+            "type": "string"
+          },
+          "host": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "episodes": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "art": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RequestStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "item": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MediaRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "following": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "ref",
+          "title",
+          "host",
+          "episodes",
+          "art",
+          "status",
+          "item",
+          "following"
+        ]
+      },
       "SearchSong": {
         "type": "object",
         "properties": {
@@ -2711,6 +2788,12 @@
               "$ref": "#/components/schemas/SearchAlbum"
             }
           },
+          "podcasts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SearchShow"
+            }
+          },
           "songs": {
             "type": "array",
             "items": {
@@ -2735,6 +2818,7 @@
           "results",
           "books",
           "albums",
+          "podcasts",
           "songs",
           "playlists",
           "streaming",
@@ -5812,6 +5896,138 @@
         }
       }
     },
+    "/api/subscriptions/{ref}": {
+      "put": {
+        "summary": "Follow a show the household holds: it joins your library and The Digest",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "operationId": "followShow",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:abs:[\\w-]{1,64}|jellyfin:[0-9a-f]{32}|ytmusic:[\\w-]{11})$"
+            },
+            "required": true,
+            "name": "ref",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "You follow the show; 404 for anything but an indexed show. No upstream is asked.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ok"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request does not parse, or was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Without the role this route needs, or sent from another site.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Unfollow a show: it leaves your library and your digests, for you alone",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "operationId": "unfollowShow",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:abs:[\\w-]{1,64}|jellyfin:[0-9a-f]{32}|ytmusic:[\\w-]{11})$"
+            },
+            "required": true,
+            "name": "ref",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "You no longer follow the show, and a play read from Audiobookshelf does not bring it back; it stays in the household for everyone else. 404 for anything but an indexed show. No upstream is asked.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ok"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request does not parse, or was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Without the role this route needs, or sent from another site.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/media/{ref}/art": {
       "get": {
         "summary": "A book's, show's or album's art, with the signed-in person's own access",
@@ -6430,6 +6646,127 @@
         "responses": {
           "200": {
             "description": "The image, as Spotify holds it."
+          },
+          "400": {
+            "description": "The request does not parse, or was refused."
+          },
+          "401": {
+            "description": "No session."
+          },
+          "403": {
+            "description": "Without the role this route needs, or sent from another site."
+          }
+        }
+      }
+    },
+    "/api/search/shows/{itunesId}/art": {
+      "get": {
+        "summary": "The cover of a podcast iTunes' search found, from Apple's image hosts",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "operationId": "getSearchShowArt",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{1,20}$"
+            },
+            "required": true,
+            "name": "itunesId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "$ref": "#/components/schemas/ArtSize"
+            },
+            "required": false,
+            "name": "size",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The image, as Apple holds it.",
+            "content": {
+              "image/*": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request does not parse, or was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Without the role this route needs, or sent from another site.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "head": {
+        "summary": "The cover of a podcast iTunes' search found, from Apple's image hosts",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "operationId": "getSearchShowArtHead",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{1,20}$"
+            },
+            "required": true,
+            "name": "itunesId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "$ref": "#/components/schemas/ArtSize"
+            },
+            "required": false,
+            "name": "size",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The image, as Apple holds it."
           },
           "400": {
             "description": "The request does not parse, or was refused."

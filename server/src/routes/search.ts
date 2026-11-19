@@ -20,6 +20,11 @@
  * A search for a Spotify playlist link searches nothing else and keeps no recent search: it answers
  * that playlist's row alone, while playlists can be imported (search/playlists.ts), and its cover
  * by Spotify image id.
+ *
+ * While shows can be requested, a search also lists the podcasts iTunes finds, each naming the
+ * household's show when it holds it (search/podcasts.ts), and their covers by iTunes id. A search
+ * for a feed address then searches nothing else either and keeps no recent search: it answers that
+ * show alone once the feed guard has read its feed, so the address reaches no other upstream.
  */
 import {
   getSearch,
@@ -28,7 +33,9 @@ import {
   searchAlbumArt,
   searchBookArt,
   searchPlaylistArt,
+  searchShowArt,
   type SearchAlbum,
+  type SearchShow,
   type SearchSong,
   type SearchBook,
   type SearchKind,
@@ -43,12 +50,16 @@ import { bookRows, type BookCatalogue } from '../requests/books/catalogue.js';
 import { clientGone, Refusal, serve, serveStream } from '../route.js';
 import { librarySource } from '../search/library.js';
 import { playlistRows, type SpotifyPlaylistSource } from '../search/playlists.js';
+import { holdsAny, isFeedAddress, showRows, type ShowCatalogue } from '../search/podcasts.js';
 import { rank, type SearchSource } from '../search/sources.js';
 import { suggest } from '../search/suggest.js';
 import type { Db } from '../store/connection.js';
 import { recordSearch } from '../store/recentSearches.js';
 import { requestsListed } from '../store/requests.js';
+import type { User } from '../store/users.js';
+import { Reach } from '../upstream/reach.js';
 import { signedIn } from './auth.js';
+import type { UpstreamAccess } from './play.js';
 
 /** The kinds that name someone or a series, not an item. */
 const NAME_KINDS: readonly SearchKind[] = ['artist', 'author', 'series'];
@@ -66,9 +77,14 @@ export function searchRoutes(
     music?: Music | null;
     /** Spotify, while a playlist can be imported: `importable` says whether it can now. */
     spotify?: { source: SpotifyPlaylistSource; importable: () => boolean } | null;
+    /** The shows iTunes finds, while shows can be requested. */
+    shows?: ShowCatalogue;
+    /** The person's own Audiobookshelf, which says what shows they have begun. */
+    upstreams?: UpstreamAccess | null;
   },
 ): void {
-  const { db, now, catalogue, albumCatalogue } = options;
+  const { db, now, catalogue, albumCatalogue, shows } = options;
+  const reach = new Reach(db, options.upstreams ?? null);
   const music = options.music ?? null;
   const spotify = options.spotify ?? null;
   const sources: readonly SearchSource[] = [librarySource(db)];
@@ -137,6 +153,26 @@ export function searchRoutes(
     }
   };
 
+  /** The rows for this search; none for a search of other kinds, or when anything goes wrong. */
+  const podcasts = async (
+    request: FastifyRequest,
+    q: string,
+    kinds: readonly SearchKind[] | undefined,
+    user: User,
+    gone: AbortSignal,
+  ): Promise<SearchShow[]> => {
+    if (shows === undefined || (kinds !== undefined && !kinds.includes('show'))) return [];
+    try {
+      const found = isFeedAddress(q) ? await shows.pasted(q, gone) : await shows.search(q, gone);
+      // A held show they have begun on their own Audiobookshelf is followed, as its page says.
+      const own = holdsAny(db, found) ? await reach.ownAbs(user).catch(() => null) : null;
+      return showRows(db, user.id, found, own);
+    } catch (err) {
+      request.log.warn({ err: err instanceof Error ? err.message : 'unknown' }, 'no show rows');
+      return [];
+    }
+  };
+
   serve(app, getSearchSuggest, (request, _reply, _body, { query }) => {
     const user = signedIn(request);
     return {
@@ -157,17 +193,33 @@ export function searchRoutes(
         results: [],
         books: [],
         albums: [],
+        podcasts: [],
         songs: [],
         playlists: importable ? await playlists.row(playlist, gone) : [],
         streaming:
           music === null || music.state.available ? ('ok' as const) : ('unavailable' as const),
       };
     }
+    if (shows !== undefined && isFeedAddress(query.q)) {
+      return {
+        query: query.q,
+        hasRequests: requestsListed(db, user.id).length > 0,
+        results: [],
+        books: [],
+        albums: [],
+        podcasts: await podcasts(request, query.q, query.kinds, user, gone),
+        songs: [],
+        playlists: [],
+        streaming:
+          music === null || music.state.available ? ('ok' as const) : ('unavailable' as const),
+      };
+    }
     const asked = query.kinds === undefined ? { q: query.q } : { q: query.q, kinds: query.kinds };
-    const [lists, found, foundAlbums, streamed] = await Promise.all([
+    const [lists, found, foundAlbums, foundShows, streamed] = await Promise.all([
       Promise.all(sources.map((source) => source.search(asked, gone))),
       books(request, query.q, query.kinds, user.id, gone),
       albums(request, query.q, query.kinds, user.id, gone),
+      podcasts(request, query.q, query.kinds, user, gone),
       songs(request, query.q, query.kinds, user, gone),
     ]);
     // A recent search is a convenience: failing to keep one never costs the results.
@@ -186,6 +238,7 @@ export function searchRoutes(
       hasRequests: requestsListed(db, user.id).length > 0,
       books: found,
       albums: foundAlbums,
+      podcasts: foundShows,
       songs: streamed,
       playlists: [],
       streaming:
@@ -219,6 +272,21 @@ export function searchRoutes(
   serveStream(app, searchAlbumArt, async (request, { params, signal }) => {
     signedIn(request);
     const art = await albumCatalogue?.art(params.mbid, signal);
+    if (art === undefined || art === null) throw new Refusal(404, 'not_found');
+    return {
+      status: 200,
+      headers: {
+        'content-type': art.type,
+        'content-length': String(art.bytes.byteLength),
+        'cache-control': ART_CACHE,
+      },
+      body: new Blob([art.bytes]).stream(),
+    };
+  });
+
+  serveStream(app, searchShowArt, async (request, { params, signal }) => {
+    signedIn(request);
+    const art = await shows?.art(params.itunesId, signal);
     if (art === undefined || art === null) throw new Refusal(404, 'not_found');
     return {
       status: 200,

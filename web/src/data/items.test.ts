@@ -5,7 +5,15 @@ import { frame as album } from '../generated/pages/Album';
 import { frame as book } from '../generated/pages/Book';
 import { frame as episodePage } from '../generated/pages/Episode';
 import { frame as show } from '../generated/pages/Show';
-import { albumData, albumVerb, bookData, episodeData, showAwaited, showData } from './items';
+import {
+  albumData,
+  albumVerb,
+  bookData,
+  episodeData,
+  followShow,
+  showAwaited,
+  showData,
+} from './items';
 import { SignedOut } from './store';
 
 const detail = (over: Partial<ItemDetail>): ItemDetail =>
@@ -90,6 +98,7 @@ describe('[M1.shell] a show’s page from GET /api/items/{ref}', () => {
       title: 'Megacorp',
       art: '/api/media/abs:s1/art',
       sort: 'newest',
+      following: true,
       episodes: [
         {
           ref: { source: 'abs', id: 'e2' },
@@ -99,6 +108,7 @@ describe('[M1.shell] a show’s page from GET /api/items/{ref}', () => {
           duration: 3120,
           progress: 0.4,
           finished: false,
+          absent: false,
         },
         {
           ref: { source: 'abs', id: 'e1' },
@@ -108,6 +118,7 @@ describe('[M1.shell] a show’s page from GET /api/items/{ref}', () => {
           duration: null,
           progress: null,
           finished: true,
+          absent: false,
         },
       ],
     }),
@@ -161,10 +172,80 @@ describe('[M1.shell] a show’s page from GET /api/items/{ref}', () => {
       options: show.placeholder.sort.options,
     });
     const serial = showData(
-      detail({ ref: { source: 'abs', id: 's1' }, kind: 'show', sort: 'oldest' }),
+      detail({ ref: { source: 'abs', id: 's1' }, kind: 'show', sort: 'oldest', following: true }),
       show.placeholder,
     );
     expect(serial.sort.value).toBe('Oldest first');
+  });
+});
+
+describe('[M3.podcasts] following a show from its page', () => {
+  const episode = (absent: boolean) => ({
+    ref: { source: 'abs' as const, id: 'e1' },
+    title: 'Part One',
+    description: null,
+    publishedAt: null,
+    duration: null,
+    progress: null,
+    finished: false,
+    absent,
+  });
+  const page = (following: boolean) =>
+    showData(
+      detail({
+        ref: { source: 'abs', id: 's1' },
+        kind: 'show',
+        sort: 'oldest',
+        following,
+        episodes: [episode(!following)],
+      }),
+      show.placeholder,
+    );
+
+  it('draws a show you follow as Subscribed, its episodes as yours', () => {
+    expect(page(true).following).toBe(true);
+    expect(page(true).episodes[0]?.absent).toBe(false);
+  });
+
+  it('draws a show you do not follow as Subscribe, its episodes greyed as the server says', () => {
+    expect(page(false).following).toBe(false);
+    expect(page(false).episodes[0]?.absent).toBe(true);
+  });
+
+  const answering = (status = 200) => {
+    const asked: { method: string; path: string }[] = [];
+    const api = createApiClient({
+      baseUrl: 'http://auralis.test',
+      fetch: async (input: Request) => {
+        asked.push({ method: input.method, path: new URL(input.url).pathname });
+        return new Response(status === 200 ? '{"ok":true}' : '{}', {
+          status,
+          headers: { 'content-type': 'application/json' },
+        });
+      },
+    });
+    return { api, asked };
+  };
+
+  it('follows the show with PUT /api/subscriptions/{ref} and unfollows it with DELETE', async () => {
+    const { api, asked } = answering();
+    await followShow(api, 'abs:s1', true);
+    await followShow(api, 'abs:s1', false);
+    expect(asked).toEqual([
+      { method: 'PUT', path: '/api/subscriptions/abs%3As1' },
+      { method: 'DELETE', path: '/api/subscriptions/abs%3As1' },
+    ]);
+  });
+
+  it('asks nothing for a ref that names no item', async () => {
+    const { api, asked } = answering();
+    await expect(followShow(api, 'salt-and-signal', true)).rejects.toThrow();
+    expect(asked).toEqual([]);
+  });
+
+  it('goes to sign in when the server wants one, and fails when it refuses', async () => {
+    await expect(followShow(answering(401).api, 'abs:s1', true)).rejects.toBeInstanceOf(SignedOut);
+    await expect(followShow(answering(404).api, 'abs:s1', false)).rejects.toThrow();
   });
 });
 

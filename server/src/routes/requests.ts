@@ -28,7 +28,7 @@ import {
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { indexedRow, topLevelOf } from '../libraryIndex/store.js';
 import {
-  ARRIVAL_CLAIM,
+  claimArrival,
   cancelRequest,
   chooseRelease,
   otherReleases,
@@ -36,8 +36,9 @@ import {
   type RequestActDeps,
   retryRequest,
 } from '../requests/job.js';
+import { heldShow } from '../requests/podcasts/held.js';
 import { Refusal, serve } from '../route.js';
-import { addClaim } from '../store/claims.js';
+import type { ShowCatalogue } from '../search/podcasts.js';
 import {
   arrivedRequests,
   createRequest,
@@ -82,7 +83,11 @@ const pastCancel = ({ medium, state }: StoredRequest) =>
   medium === 'song' && state.status === 'importing';
 
 /** What asking for something takes. */
-export type RequestDoorDeps = RequestActDeps & { maxLive: number };
+export type RequestDoorDeps = RequestActDeps & {
+  maxLive: number;
+  /** Vouches for a podcast request's iTunes id; with none, no client's iTunes id is kept. */
+  shows?: Pick<ShowCatalogue, 'confirmed'>;
+};
 
 /**
  * The one way in to a request, which `POST /requests` and `POST /keep` share: asking for a thing
@@ -131,7 +136,7 @@ export function requestDoor(deps: RequestDoorDeps) {
       const { request } = createRequest(db, userId, ref, now(), log);
       const change = { state: { status: 'inLibrary' as const }, result: owned };
       saveRequest(db, request.id, change, now(), request.version);
-      addClaim(db, userId, topLevelOf(db, owned), ARRIVAL_CLAIM[ref.medium], now());
+      claimArrival(db, userId, ref.medium, topLevelOf(db, owned), now());
       return getRequest(db, request.id)!;
     })();
 
@@ -150,7 +155,7 @@ export function requestDoor(deps: RequestDoorDeps) {
     const there = arrived(ref);
     if (there?.result != null) {
       joinArrivedRequest(db, there.id, userId, ref, now());
-      addClaim(db, userId, topLevelOf(db, there.result), ARRIVAL_CLAIM[there.medium], now());
+      claimArrival(db, userId, there.medium, topLevelOf(db, there.result), now());
       return there;
     }
     const live = liveRequest(db, ref, log);
@@ -191,7 +196,13 @@ export function requestRoutes(app: FastifyInstance, deps: RequestDoorDeps): void
   // A song is kept by `POST /keep`, which names it as search did: one door per medium.
   serve(app, createRequestRoute, async (request, _reply, { ref }) => {
     if (ref.medium === 'song') throw new Refusal(400, 'use_keep');
-    return viewOf(await askFor(signedIn(request).id, ref));
+    if (ref.medium !== 'podcast') return viewOf(await askFor(signedIn(request).id, ref, null));
+    // Only an iTunes id the server's own iTunes answer gave with this feed is kept.
+    const { itunesId: _unvouched, ...feedOnly } = ref.target.ids;
+    const ids = deps.shows?.confirmed(ref.target.ids) ?? feedOnly;
+    const vouched = { ...ref, target: { ...ref.target, ids } };
+    // A show the household holds is followed at once, asking no upstream.
+    return viewOf(await askFor(signedIn(request).id, vouched, heldShow(db, ids)));
   });
 
   serve(app, listRequests, (request) => {

@@ -13,7 +13,8 @@
  * `onSelect={<Choose ref={data.ref} />}`; or do a request's verb to the request its ref binds,
  * `onClick={<Act ref={request.id} verb={request.verb} />}`; or set a setting from a switch,
  * `onChange={<Toggle setting="showEveryonesLibrary" />}`; or import the Spotify playlist a link names,
- * `onClick={<Import from={playlist.from} />}`. An Open may also bind any of its route's query names,
+ * `onClick={<Import from={playlist.from} />}`; or follow or unfollow the show its ref binds, from a
+ * subscribe control, `onChange={<Follow ref={data.ref} />}`. An Open may also bind any of its route's query names,
  * `<Open page="search" q={s.query} />`. It is read into a page
  * tree, never run, so both platforms can generate from the same file: the web as a navigation to
  * the route, Android as one to the nav graph's destination with the same arguments.
@@ -54,6 +55,8 @@ export type PropValue =
   | { kind: 'retry' }
   /** A control's handler importing the outside playlist its `from` binds, a Spotify link. */
   | { kind: 'import'; params: Record<string, string[]> }
+  /** A subscribe control's handler following or unfollowing the show its `ref` binds. */
+  | { kind: 'follow'; params: Record<string, string[]> }
   /** A menu's handler doing its chosen verb, by its key, to the item its `ref` binds. */
   | { kind: 'choose'; params: Record<string, string[]> }
   /**
@@ -135,7 +138,7 @@ const TAKEN = new Set([
   ...['context', 'leading', 'key', 'tab', 'window', 'undefined'],
   ...['useContext', 'useLayout', 'useNavigate', 'usePlay', 'usePlaying', 'useQuery', 'useShellNav'],
   ...['useChoose', 'act', 'useAct', 'askFor', 'useRequest'],
-  ...['toggle', 'useToggle', 'retry', 'useRetry', 'importFrom', 'useImport'],
+  ...['toggle', 'useToggle', 'retry', 'useRetry', 'importFrom', 'useImport', 'follow', 'useFollow'],
 ]);
 
 /** `value`, if it is a plain lower-case name a page may give an Each item or a When state. */
@@ -176,6 +179,7 @@ function propValue(value: t.JSXAttribute['value']): PropValue {
     if (name.type === 'JSXIdentifier' && name.name === 'Act') return act(e);
     if (name.type === 'JSXIdentifier' && name.name === 'Toggle') return toggle(e);
     if (name.type === 'JSXIdentifier' && name.name === 'Import') return importer(e);
+    if (name.type === 'JSXIdentifier' && name.name === 'Follow') return follow(e);
     const tree = element(e);
     if (tree.kind !== 'element') return fail(e, 'Each and When go in children, not in a prop');
     return { kind: 'slot', tree };
@@ -205,6 +209,7 @@ function handlerAttrs(node: t.JSXElement, what: string) {
     const value = attr.value;
     if (what === 'Choose' && name !== 'ref') return fail(attr, `Choose takes ref, not ${name}`);
     if (what === 'Import' && name !== 'from') return fail(attr, `Import takes from, not ${name}`);
+    if (what === 'Follow' && name !== 'ref') return fail(attr, `Follow takes ref, not ${name}`);
     if (what === 'Act' && !['ref', 'verb', 'candidate'].includes(name)) {
       return fail(attr, `Act takes ref, verb and candidate, not ${name}`);
     }
@@ -326,6 +331,14 @@ function importer(node: t.JSXElement): PropValue {
 }
 
 /**
+ * `<Follow ref={data.ref} />`: following or unfollowing the show its `ref` binds, by the state a
+ * `FollowButton` hands its `onChange`. Each app knows how.
+ */
+function follow(node: t.JSXElement): PropValue {
+  return { kind: 'follow', params: handlerAttrs(node, 'Follow').params };
+}
+
+/**
  * `<Toggle setting="showEveryonesLibrary" />`: sets a setting, one of `TOGGLE_SETTINGS`, to what the
  * switch says. It is always written, never bound, so the check knows every setting a page can set.
  */
@@ -427,6 +440,9 @@ function element(node: t.JSXElement): PageTree {
   }
   if (name.name === 'Import') {
     return fail(node, 'Import goes in a handler prop, onClick={<Import from={…} />}');
+  }
+  if (name.name === 'Follow') {
+    return fail(node, 'Follow goes in a handler prop, onChange={<Follow ref={…} />}');
   }
   const props: Record<string, PropValue> = {};
   for (const attr of node.openingElement.attributes) {
@@ -812,6 +828,26 @@ export function checkPage(
               if (typeof v !== 'string' || v === '') {
                 errors.push(
                   `${at}: the import's from (${value.params.from!.join('.')}) is not a non-empty string`,
+                );
+              }
+            }
+            continue;
+          }
+          if (value.kind === 'follow') {
+            const at = `line ${node.line}: ${node.component}.${prop}`;
+            if (node.component !== 'FollowButton' || prop !== 'onChange') {
+              errors.push(`${at} cannot follow a show: Follow goes on a FollowButton's onChange`);
+              continue;
+            }
+            const given = Object.keys(value.params);
+            if (given.join() !== 'ref') {
+              errors.push(`${at} gives a follow [${given}], and a follow takes [ref]`);
+              continue;
+            }
+            for (const v of check(node.line, value.params.ref!)) {
+              if (typeof v !== 'string' || v === '') {
+                errors.push(
+                  `${at}: the follow's ref (${value.params.ref!.join('.')}) is not a non-empty string`,
                 );
               }
             }

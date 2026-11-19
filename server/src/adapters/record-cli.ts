@@ -109,6 +109,16 @@
  * asked. `--only spotify-misfires` records the four tracks Rock Classics' live import left
  * unmatched: their metadata, 1 s apart, and their YouTube Music searches, 2 s apart.
  *
+ * `--only itunes` records M3.podcasts' iTunes podcast searches, with no key: a show by name, a
+ * broad word whose rows include some without a feed, and words nothing matches, each 3 s after the
+ * last, every row cut to the fields parsed (record-podcasts.ts).
+ *
+ * `--only abs-podcasts --abs <url> --abs-folder <path> --abs-version <v> --feed <url> [--itunes-id <id>]` records
+ * M3.podcasts' subscribe calls on a throwaway Audiobookshelf, never the household's: the feed as
+ * Auralis reads it, then the libraries, the feed as Audiobookshelf reads it and its refusal of a
+ * private address, the show made and made again, and the item read back, 3 s apart, the folder
+ * written as `/data/Podcasts` (record-podcasts.ts). It needs ABS_API_KEY and ABS_PROVISION_KEY.
+ *
  * `--only albums-live --log <file> --pick <call=line,..>` turns the lines named of a live album
  * run's proxy log into recordings of qBittorrent, Prowlarr and Jellyfin, and asks the Cover Art
  * Archive for The Slip's release-group front (record-albums-live.ts). Nothing goes on stdin.
@@ -159,6 +169,8 @@ import {
 } from './record-musicbrainz.js';
 import { MUSICBRAINZ_URL } from './musicbrainz/client.js';
 import { COVERART_URL } from './coverart/client.js';
+import { ITUNES_URL } from './itunes/client.js';
+import { recordAbsPodcasts, recordItunes } from './record-podcasts.js';
 
 /**
  * The index calls record one page of two items from each library. The fifth page holds the
@@ -183,7 +195,7 @@ Records Audiobookshelf's and Jellyfin's calls into server/src/adapters/*/recordi
   --only <name>      record only abs, jellyfin, index, play, episode, jfplay, progress,
                      sessions, shell, lyrics, lists, played, books, albums, shelf, qbit, ytmusic,
                      extractor, musicbrainz, albums-musicbrainz, albums-qbit, albums-live, spotify,
-                     spotify-ytmusic, spotify-misfires, coverart or keep; or
+                     spotify-ytmusic, spotify-misfires, coverart, keep, itunes or abs-podcasts; or
                      oidc, a sign-in and its links
   --lrclib <url>     LRCLIB's base URL, for --only lyrics
   --prowlarr <url>   Prowlarr's base URL, for --only books and albums
@@ -722,6 +734,10 @@ export async function runRecord(io: RecordIo): Promise<number> {
       lrclib: { type: 'string' },
       prowlarr: { type: 'string' },
       'book-folder': { type: 'string' },
+      'abs-folder': { type: 'string' },
+      feed: { type: 'string' },
+      'abs-version': { type: 'string' },
+      'itunes-id': { type: 'string' },
       qbittorrent: { type: 'string' },
       torrent: { type: 'string' },
       'long-track': { type: 'string' },
@@ -779,10 +795,12 @@ export async function runRecord(io: RecordIo): Promise<number> {
       'spotify',
       'spotify-ytmusic',
       'spotify-misfires',
+      'itunes',
+      'abs-podcasts',
     ].includes(only)
   ) {
     io.err(
-      `--only is abs, jellyfin, index, play, episode, jfplay, progress, sessions, shell, lyrics, lists, played, household, books, albums, shelf, qbit, ytmusic, extractor, github, musicbrainz, albums-musicbrainz, albums-qbit, albums-live, coverart, keep, oidc, spotify, spotify-ytmusic or spotify-misfires, not ${only}`,
+      `--only is abs, jellyfin, index, play, episode, jfplay, progress, sessions, shell, lyrics, lists, played, household, books, albums, shelf, qbit, ytmusic, extractor, github, musicbrainz, albums-musicbrainz, albums-qbit, albums-live, coverart, keep, oidc, spotify, spotify-ytmusic, spotify-misfires, itunes or abs-podcasts, not ${only}`,
     );
     return 2;
   }
@@ -818,6 +836,8 @@ export async function runRecord(io: RecordIo): Promise<number> {
   if (only === 'albums-qbit') return runAlbumsQbit(io, values, parseKeys(io.stdin), root);
   if (only === 'albums-live') return runAlbumsLive(io, values, root);
   if (only === 'coverart') return runCoverArt(io, root);
+  if (only === 'itunes') return runItunes(io, root);
+  if (only === 'abs-podcasts') return runAbsPodcasts(io, values, parseKeys(io.stdin), root);
   if (only === 'keep') return runKeep(io, values, parseKeys(io.stdin), root);
   const wantIndex = only === undefined || only === 'index';
   const wantAbs = only !== 'jellyfin';
@@ -1392,6 +1412,52 @@ async function runSpotifyYtMusic(
       }),
   });
   return scanWritten(io, written, []);
+}
+
+async function runItunes(io: RecordIo, root: string): Promise<number> {
+  const { written } = await recordItunes({
+    fetch: io.fetch,
+    out: io.out,
+    root,
+    itunesUrl: ITUNES_URL,
+  });
+  return scanWritten(io, written, []);
+}
+
+async function runAbsPodcasts(
+  io: RecordIo,
+  values: Record<string, string | boolean | undefined>,
+  keys: Record<string, string>,
+  root: string,
+): Promise<number> {
+  const need = {
+    '--abs': values.abs,
+    '--abs-folder': values['abs-folder'],
+    '--abs-version': values['abs-version'],
+    '--feed': values.feed,
+    'ABS_API_KEY on stdin': keys.ABS_API_KEY,
+    'ABS_PROVISION_KEY on stdin': keys.ABS_PROVISION_KEY,
+  };
+  const missing = Object.entries(need)
+    .filter(([, v]) => typeof v !== 'string' || v === '')
+    .map(([k]) => k);
+  if (missing.length > 0) {
+    io.err(`missing ${missing.join(', ')}\n\n${USAGE}`);
+    return 2;
+  }
+  const { written } = await recordAbsPodcasts({
+    fetch: io.fetch,
+    out: io.out,
+    root,
+    absUrl: values.abs as string,
+    absKey: keys.ABS_API_KEY as string,
+    provisionKey: keys.ABS_PROVISION_KEY as string,
+    folder: values['abs-folder'] as string,
+    feedUrl: values.feed as string,
+    itunesId: typeof values['itunes-id'] === 'string' ? values['itunes-id'] : null,
+    absVersion: values['abs-version'] as string,
+  });
+  return scanWritten(io, written, [keys.ABS_API_KEY as string, keys.ABS_PROVISION_KEY as string]);
 }
 
 async function runAlbumGroups(io: RecordIo, root: string): Promise<number> {

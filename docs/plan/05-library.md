@@ -14,7 +14,7 @@ part: The product
 
 ### Accounts, and one listening session per device
 
-- **Users**: each household member has their own account, taste profile, queues, lists, digests and recommendations. Everyone signs in through the household's single sign-on (Authelia over LLDAP; Jellyfin checks the same directory through its LDAP plugin), with Auralis as one more OpenID Connect client. At first sign-in Auralis finds each person's ABS and Jellyfin user by login name, ignoring case and accents, and pins those upstream ids; a household member with no ABS account gets a listen-only one created by Auralis, while Jellyfin accounts are never created. Members of the `lldap_admin` group are Auralis admins, and the admin role owns providers, paths and approvals.
+- **Users**: each household member has their own account, taste profile, queues, lists, digests and recommendations. Everyone signs in through the household's single sign-on (Authelia over LLDAP; Jellyfin checks the same directory through its LDAP plugin), with Auralis as one more OpenID Connect client. At first sign-in Auralis finds each person's ABS and Jellyfin user by login name, ignoring case and accents, and pins those upstream ids; a member with no ABS account gets a listen-only one from Auralis; Jellyfin accounts are never created. `lldap_admin` members are Auralis admins, owning providers, paths and approvals.
 - **Sessions are per device, and by default they don't mix**: the phone's and the laptop's queues are separate, and each resumes its own, even after a restart, from the server's per-(user, device) store.
 - **What is shared across a user's devices** is library state, not the session: your position in a book or episode (in Audiobookshelf), favourites, lists and history.
 - **Mixing is explicit**: "Continue here" moves another device's session to this one, and "Play on…" sends this one elsewhere, like Spotify Connect but opt-in. Both come later.
@@ -32,7 +32,7 @@ part: The product
 ### Shared files, personal view
 
 - **Files are stored once, for the whole household**, as today: one Music library in Jellyfin, one Books and one Podcasts library in Audiobookshelf.
-- **Auralis shows each person their own library**: what they added, requested, subscribed to or played; things already on the server count as yours once played.
+- **Auralis shows each person their own library**: what they added, requested, subscribed to or played; things already on the server count as yours once played, except a show you unsubscribed from.
 - **Everyone else's things stay findable**: search covers the household, and those results play at once through Auralis's own account, not as requests.
 - **"Show everyone's library" is a setting**, only in Settings, never a toggle on library screens.
 - The Audiobookshelf and Jellyfin apps are unchanged and still show everything.

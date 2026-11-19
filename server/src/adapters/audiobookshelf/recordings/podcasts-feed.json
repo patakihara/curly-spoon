@@ -1,0 +1,50 @@
+{
+  "upstream": "audiobookshelf",
+  "upstreamVersion": "2.37.2",
+  "call": "podcasts-feed",
+  "request": {
+    "method": "POST",
+    "path": "/api/podcasts/feed",
+    "query": {},
+    "headers": {
+      "accept": "application/json",
+      "authorization": "Bearer <token>",
+      "content-type": "application/json"
+    },
+    "body": {
+      "json": {
+        "rssFeed": "https://feeds.acast.com/public/shows/7db8dbf2-4b79-4d64-892a-d0d87f255834"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "podcast": {
+          "metadata": {
+            "image": "https://assets.pippa.io/shows/611e679406c05edcf9f4089c/show-cover.png",
+            "categories": [
+              "History",
+              "Education",
+              "Society & Culture:Documentary"
+            ],
+            "feedUrl": "https://feeds.acast.com/public/shows/7db8dbf2-4b79-4d64-892a-d0d87f255834",
+            "description": "Cut by the recorder: show notes name third-party sites.",
+            "descriptionPlain": "Cut by the recorder: show notes name third-party sites.",
+            "type": "serial",
+            "title": "Not What You Thought You Knew",
+            "language": "en",
+            "explicit": "false",
+            "author": "HISTORY",
+            "pubDate": null
+          },
+          "episodes": []
+        }
+      }
+    }
+  }
+}

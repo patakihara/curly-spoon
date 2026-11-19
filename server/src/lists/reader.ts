@@ -25,7 +25,8 @@ import { Refusal } from '../route.js';
 import { artOf, artUrl } from '../routes/art.js';
 import { entry } from '../routes/library.js';
 import { refusalFor, type UpstreamAccess } from '../routes/play.js';
-import { addPlayedClaims } from '../store/claims.js';
+import { addPlayedClaims, unfollowed } from '../store/claims.js';
+import { personalView } from '../library/personal.js';
 import type { Db } from '../store/connection.js';
 import * as store from '../store/lists.js';
 import { streamedTrack } from '../store/streamedTracks.js';
@@ -276,13 +277,22 @@ function listeningItem(r: Reader, row: StoredRow): ListItem {
   };
 }
 
-/** A digest's shows the person may open: every one for The Digest, by title; else its own. */
+/**
+ * A digest's shows the person may open: every one they follow for The Digest, by title; else its
+ * own, less any they unfollowed (unless they see everyone's library, where every show is followed).
+ */
 export function digestShows(r: Reader, list: store.StoredList): StoredRow[] {
-  return list.theDigest
-    ? subscribedShows(r.db, r.userId)
-        .filter((row) => opens(r, row))
-        .sort((a, b) => byTitle.compare(a.title, b.title))
-    : reachable(r, list.items).filter((row) => row.kind === 'show');
+  if (list.theDigest) {
+    return subscribedShows(r.db, r.userId)
+      .filter((row) => opens(r, row))
+      .sort((a, b) => byTitle.compare(a.title, b.title));
+  }
+  const everyone = personalView(r.db, r.userId).everyone;
+  return reachable(r, list.items).filter(
+    (row) =>
+      row.kind === 'show' &&
+      (everyone || !unfollowed(r.db, r.userId, { source: row.source, id: row.id })),
+  );
 }
 
 /** A digest's episodes now, in its order: its shows' new ones the person has not played. */

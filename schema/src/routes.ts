@@ -69,6 +69,7 @@ import {
 import {
   SearchAlbumParams,
   SearchPlaylistParams,
+  SearchShowParams,
   SearchBookParams,
   SearchQuery,
   SearchResults,
@@ -575,6 +576,30 @@ export const getItem = {
   query: ItemQuery,
 } as const satisfies Route;
 
+export const followShow = {
+  method: 'PUT',
+  path: '/api/subscriptions/{ref}',
+  operationId: 'followShow',
+  summary: 'Follow a show the household holds: it joins your library and The Digest',
+  responseDescription:
+    'You follow the show; 404 for anything but an indexed show. No upstream is asked.',
+  response: Ok,
+  access: 'member',
+  params: ItemParams,
+} as const satisfies Route;
+
+export const unfollowShow = {
+  method: 'DELETE',
+  path: '/api/subscriptions/{ref}',
+  operationId: 'unfollowShow',
+  summary: 'Unfollow a show: it leaves your library and your digests, for you alone',
+  responseDescription:
+    'You no longer follow the show, and a play read from Audiobookshelf does not bring it back; it stays in the household for everyone else. 404 for anything but an indexed show. No upstream is asked.',
+  response: Ok,
+  access: 'member',
+  params: ItemParams,
+} as const satisfies Route;
+
 export const mediaArt = {
   method: 'GET',
   path: '/api/media/{ref}/art',
@@ -649,6 +674,19 @@ export const searchPlaylistArt = {
   response: ImageBytes,
   access: 'member',
   params: SearchPlaylistParams,
+  query: ArtQuery,
+  stream: 'image',
+} as const satisfies Route;
+
+export const searchShowArt = {
+  method: 'GET',
+  path: '/api/search/shows/{itunesId}/art',
+  operationId: 'getSearchShowArt',
+  summary: "The cover of a podcast iTunes' search found, from Apple's image hosts",
+  responseDescription: 'The image, as Apple holds it.',
+  response: ImageBytes,
+  access: 'member',
+  params: SearchShowParams,
   query: ArtQuery,
   stream: 'image',
 } as const satisfies Route;
@@ -829,12 +867,15 @@ export const routes: readonly Route[] = [
   listLibrary,
   getFeed,
   getItem,
+  followShow,
+  unfollowShow,
   mediaArt,
   getSearchSuggest,
   getSearch,
   searchBookArt,
   searchAlbumArt,
   searchPlaylistArt,
+  searchShowArt,
   getLyrics,
   listLists,
   createList,

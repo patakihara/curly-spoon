@@ -237,17 +237,40 @@ export default function Search({ data }) {
               </Each>
             </Each>
             <Each of={data.outside.podcasts} as="show">
-              <ResultRow
-                title={show.title}
-                meta={show.meta}
-                image={show.image}
-                divider
-                trailing={
-                  <Button variant="secondary" size="sm">
-                    {show.action}
-                  </Button>
-                }
-              />
+              <Each of={show.asking} as="asking">
+                <ResultRow
+                  title={asking.title}
+                  meta={asking.meta}
+                  image={asking.image}
+                  status={asking.status}
+                  tone={asking.tone}
+                  divider
+                  trailing={
+                    <Button variant="secondary" size="sm" onClick={<Request ref={asking.ref} />}>
+                      {asking.action}
+                    </Button>
+                  }
+                />
+              </Each>
+              <Each of={show.follows} as="follows">
+                <ResultRow
+                  title={follows.title}
+                  meta={follows.meta}
+                  image={follows.image}
+                  status={follows.status}
+                  tone={follows.tone}
+                  onClick={<Open page="show" ref={follows.item} />}
+                  divider
+                  trailing={
+                    <FollowButton
+                      size="sm"
+                      following={follows.following}
+                      labels={follows.subscribe}
+                      onChange={<Follow ref={follows.item} />}
+                    />
+                  }
+                />
+              </Each>
             </Each>
           </Section>
         </When>

@@ -12,6 +12,7 @@ import { frame as podcastsFrame } from '../generated/pages/Podcasts';
 import Music from '../generated/pages/Music';
 import Queue from '../generated/pages/Queue';
 import { frame as searchFrame } from '../generated/pages/Search';
+import { frame as showFrame } from '../generated/pages/Show';
 import { drafts, SETTLE_MS } from '../query';
 import { type Access, type AccessStore } from './access';
 import { PageDepsContext, type PageDeps } from './deps';
@@ -272,6 +273,31 @@ describe('[M2.sorting] a library home before its list answers', () => {
   });
 });
 
+describe('[M3.podcasts] a show’s subscribe control given its data', () => {
+  /** The opening tag of the button whose words end on `label`. */
+  const button = (html: string, label: string) =>
+    html
+      .split('<button')
+      .map((part) => part.slice(0, part.indexOf('</button>')))
+      .find((part) => part.replace(/<[^>]*>/g, '').endsWith(label))
+      ?.split('>')[0] ?? '';
+  const show = (following: boolean) => ({ ...showFrame.placeholder, ref: 'abs:s1', following });
+
+  it('follows or unfollows the show for a member, in the words of where they stand', () => {
+    const followed = renderAt('/podcasts/abs:s1', deps('member', { show: show(true) }).given);
+    expect(button(followed, 'Subscribed')).not.toBe('');
+    expect(button(followed, 'Subscribed')).not.toContain('disabled');
+    const not = renderAt('/podcasts/abs:s1', deps('member', { show: show(false) }).given);
+    expect(button(not, 'Subscribe')).not.toBe('');
+    expect(button(not, 'Subscribe')).not.toContain('disabled');
+  });
+
+  it('draws it disabled on the canvas, where nothing follows', () => {
+    const html = renderAt('/podcasts/abs:s1', deps('canvas', { show: show(true) }).given);
+    expect(button(html, 'Subscribed')).toContain('disabled');
+  });
+});
+
 describe('[M2.sorting] a show asked an order it does not know', () => {
   it('[M2.sorting] asks the API for none and names the show’s own order', async () => {
     const asked: URL[] = [];
@@ -293,6 +319,7 @@ describe('[M2.sorting] a show asked an order it does not know', () => {
           episodes: [],
           tracks: [],
           sort: 'newest',
+          following: true,
           request: null,
         };
         return url.pathname.startsWith('/api/items/')

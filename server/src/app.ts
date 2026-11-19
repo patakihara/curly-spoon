@@ -22,6 +22,7 @@ import { bookmarkRoutes } from './routes/bookmarks.js';
 import { deviceRoutes } from './routes/devices.js';
 import { feedRoutes } from './routes/feed.js';
 import { itemRoutes } from './routes/items.js';
+import { subscriptionRoutes } from './routes/subscriptions.js';
 import { libraryRoutes } from './routes/library.js';
 import { type ListImports, listRoutes } from './routes/lists.js';
 import type { Clock } from './adapters/musicbrainz/client.js';
@@ -39,6 +40,7 @@ import { AutoKeep } from './music/autoKeep.js';
 import { requestRoutes } from './routes/requests.js';
 import { MOST_LIVE_REQUESTS } from './store/requests.js';
 import { searchRoutes } from './routes/search.js';
+import type { ShowCatalogue } from './search/podcasts.js';
 import type { SpotifyPlaylistSource } from './search/playlists.js';
 import { sessionRoutes } from './routes/sessions.js';
 import { settingsRoutes } from './routes/settings.js';
@@ -90,6 +92,8 @@ export interface BuildAppOptions {
   bookCatalogue?: BookCatalogue;
   /** What Search lists of the albums the library lacks, while albums can be requested. */
   albumCatalogue?: AlbumCatalogue;
+  /** What Search lists of podcasts, while shows can be requested. */
+  showCatalogue?: ShowCatalogue;
   /** How transcodes are held open and their segments waited for. */
   playback?: PlaybackOptions;
   /** Songs from outside the library. Null or absent, a streamed ref is not linked. */
@@ -267,6 +271,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     // With no steps registered, no step ever runs against this.
     stepTimeoutMs: options.requests?.stepTimeoutMs ?? 0,
     maxLive: options.requests?.maxLive ?? MOST_LIVE_REQUESTS,
+    ...(options.showCatalogue === undefined ? {} : { shows: options.showCatalogue }),
   };
   playRoutes(app, {
     db,
@@ -303,6 +308,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     music: options.music ?? null,
     albumRequests: requestDeps.steps.has('album'),
   });
+  subscriptionRoutes(app, { db, now: options.now ?? Date.now });
   const imports = listImports(options, app);
   listRoutes(app, {
     db,
@@ -326,6 +332,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
   const cover = spotify?.cover?.bind(spotify);
   searchRoutes(app, {
     db,
+    upstreams,
     now: options.now ?? Date.now,
     music: options.music ?? null,
     // A playlist row is listed only while importing could take its tap.
@@ -339,6 +346,9 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
       : {}),
     ...(options.albumCatalogue !== undefined && options.requests?.steps.has('album') === true
       ? { albumCatalogue: options.albumCatalogue }
+      : {}),
+    ...(options.showCatalogue !== undefined && options.requests?.steps.has('podcast') === true
+      ? { shows: options.showCatalogue }
       : {}),
   });
   settingsRoutes(app, { db, sessions, now: options.now ?? Date.now });

@@ -230,6 +230,7 @@ data class ItemDetail(
     val tracks: List<ItemTrack>,
     val episode: ItemEpisodeAbout? = null,
     val sort: EpisodeOrder? = null,
+    val following: Boolean? = null,
     val request: RequestRef?,
 )
 
@@ -242,6 +243,7 @@ data class ItemEpisode(
     val duration: Double?,
     val progress: Double?,
     val finished: Boolean,
+    val absent: Boolean,
 )
 
 @Serializable
@@ -884,6 +886,12 @@ enum class RequestFailure {
     CANCELLED_UPSTREAM,
     @SerialName("wrongRelease")
     WRONG_RELEASE,
+    @SerialName("privateAddress")
+    PRIVATE_ADDRESS,
+    @SerialName("noPodcastLibrary")
+    NO_PODCAST_LIBRARY,
+    @SerialName("feedUnreachable")
+    FEED_UNREACHABLE,
 }
 
 @Serializable
@@ -893,6 +901,7 @@ data class RequestIds(
     val mbid: String? = null,
     val feedUrl: String? = null,
     val youtubeMusicId: String? = null,
+    val itunesId: String? = null,
 )
 
 @Serializable
@@ -1074,10 +1083,23 @@ data class SearchResults(
     val results: List<SearchResult>,
     val books: List<SearchBook>,
     val albums: List<SearchAlbum>,
+    val podcasts: List<SearchShow>,
     val songs: List<SearchSong>,
     val playlists: List<SearchPlaylist>,
     val streaming: StreamingState,
     val hasRequests: Boolean,
+)
+
+@Serializable
+data class SearchShow(
+    val ref: RequestRef,
+    val title: String,
+    val host: String?,
+    val episodes: Long?,
+    val art: String?,
+    val status: RequestStatus?,
+    val item: MediaRef?,
+    val following: Boolean,
 )
 
 @Serializable

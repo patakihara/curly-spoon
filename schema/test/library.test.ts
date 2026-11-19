@@ -213,6 +213,7 @@ describe('an item page', () => {
       ref: show,
       kind: 'show',
       sort: 'oldest',
+      following: false,
       ...header,
       progress: null,
       duration: null,
@@ -226,11 +227,30 @@ describe('an item page', () => {
           duration: 3120,
           progress: 0.4,
           finished: false,
+          absent: true,
         },
       ],
       tracks: [],
     };
     expect(ItemDetail.parse(page)).toEqual(page);
+  });
+
+  it('[M3.podcasts/b] says whether you follow a show on its page alone', () => {
+    const show = {
+      ref: { source: 'abs', id: 's1' },
+      kind: 'show',
+      sort: 'newest',
+      ...header,
+      progress: null,
+      duration: null,
+      chapters: [],
+      episodes: [],
+      tracks: [],
+    };
+    expect(ItemDetail.safeParse({ ...show, following: true }).success).toBe(true);
+    expect(ItemDetail.safeParse(show).success).toBe(false);
+    const book = { ...show, kind: 'book', sort: undefined, following: false };
+    expect(ItemDetail.safeParse(book).success).toBe(false);
   });
 
   it("holds an album's tracks, numbered, with their artist", () => {

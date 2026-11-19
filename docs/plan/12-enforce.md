@@ -53,7 +53,7 @@ part: How it's built
 
 Anything you say about Auralis takes one fixed path, each step safe to interrupt.
 
-1. **Filed.** One file per idea in `docs/inbox/`: your words verbatim, where it came from, and the date. The session replies `Noted: <title>` (in the thread, for a comment) and carries on. Filing never touches the plan or the work in progress, unless you say "do it now", answer one of its outbox items, or tell the session itself to stop or pause.
+1. **Filed.** One file per idea in `docs/inbox/`: your words verbatim, where it came from, and the date. The session replies `Noted: <title>` (in the thread, for a comment) and carries on. Filing never touches the plan or the work in progress, unless you say "do it now", answer one of its outbox items, or tell the session to stop or pause.
 2. **Sorted, at set moments:** each milestone demo, when you say "let's go through my ideas", or once about ten are waiting. The orchestrator gives each idea to a fresh subagent that weighs it against the whole plan:
    - **new work**: a new plan item, in the milestone where it belongs (usually a later one; the milestone in progress only takes small fixes to what it builds, or anything you pulled in);
    - **a change** to an existing item: that item is rewritten in place, including its "done when";
@@ -71,7 +71,7 @@ Anything you say about Auralis takes one fixed path, each step safe to interrupt
 **The session doing the work decides almost everything.** The outbox (`docs/outbox/`) holds only what needs you.
 
 - **Five kinds only:** a product call that passes your test ("would she have an opinion, and does the answer change what she gets?"); a name; anything published or shared beyond the machines; anything destructive or irreversible; something only you can physically do (try a milestone build, sign off, export YouTube cookies, test in the car).
-- **Every item carries its default**, and work goes ahead on it: a working name gets used until you rename it, a product call gets the session's best choice, yours to overturn. Only irreversible or outward-facing actions wait for your answer.
+- **Every item carries its default**, and work goes ahead on it: a working name is used until you rename it, a product call gets the session's best choice, yours to overturn. Only irreversible or outward-facing actions wait for your answer.
 - **Kept small by checks.** An item without its kind and default is rejected. Over about five open items means sessions over-ask, and the session-start summary says so. Answered items are deleted.
 - **Decisions made for you are visible, not queued.** They're written into the plan, their commits carrying a `Decision:` line. The session-start summary and this page list recent ones; overruling one is saying so.
 - **Where you see it:** a "waiting on you" box at the top of this page, in every session's opening summary, and as a phone notification when an item is time-sensitive.

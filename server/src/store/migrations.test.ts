@@ -124,12 +124,13 @@ describe('the migration that lets a request fail stalled', () => {
 describe('[M3.albums] the migration that lets a request fail with the wrong release', () => {
   const at = 1_000;
   const everything = 'SELECT * FROM requests ORDER BY id';
-  function withRequestsBefore() {
+  /** Three album requests, with their people and keys, made before migration `until`, then upgraded. */
+  function withRequestsBefore(until = 29) {
     const db = new Database(':memory:');
     db.pragma('foreign_keys = ON');
     runMigrations(
       db,
-      migrations.filter((m) => m.id < 29),
+      migrations.filter((m) => m.id < until),
     );
     db.prepare(
       `INSERT INTO users (id, username, role, created_at, updated_at)
@@ -254,6 +255,35 @@ describe('[M3.albums] the migration that lets a request fail with the wrong rele
     expect(db.prepare(`SELECT id FROM requests WHERE id = 'r2'`).get()).toBeUndefined();
     expect(db.prepare(`SELECT 1 FROM arrived_keys WHERE request_id = 'r2'`).get()).toBeUndefined();
     db.close();
+  });
+
+  describe('[M3.podcasts] the migrations that let a podcast request fail privateAddress, noPodcastLibrary or feedUnreachable', () => {
+    it('[M3.podcasts] keeps every request made before them, who is on it, and its keys', () => {
+      const { db, before } = withRequestsBefore(37);
+      expect(db.prepare(everything).all()).toEqual(before);
+      expect(db.prepare('SELECT request_id FROM request_people ORDER BY request_id').all()).toEqual(
+        [{ request_id: 'r1' }, { request_id: 'r2' }, { request_id: 'r3' }],
+      );
+      expect(db.prepare('SELECT request_id FROM request_keys ORDER BY request_id').all()).toEqual([
+        { request_id: 'r1' },
+        { request_id: 'r3' },
+      ]);
+      expect(db.pragma('foreign_key_check')).toEqual([]);
+      db.close();
+    });
+
+    it('[M3.podcasts] lets an upgraded request fail with each podcast reason, and still refuses one nobody knows', () => {
+      const { db } = withRequestsBefore(37);
+      const fail = db.prepare(
+        `UPDATE requests SET status = 'failed', failed_step = 'searching', reason = ?, progress = NULL
+         WHERE id = 'r1'`,
+      );
+      for (const reason of ['privateAddress', 'noPodcastLibrary', 'feedUnreachable']) {
+        expect(fail.run(reason).changes, reason).toBe(1);
+      }
+      expect(() => fail.run('feed down')).toThrow();
+      db.close();
+    });
   });
 });
 

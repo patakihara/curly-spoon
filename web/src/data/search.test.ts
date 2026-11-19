@@ -3,6 +3,7 @@ import {
   type SearchBook,
   type SearchResult,
   SearchResults,
+  type SearchShow,
   type SearchSong,
   SuggestionList,
 } from '@auralis/schema';
@@ -116,6 +117,7 @@ describe('[M3.requests] the way to Requests from Search', () => {
       books: [],
       albums: [],
       songs: [],
+      podcasts: [],
       playlists: [],
       streaming: 'ok',
       hasRequests,
@@ -148,6 +150,7 @@ describe('search’s data', () => {
       books: [],
       albums: [],
       songs: [],
+      podcasts: [],
       playlists: [],
       streaming: 'ok',
       hasRequests: false,
@@ -170,6 +173,7 @@ describe('search’s data', () => {
       books: [],
       albums: [],
       songs: [],
+      podcasts: [],
       playlists: [],
       streaming: 'ok',
       hasRequests: false,
@@ -196,6 +200,7 @@ describe('search’s data', () => {
         books: [],
         albums: [],
         songs: [],
+        podcasts: [],
         playlists: [],
         streaming: 'ok',
         hasRequests: false,
@@ -305,6 +310,7 @@ describe('what search asks of the server', () => {
               books: [],
               albums: [],
               songs: [],
+              podcasts: [],
               playlists: [],
               streaming: 'ok',
               hasRequests: false,
@@ -457,6 +463,7 @@ describe('[M3.books] a book the library lacks, in Search', () => {
       books,
       albums: [],
       songs: [],
+      podcasts: [],
       playlists: [],
       streaming: 'ok',
       hasRequests: false,
@@ -582,6 +589,7 @@ describe('[M3.ytmusic] songs from outside the library', () => {
     books: [],
     albums: [],
     songs: [song],
+    podcasts: [],
     playlists: [],
     streaming: 'ok',
     hasRequests: false,
@@ -737,6 +745,7 @@ describe('[M3.keep] keeping a song from YouTube Music', () => {
     books: [],
     albums: [],
     songs,
+    podcasts: [],
     playlists: [],
     streaming: 'ok',
     hasRequests: false,
@@ -870,6 +879,7 @@ describe('[M3.albums] an album the library lacks, in Search', () => {
       books: [],
       albums,
       songs: [],
+      podcasts: [],
       playlists: [],
       streaming: 'ok',
       hasRequests: false,
@@ -984,6 +994,7 @@ describe('[M3.spotify] a pasted Spotify playlist link in Search', () => {
       results: [],
       books: [],
       albums: [],
+      podcasts: [],
       songs: [],
       playlists,
       streaming: 'ok',
@@ -1011,5 +1022,124 @@ describe('[M3.spotify] a pasted Spotify playlist link in Search', () => {
         }),
     });
     expect((await loadSearchPage(client, { q: pasted.from }, empty)).found).toBe(true);
+  });
+});
+
+describe('[M3.podcasts] a podcast in Search', () => {
+  const ref = {
+    medium: 'podcast' as const,
+    target: {
+      title: 'Maintenance Phase',
+      creator: 'Aubrey Gordon & Michael Hobbes',
+      ids: { feedUrl: 'https://feeds.example.org/maintenance', itunesId: '1511103325' },
+    },
+  };
+  const show = (over: Partial<SearchShow> = {}): SearchShow => ({
+    ref,
+    title: 'Maintenance Phase',
+    host: 'Aubrey Gordon & Michael Hobbes',
+    episodes: 162,
+    art: '/api/search/podcasts/1511103325/art',
+    status: null,
+    item: null,
+    following: false,
+    ...over,
+  });
+  const answered = (...podcasts: SearchShow[]) =>
+    SearchResults.parse({
+      query: 'maintenance phase',
+      results: [],
+      books: [],
+      albums: [],
+      songs: [],
+      podcasts,
+      playlists: [],
+      streaming: 'ok',
+      hasRequests: false,
+    });
+  const rows = (...shows: SearchShow[]) => searchData(answered(...shows), empty).outside.podcasts;
+  const subscribe = { on: 'Subscribed', off: 'Subscribe' };
+
+  it('offers a show the household lacks as Subscribe, asking for it with the request its ref stands for', () => {
+    const [row] = rows(show());
+    expect(row?.follows).toEqual([]);
+    expect(row?.asking[0]).toMatchObject({
+      title: 'Maintenance Phase',
+      meta: 'Podcast · Aubrey Gordon & Michael Hobbes · 162 episodes',
+      status: null,
+      tone: null,
+      action: 'Subscribe',
+    });
+    expect(row?.asking[0]?.image).toContain('/api/search/podcasts/1511103325/art');
+    expect(requestOf(row?.asking[0]?.ref ?? '')).toEqual(ref);
+  });
+
+  it('leaves out what it does not know of a show, and counts one episode as one', () => {
+    expect(rows(show({ host: null, episodes: null, art: null }))[0]?.asking[0]).toMatchObject({
+      meta: 'Podcast',
+      image: '',
+    });
+    expect(rows(show({ episodes: 1 }))[0]?.asking[0]?.meta).toBe(
+      'Podcast · Aubrey Gordon & Michael Hobbes · 1 episode',
+    );
+  });
+
+  it('draws a show the household holds as one that opens its page and follows from its own button', () => {
+    const held = { source: 'abs' as const, id: 'li_show' };
+    const [unfollowed] = rows(show({ item: held, following: false }));
+    expect(unfollowed?.asking).toEqual([]);
+    expect(unfollowed?.follows[0]).toMatchObject({
+      title: 'Maintenance Phase',
+      item: 'abs:li_show',
+      following: false,
+      status: null,
+      tone: null,
+      subscribe,
+    });
+    const [followed] = rows(show({ item: held, following: true, status: 'inLibrary' }));
+    expect(followed?.follows[0]).toMatchObject({ item: 'abs:li_show', following: true });
+  });
+
+  it('draws a request on its way with its status and no button to ask again', () => {
+    const [row] = rows(show({ status: 'importing' }));
+    expect(row?.asking[0]).toMatchObject({ status: 'Importing', tone: 'progress' });
+    expect(requestOf(row?.asking[0]?.ref ?? '')).toBeNull();
+  });
+
+  it('draws a failed request as failed, its button asking again', () => {
+    const [row] = rows(show({ status: 'failed' }));
+    expect(row?.asking[0]).toMatchObject({ status: 'Failed', tone: 'error', action: 'Subscribe' });
+    expect(requestOf(row?.asking[0]?.ref ?? '')).toEqual(ref);
+  });
+
+  it('says on its row that a tap did not go through', () => {
+    const data = searchData(answered(show()), empty);
+    const said = searchRequestFailed(data, data.outside.podcasts[0]!.asking[0]!.ref);
+    expect(said.outside.podcasts[0]!.asking[0]).toMatchObject({
+      status: 'Request failed',
+      tone: 'error',
+      action: 'Subscribe',
+    });
+    expect(said.errors).toEqual([]);
+  });
+
+  it('counts shows as found, and looks again while one is on its way', async () => {
+    const loaded = (...shows: SearchShow[]) =>
+      loadSearchPage(
+        createApiClient({
+          baseUrl: 'http://auralis.test',
+          fetch: async () => Response.json(answered(...shows)),
+        }),
+        { q: 'maintenance phase' },
+        empty,
+      );
+    expect((await loaded(show())).found).toBe(true);
+    expect((await loaded(show())).moving).toBe(false);
+    expect((await loaded(show({ status: 'searching' }))).moving).toBe(true);
+    expect((await loaded(show({ status: 'failed' }))).moving).toBe(false);
+    expect(
+      (await loaded(show({ status: 'inLibrary', item: { source: 'abs' as const, id: 'x' } })))
+        .moving,
+    ).toBe(false);
   });
 });

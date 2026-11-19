@@ -13,7 +13,8 @@
  * `<Act ref verb>` hands a request's verb to `useAct()` (`web/src/act`) the same way, and a
  * `<Request ref>` a control's tap to `useRequest()` (`web/src/request`), and a
  * `<Toggle setting>` a switch's change to `useToggle()` (`web/src/toggle`), and an `<Import from>` a
- * control's tap to `useImport()` (`web/src/import`); a back layer or subheader holding one, or an
+ * control's tap to `useImport()` (`web/src/import`), and a `<Follow ref>` a subscribe control's
+ * change to `useFollow()` (`web/src/follow`); a back layer or subheader holding one, or an
  * `<Open>` and so the router's `useNavigate()`, is drawn as a component of its own, since the
  * shell calls the frame's parts outside any page.
  */
@@ -130,6 +131,10 @@ const retries = (node: PageTree) =>
 /** Whether an element imports an outside playlist, an `<Import from>` in a handler prop. */
 const imports = (node: PageTree) =>
   node.kind === 'element' && Object.values(node.props).some((v) => v.kind === 'import');
+
+/** Whether an element follows a show, a `<Follow ref>` in a handler prop. */
+const follows = (node: PageTree) =>
+  node.kind === 'element' && Object.values(node.props).some((v) => v.kind === 'follow');
 
 /** Whether an element holds the search query, a `<Query />` in one of its handler props. */
 const queries = (node: PageTree) =>
@@ -292,6 +297,12 @@ function propLines(
     const from = value.params['from'];
     if (from === undefined) throw new Error(`${owner}.${name}: Import needs from={…}`);
     return [`${name}={importFrom(${pathCode(from)})}`];
+  }
+  // Following goes to what the page is given, none while nothing can follow this show.
+  if (value.kind === 'follow') {
+    const ref = value.params['ref'];
+    if (ref === undefined) throw new Error(`${owner}.${name}: Follow needs ref={…}`);
+    return [`${name}={follow(${pathCode(ref)})}`];
   }
   // A switch's change goes to the toggles the page is given, none while nothing sets the setting.
   if (value.kind === 'toggle') return [`${name}={toggle('${value.setting}')}`];
@@ -742,6 +753,12 @@ export function generateWebPage(
     }
   }
   const usesImport = some(root, imports);
+  for (const part of [back, subheader]) {
+    if (part !== undefined && some(part, follows)) {
+      throw new Error(`${id}: Follow goes in the page's content, not its back layer or subheader`);
+    }
+  }
+  const usesFollow = some(root, follows);
   const actsBound = some(
     root,
     (node) =>
@@ -828,6 +845,7 @@ export function generateWebPage(
     ...(usesToggle ? ["import { useToggle } from '../../toggle';"] : []),
     ...(usesRetry ? ["import { useRetry } from '../../retry';"] : []),
     ...(usesImport ? ["import { useImport } from '../../import';"] : []),
+    ...(usesFollow ? ["import { useFollow } from '../../follow';"] : []),
     `import { ${[...used].sort().join(', ')} } from '../ui/index.js';`,
     '',
     `const placeholder = ${JSON.stringify(placeholder, null, 2)};`,
@@ -900,6 +918,7 @@ export function generateWebPage(
     ...(usesToggle ? ['  const toggle = useToggle();'] : []),
     ...(usesRetry ? ['  const retry = useRetry();'] : []),
     ...(usesImport ? ['  const importFrom = useImport();'] : []),
+    ...(usesFollow ? ['  const follow = useFollow();'] : []),
     ...(usesPlaying
       ? ['  const playing = usePlaying();', '  if (playing === null) return null;']
       : []),

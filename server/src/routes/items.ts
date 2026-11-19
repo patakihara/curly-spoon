@@ -10,6 +10,9 @@
  *   serial, newest first otherwise), or the other way round when that order is asked (`?sort`),
  *   undated and unnumbered episodes last either way, each with how far through the person is and whether they finished it, from their
  *   `GET /api/me` and what Auralis holds for them. The order asked is the page's alone: autoplay and every list keep the show's.
+ *   It says whether the person follows the show: it is in their own library, or they have begun it
+ *   on Audiobookshelf and not unfollowed it, or they see everyone's library. While they do not,
+ *   every episode is greyed out (`absent`); playing one follows the show (`routes/play.ts`).
  * - An album's page: its tracks as the index holds them, in disc and track order, and while albums
  *   can be requested, the request for its lossless copy when every track is a kept song
  *   (`albums/catalogue.ts`).
@@ -46,6 +49,7 @@ import { signedIn } from './auth.js';
 import { entry } from './library.js';
 import { type Music, TrackRefused } from '../music/index.js';
 import { refusalFor, type UpstreamAccess } from './play.js';
+import { follows } from '../library/follows.js';
 
 /** Pixel widths the art route asks the upstream for, by size. */
 export const ART_WIDTH: Record<ArtSize, number> = { small: 192, medium: 512, large: 1024 };
@@ -57,7 +61,14 @@ type Abs = NonNullable<Upstreams['abs']>;
 
 /** A book, show, episode or album the person may open, with what was learned checking. */
 type Openable =
-  | { row: StoredRow; kind: 'book' | 'show'; abs: Abs; access: AbsAccess }
+  | {
+      row: StoredRow;
+      kind: 'book' | 'show';
+      abs: Abs;
+      access: AbsAccess;
+      /** Whether the person follows it, for a show. */
+      following: boolean;
+    }
   | { row: StoredRow; kind: 'episode'; show: StoredRow; abs: Abs; access: AbsAccess }
   | { row: StoredRow; kind: 'album'; jellyfin: NonNullable<Upstreams['jellyfin']> };
 
@@ -88,7 +99,13 @@ function bookChapters(
 const ownOrder = (show: StoredRow): EpisodeOrder =>
   show.episodeOrder === 'serial' ? 'oldest' : 'newest';
 
-function episodes(db: Db, show: StoredRow, access: AbsAccess, sort: EpisodeOrder): ItemEpisode[] {
+function episodes(
+  db: Db,
+  show: StoredRow,
+  access: AbsAccess,
+  sort: EpisodeOrder,
+  absent: boolean,
+): ItemEpisode[] {
   return episodesInOrder(db, show.id, sort).map((row) => {
     const { progress, finished } = access.standing(row.id);
     return {
@@ -99,6 +116,7 @@ function episodes(db: Db, show: StoredRow, access: AbsAccess, sort: EpisodeOrder
       duration: row.duration,
       progress,
       finished,
+      absent,
     };
   });
 }
@@ -178,7 +196,8 @@ export function itemRoutes(
       if (acting === null) throw notFound();
       const access = withHeld(db, user.id, own, reach.household('abs') !== null)!;
       if (show !== undefined) return { row, kind: 'episode', show, abs: acting.client, access };
-      return { row, kind: row.kind as 'book' | 'show', abs: acting.client, access };
+      const following = follows(db, user.id, { source: row.source, id: row.id }, own);
+      return { row, kind: row.kind as 'book' | 'show', abs: acting.client, access, following };
     } catch (error) {
       if (error instanceof Refusal) throw error;
       return refusalFor(error);
@@ -225,8 +244,16 @@ export function itemRoutes(
     }
     if (item.kind === 'show') {
       const sort = query.sort ?? ownOrder(row);
-      const list = episodes(db, row, item.access, sort);
-      return { ...entry(row, 'show', null), duration: null, ...none, episodes: list, sort };
+      const { following } = item;
+      const list = episodes(db, row, item.access, sort, !following);
+      return {
+        ...entry(row, 'show', null),
+        duration: null,
+        ...none,
+        episodes: list,
+        sort,
+        following,
+      };
     }
     if (item.kind === 'episode') return episodePage(item);
     const detail = await item.abs.getBookDetail(row.id).catch(refusalFor);

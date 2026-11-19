@@ -153,6 +153,29 @@ export const SearchPlaylist = z
   .openapi('SearchPlaylist');
 export type SearchPlaylist = z.infer<typeof SearchPlaylist>;
 
+/**
+ * A podcast found by iTunes' search, or by a pasted feed address, as raw values the apps word
+ * themselves: `ref` is what a request for it takes, `host` who makes it, `episodes` how many iTunes
+ * counts (or the pasted feed holds). A show the household holds, by its feed or iTunes id, carries
+ * that show in `item`, `status` `inLibrary`, and whether the person follows it; following it is
+ * `PUT /subscriptions/{item}`, not a request. A show the household lacks has `status` where a request
+ * for it stands, null while there is none, and is not followed.
+ */
+export const SearchShow = z
+  .object({
+    ref: RequestRef,
+    title: z.string(),
+    host: z.string().nullable(),
+    episodes: z.number().int().nonnegative().nullable(),
+    art: ArtUrl.nullable(),
+    status: RequestStatus.nullable(),
+    /** The household's show this row names, held already or brought by a request. */
+    item: MediaRef.nullable(),
+    following: z.boolean(),
+  })
+  .openapi('SearchShow');
+export type SearchShow = z.infer<typeof SearchShow>;
+
 /** Whether songs from outside the library can play right now. */
 export const StreamingState = z.enum(['ok', 'unavailable']).openapi('StreamingState');
 export type StreamingState = z.infer<typeof StreamingState>;
@@ -165,15 +188,22 @@ export type SearchBookParams = z.infer<typeof SearchBookParams>;
 export const SearchAlbumParams = z.object({ mbid: z.string().uuid() });
 export type SearchAlbumParams = z.infer<typeof SearchAlbumParams>;
 
+/** A show row's cover, by its iTunes collection id. */
+export const SearchShowParams = z.object({ itunesId: z.string().regex(/^\d{1,20}$/) });
+export type SearchShowParams = z.infer<typeof SearchShowParams>;
+
 /** A playlist row's cover, by its Spotify image id (40 hex digits). */
 export const SearchPlaylistParams = z.object({ image: z.string().regex(/^[0-9a-f]{40}$/) });
 export type SearchPlaylistParams = z.infer<typeof SearchPlaylistParams>;
 
 /**
  * A search's results, best first, for the query as it was searched, the books and albums the
- * library lacks that the catalogues find for it, the songs that play straight away, and whether they
- * can now. A query that is a Spotify playlist link searches nothing else: it answers that playlist
- * alone in `playlists`, while it can be imported, and none when Spotify does not answer.
+ * library lacks that the catalogues find for it, the podcasts iTunes finds, the songs that play
+ * straight away, and whether they can now. A query that is a Spotify playlist link searches nothing
+ * else: it answers that playlist alone in `playlists`, while it can be imported, and none when
+ * Spotify does not answer. A query that is a feed address, while shows can be requested, searches
+ * nothing else either: it answers that show alone in `podcasts` once its feed is read from the
+ * public internet, and none otherwise.
  */
 export const SearchResults = z
   .object({
@@ -181,6 +211,7 @@ export const SearchResults = z
     results: z.array(SearchResult),
     books: z.array(SearchBook),
     albums: z.array(SearchAlbum),
+    podcasts: z.array(SearchShow),
     songs: z.array(SearchSong),
     playlists: z.array(SearchPlaylist),
     streaming: StreamingState,

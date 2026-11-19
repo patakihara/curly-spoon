@@ -1,7 +1,7 @@
 /**
  * Moving everything Auralis holds of one item onto another, as when an album's lossless track
  * replaces a kept song: queues, history, autoplay, radio, lists, played marks, held progress,
- * library claims, requests' results, radio seeds and the spoken queues a digest put aside. One call
+ * library claims, unfollowed shows, requests' results, radio seeds and the spoken queues a digest put aside. One call
  * is one transaction.
  *
  * Each place a reference lives is named below, and every other column that could hold one is named
@@ -37,6 +37,7 @@ export const REF_COLUMNS: readonly RefColumns[] = [
   { table: 'played_marks', source: 'source', id: 'upstream_id', keyed: true },
   { table: 'held_progress', source: 'source', id: 'item_id', keyed: true },
   { table: 'library_claims', source: 'source', id: 'item_id', keyed: true },
+  { table: 'show_unfollows', source: 'source', id: 'item_id', keyed: true },
   { table: 'requests', source: 'result_source', id: 'result_id' },
   { table: 'streamed_seeds', source: null, id: 'jellyfin_id', keyed: true },
 ];

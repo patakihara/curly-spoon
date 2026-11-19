@@ -587,6 +587,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/subscriptions/{ref}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Follow a show the household holds: it joins your library and The Digest */
+        put: operations["followShow"];
+        post?: never;
+        /** Unfollow a show: it leaves your library and your digests, for you alone */
+        delete: operations["unfollowShow"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/media/{ref}/art": {
         parameters: {
             query?: never;
@@ -690,6 +708,24 @@ export interface paths {
         options?: never;
         /** The cover of a Spotify playlist a pasted link named, from Spotify's image host */
         head: operations["getSearchPlaylistArtHead"];
+        patch?: never;
+        trace?: never;
+    };
+    "/api/search/shows/{itunesId}/art": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The cover of a podcast iTunes' search found, from Apple's image hosts */
+        get: operations["getSearchShowArt"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        /** The cover of a podcast iTunes' search found, from Apple's image hosts */
+        head: operations["getSearchShowArtHead"];
         patch?: never;
         trace?: never;
     };
@@ -832,7 +868,7 @@ export interface components {
             at: number;
         };
         /** @enum {string} */
-        RequestFailure: "noRelease" | "searchFailed" | "downloadFailed" | "downloadStalled" | "importFailed" | "notIndexed" | "cancelledUpstream" | "wrongRelease";
+        RequestFailure: "noRelease" | "searchFailed" | "downloadFailed" | "downloadStalled" | "importFailed" | "notIndexed" | "cancelledUpstream" | "wrongRelease" | "privateAddress" | "noPodcastLibrary" | "feedUnreachable";
         /** @enum {string} */
         QueueType: "music" | "spoken";
         /** @enum {string} */
@@ -891,6 +927,7 @@ export interface components {
             /** Format: uri */
             feedUrl?: string;
             youtubeMusicId?: string;
+            itunesId?: string;
         };
         RequestTarget: {
             title: string;
@@ -1290,6 +1327,7 @@ export interface components {
             duration: number | null;
             progress: number | null;
             finished: boolean;
+            absent: boolean;
         };
         ItemTrack: {
             ref: components["schemas"]["MediaRef"];
@@ -1318,6 +1356,7 @@ export interface components {
             tracks: components["schemas"]["ItemTrack"][];
             episode?: components["schemas"]["ItemEpisodeAbout"];
             sort?: components["schemas"]["EpisodeOrder"];
+            following?: boolean;
             request: components["schemas"]["RequestRef"] | null;
         };
         /** @enum {string} */
@@ -1371,6 +1410,16 @@ export interface components {
             item: components["schemas"]["MediaRef"] | null;
             kept: number;
         };
+        SearchShow: {
+            ref: components["schemas"]["RequestRef"];
+            title: string;
+            host: string | null;
+            episodes: number | null;
+            art: string | null;
+            status: components["schemas"]["RequestStatus"] | null;
+            item: components["schemas"]["MediaRef"] | null;
+            following: boolean;
+        };
         SearchSong: {
             ref: components["schemas"]["MediaRef"];
             title: string;
@@ -1393,6 +1442,7 @@ export interface components {
             results: components["schemas"]["SearchResult"][];
             books: components["schemas"]["SearchBook"][];
             albums: components["schemas"]["SearchAlbum"][];
+            podcasts: components["schemas"]["SearchShow"][];
             songs: components["schemas"]["SearchSong"][];
             playlists: components["schemas"]["SearchPlaylist"][];
             streaming: components["schemas"]["StreamingState"];
@@ -3473,6 +3523,104 @@ export interface operations {
             };
         };
     };
+    followShow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description You follow the show; 404 for anything but an indexed show. No upstream is asked. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Ok"];
+                };
+            };
+            /** @description The request does not parse, or was refused. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description No session. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Without the role this route needs, or sent from another site. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    unfollowShow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description You no longer follow the show, and a play read from Audiobookshelf does not bring it back; it stays in the household for everyone else. 404 for anything but an indexed show. No upstream is asked. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Ok"];
+                };
+            };
+            /** @description The request does not parse, or was refused. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description No session. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Without the role this route needs, or sent from another site. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     getMediaArt: {
         parameters: {
             query?: {
@@ -3919,6 +4067,100 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description The image, as Spotify holds it. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The request does not parse, or was refused. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No session. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Without the role this route needs, or sent from another site. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    getSearchShowArt: {
+        parameters: {
+            query?: {
+                size?: components["schemas"]["ArtSize"];
+            };
+            header?: never;
+            path: {
+                itunesId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The image, as Apple holds it. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/*": string;
+                };
+            };
+            /** @description The request does not parse, or was refused. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description No session. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Without the role this route needs, or sent from another site. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getSearchShowArtHead: {
+        parameters: {
+            query?: {
+                size?: components["schemas"]["ArtSize"];
+            };
+            header?: never;
+            path: {
+                itunesId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The image, as Apple holds it. */
             200: {
                 headers: {
                     [name: string]: unknown;

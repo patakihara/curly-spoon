@@ -46,6 +46,7 @@ import { replayFetch, standInsBeside } from '../src/adapters/http/replay.js';
 import { PLACEHOLDER, PLACEHOLDER_ORIGIN } from '../src/adapters/http/scrub.js';
 import { decodePart, signWithTestKey } from '../src/adapters/http/testSigningKey.js';
 import { parseFeed } from '../src/adapters/feed/client.js';
+import { ABS_PODCAST_CALLS } from '../src/adapters/record-podcasts.js';
 import { JellyfinClient } from '../src/adapters/jellyfin/client.js';
 import { type BuildAppOptions } from '../src/app.js';
 import { loadConfig } from '../src/config.js';
@@ -58,6 +59,7 @@ import { keepEveryTrack, standInAlbums } from './standInAlbums.js';
 import { type BookSource, standInBooks } from './standInBooks.js';
 import { standInMedia } from './standInMedia.js';
 import { type MusicSource, standInMusic } from './standInMusic.js';
+import { standInShows } from './standInShows.js';
 import { standInSpotify } from './standInSpotify.js';
 
 const ADAPTERS = fileURLToPath(new URL('../src/adapters/', import.meta.url));
@@ -85,6 +87,11 @@ export interface RecordedServerOptions {
   keptAlbum?: boolean;
   /** Spotify playlist import over the recorded All Out 80s and its searches; needs `music`. */
   spotify?: boolean;
+  /**
+   * Shows from iTunes' recorded searches, a show asked for arriving as the recorded show other than
+   * the one whose episode plays (`standInShows.ts`).
+   */
+  shows?: boolean;
 }
 
 export interface RecordedServer {
@@ -298,6 +305,18 @@ async function indexRecordedPages(
 }
 
 /** The titles of the books the index holds. */
+/** The recorded show other than `played`, the one a stand-in podcast request brings. */
+function otherShow(file: string, played: string): MediaRef {
+  const db = openDatabase(file);
+  try {
+    const other = topLevelOfKind(db, 'show').find(({ id }) => id !== played);
+    if (other === undefined) throw new Error('the recordings hold one show');
+    return { source: 'abs', id: other.id };
+  } finally {
+    db.close();
+  }
+}
+
 function heldTitles(file: string): string[] {
   const db = openDatabase(file);
   try {
@@ -459,6 +478,8 @@ export async function recordedServer(options: RecordedServerOptions = {}): Promi
     'progress-play',
     'progress-sync',
     'bookmark-delete-missing',
+    // A throwaway Audiobookshelf's subscribe calls, which answer for another library.
+    ...ABS_PODCAST_CALLS,
   ]);
   const absRecorded = recordingsOf('audiobookshelf');
   const replayed = absRecorded.filter((r) => !notReplayed.has(r.call));
@@ -483,6 +504,16 @@ export async function recordedServer(options: RecordedServerOptions = {}): Promi
   const deepInertia = fileURLToPath(
     new URL('../../web/public/art/deep-inertia.jpg', import.meta.url),
   );
+  const [playedShow = ''] = call(abs, 'episode-play')
+    .request.path.split('/')
+    .filter((_, i) => i === 3);
+  const shows =
+    options.shows === true
+      ? standInShows(recordingsOf('itunes'), {
+          art: deepInertia,
+          arrives: otherShow(database, playedShow),
+        })
+      : null;
   const server = await assembleServer(config, {
     fetch: byOrigin({
       [SIGN_ON_ISSUER]: signOn.fetch,
@@ -490,7 +521,11 @@ export async function recordedServer(options: RecordedServerOptions = {}): Promi
       [JELLYFIN_ORIGIN]: jellyfinFetch,
     }),
     logger: options.logger,
-    steps: standInMedia({ source: 'abs', id: multiFileId }),
+    steps: [
+      ...standInMedia({ source: 'abs', id: multiFileId }),
+      ...(shows === null ? [] : [shows.steps]),
+    ],
+    ...(shows === null ? {} : { showCatalogue: shows.catalogue }),
     bookCatalogue: standInBooks(
       options.bookSource ?? 'answers',
       recordingsOf('audible'),

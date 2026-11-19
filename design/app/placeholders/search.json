@@ -291,10 +291,36 @@
     ],
     "podcasts": [
       {
-        "title": "Salt & Signal",
-        "meta": "Podcast · 212 episodes · PodcastIndex",
-        "image": "/art/the-long-read.jpg",
-        "action": "Subscribe"
+        "asking": [
+          {
+            "title": "Salt & Signal",
+            "ref": "salt-and-signal",
+            "meta": "Podcast · Mira Holt · 212 episodes",
+            "image": "/art/signal-noise.jpg",
+            "status": null,
+            "tone": null,
+            "action": "Subscribe"
+          }
+        ],
+        "follows": []
+      },
+      {
+        "asking": [],
+        "follows": [
+          {
+            "title": "The Long Read",
+            "item": "the-long-read",
+            "meta": "Podcast · Nadia Berg · 212 episodes",
+            "image": "/art/the-long-read.jpg",
+            "status": null,
+            "tone": null,
+            "following": true,
+            "subscribe": {
+              "on": "Subscribed",
+              "off": "Subscribe"
+            }
+          }
+        ]
       }
     ]
   }

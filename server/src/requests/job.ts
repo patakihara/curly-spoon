@@ -37,7 +37,7 @@ import { randomUUID } from 'node:crypto';
 import type { MediaRef, RequestFailure, RequestMedium } from '@auralis/schema';
 import type { JobLog } from '../jobs/schedule.js';
 import { indexedRow, topLevelOf } from '../libraryIndex/store.js';
-import { addClaim, type ClaimReason } from '../store/claims.js';
+import { addClaim, type ClaimReason, followShow } from '../store/claims.js';
 import type { Db } from '../store/connection.js';
 import {
   clearHeld,
@@ -281,6 +281,21 @@ export const ARRIVAL_CLAIM: Record<RequestMedium, ClaimReason> = {
 };
 
 /**
+ * Claims what a person's request brought them. A show is followed, which also forgets an earlier
+ * unfollow of it: asking for a show again subscribes you again.
+ */
+export function claimArrival(
+  db: Db,
+  userId: string,
+  medium: RequestMedium,
+  held: MediaRef,
+  now: number,
+): void {
+  if (medium === 'podcast') followShow(db, userId, held, now);
+  else addClaim(db, userId, held, ARRIVAL_CLAIM[medium], now);
+}
+
+/**
  * Moves a request into the library and claims the item for everyone on it, together. What is
  * claimed is the top-level item, as a play claims it: a kept song's album, which the library lists.
  */
@@ -289,7 +304,7 @@ function arrive(deps: RequestJobDeps, request: StoredRequest, ref: MediaRef): vo
     if (!apply(deps, request, { type: 'moved', to: 'inLibrary' })) return;
     const held = topLevelOf(deps.db, ref);
     for (const person of peopleOn(deps.db, request.id)) {
-      addClaim(deps.db, person, held, ARRIVAL_CLAIM[request.medium], deps.now());
+      claimArrival(deps.db, person, request.medium, held, deps.now());
     }
   })();
 }

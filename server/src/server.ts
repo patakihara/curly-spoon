@@ -31,6 +31,8 @@ import type { AlbumCatalogue } from './requests/albums/catalogue.js';
 import { bookSteps } from './requests/books/index.js';
 import { Wake } from './requests/job.js';
 import { musicBrainzOf } from './requests/musicBrainz.js';
+import { podcastSteps } from './requests/podcasts/index.js';
+import type { ShowCatalogue } from './search/podcasts.js';
 import { prowlarrOf } from './requests/prowlarr.js';
 import { songSteps } from './requests/songs/index.js';
 import type { BookCatalogue } from './requests/books/catalogue.js';
@@ -89,6 +91,8 @@ export async function assembleServer(
     bookCatalogue?: BookCatalogue;
     /** What Search lists of the albums the library lacks, in place of the configured one. */
     albumCatalogue?: AlbumCatalogue;
+    /** What Search lists of the shows the household lacks, in place of the configured one. */
+    showCatalogue?: ShowCatalogue;
     /** Songs from outside the library, in place of the configured extractor, as a harness brings. */
     music?: (log: MusicLog, db: Db) => { music: Music; stop: () => void | Promise<void> };
     /** Spotify playlist import's reader, search and pace, in place of Spotify's own, as a harness brings. */
@@ -174,6 +178,13 @@ export async function assembleServer(
     prowlarr,
   });
 
+  const podcasts = podcastSteps(config, {
+    db,
+    fetch,
+    now: Date.now,
+    log: { error: (details, message) => app.log.error(details, message) },
+  });
+
   // Makes no upstream call at start, so a server with no network still starts.
   const musicLog: MusicLog = {
     warn: (details, message) => app.log.warn(details, message),
@@ -232,6 +243,7 @@ export async function assembleServer(
         ...('steps' in books ? [books.steps] : []),
         ...('steps' in albums ? [albums.steps] : []),
         ...('steps' in songs ? [songs.steps] : []),
+        ...('steps' in podcasts ? [podcasts.steps] : []),
       ]),
       wake,
       everyMs: config.requests.everySeconds * 1_000,
@@ -251,12 +263,18 @@ export async function assembleServer(
       : 'steps' in albums
         ? { albumCatalogue: albums.catalogue }
         : {}),
+    ...(deps.showCatalogue !== undefined
+      ? { showCatalogue: deps.showCatalogue }
+      : 'steps' in podcasts
+        ? { showCatalogue: podcasts.catalogue }
+        : {}),
     logger: deps.logger ?? true,
   });
 
   if ('off' in books) app.log.info({ missing: books.off }, 'Books cannot be requested');
   if ('off' in albums) app.log.info({ missing: albums.off }, 'Albums cannot be requested');
   if ('off' in songs) app.log.info({ missing: songs.off }, 'Songs cannot be kept');
+  if ('off' in podcasts) app.log.info({ missing: podcasts.off }, 'Shows cannot be requested');
 
   if (!hasAdmin(db)) {
     issueSetupCode(db, setupCodeFile);

@@ -45,6 +45,7 @@ import ShelfReview, { frame as shelfReviewFrame } from '../generated/pages/Shelf
 import Show, { frame as showFrame } from '../generated/pages/Show';
 import SignIn from '../generated/pages/SignIn';
 import { type Act, ActContext } from '../act';
+import { type Follow, FollowContext } from '../follow';
 import { type Request, RequestContext, requestOf } from '../request';
 import { type Choose, ChooseContext } from '../choose';
 import { type Import, ImportContext } from '../import';
@@ -63,7 +64,15 @@ import { type Toggle, ToggleContext, type ToggleSetting } from '../toggle';
 import { useAccessOf } from './access';
 import { useDeps } from './deps';
 import { emptied } from './format';
-import { albumData, albumVerb, bookData, episodeData, showAwaited, showData } from './items';
+import {
+  albumData,
+  albumVerb,
+  bookData,
+  episodeData,
+  followShow,
+  showAwaited,
+  showData,
+} from './items';
 import {
   booksData,
   browseData,
@@ -199,6 +208,13 @@ interface Screen<T, L = T> {
   heard?(data: T, heard: PlayerHeard): T;
   /** What the page draws when a tap on the ref `failed` did not make its request. */
   requestFailed?(data: T, failed: string): T;
+  /**
+   * For a page with subscribe controls, the show `ref` names followed or unfollowed as its control
+   * says: the page loads again after.
+   */
+  follows?(api: ApiClient, ref: string, following: boolean): Promise<void>;
+  /** What the page says when a show could not be followed or unfollowed. */
+  followFailure?: string;
   /** For a page of switches, a setting set to what its switch says: the page loads again after. */
   toggles?(api: ApiClient, setting: ToggleSetting, next: boolean): Promise<void>;
   /** What the page says when a switch could not be set. */
@@ -284,6 +300,9 @@ const itemVerbs = async (api: ApiClient, ref: string, key: string) => {
  * A show's verbs: its sort menu's order replaces the page's address, which loads its episodes in
  * that order; any other key is its menu's, an item's verb.
  */
+/** What a page says when a show could not be followed or unfollowed. */
+const FOLLOW_FAILED = 'Subscribing didn’t go through. Try again in a moment.';
+
 const showVerbs = async (api: ApiClient, ref: string, key: string) => {
   const sort = episodeAsk({ sort: key }).sort;
   if (sort === undefined) return itemVerbs(api, ref, key);
@@ -399,6 +418,7 @@ const screens: Screen<never>[] = [
       };
     },
     verbs: showVerbs,
+    follows: followShow,
   } satisfies Screen<typeof showFrame.placeholder>,
   {
     name: 'episode',
@@ -448,6 +468,8 @@ const screens: Screen<never>[] = [
     verbs: searchVerb,
     offers: searchOffers,
     requestFailed: searchRequestFailed,
+    follows: followShow,
+    followFailure: FOLLOW_FAILED,
     heard: searchHeard,
   } satisfies Screen<SearchData, SearchLoaded>,
   {
@@ -730,6 +752,26 @@ function requestsOf<T>(
   };
 }
 
+/**
+ * A page's follows for it to hand down: none on the canvas, or for a page with no subscribe control.
+ * A show takes no tap while its last one is under way.
+ */
+function followsOf<T, L>(
+  screen: Screen<T, L>,
+  drawn: Drawn<T> | undefined,
+  api: ApiClient,
+  { make, working }: Changes,
+): Follow | null {
+  const follows = screen.follows;
+  if (follows === undefined || drawn === undefined) return null;
+  return (ref) => {
+    const what = `follow:${ref}`;
+    return working.has(what)
+      ? undefined
+      : (following) => make(what, screen.followFailure ?? '', () => follows(api, ref, following));
+  };
+}
+
 /** What a page says when a pasted playlist could not be imported. */
 const IMPORT_FAILED = 'This playlist couldn’t be imported. Try again in a moment.';
 
@@ -852,6 +894,7 @@ function pageOf<T>(screen: Screen<T>): ComponentType {
             const act = actsOf(screen, shown, api, changes);
             const request = requestsOf(shown, api, changes);
             const toggle = togglesOf(screen, shown, api, changes);
+            const follow = followsOf(screen, shown, api, changes);
             const importFrom = useImports(shown, changes);
             const retry = useRetries(screen, shown);
             usePolling(screen);
@@ -870,7 +913,9 @@ function pageOf<T>(screen: Screen<T>): ComponentType {
                   <RequestContext.Provider value={request}>
                     <ImportContext.Provider value={importFrom}>
                       <ToggleContext.Provider value={toggle}>
-                        <RetryContext.Provider value={retry}>{page}</RetryContext.Provider>
+                        <FollowContext.Provider value={follow}>
+                          <RetryContext.Provider value={retry}>{page}</RetryContext.Provider>
+                        </FollowContext.Provider>
                       </ToggleContext.Provider>
                     </ImportContext.Provider>
                   </RequestContext.Provider>
