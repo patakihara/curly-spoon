@@ -218,7 +218,7 @@ export function feedFetch({
       await response.body?.cancel();
       if (hop >= FEED_MAX_REDIRECTS) throw new FeedRefused('too many redirects');
       permanent &&= response.status === 301 || response.status === 308;
-      if (!URL.canParse(location, url)) throw new FeedRefused('a malformed redirect');
+      if (!URL.canParse(location, url.href)) throw new FeedRefused('a malformed redirect');
       url = new URL(location, url);
       if (permanent) named = url;
     }
