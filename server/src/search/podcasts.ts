@@ -23,11 +23,12 @@ import type { FetchLike } from '../adapters/http/fetch.js';
 import { type FeedFetch, FeedRefused, readCapped } from '../adapters/http/publicFetch.js';
 import { type ItunesClient, isItunesArtHost } from '../adapters/itunes/client.js';
 import type { JobLog } from '../jobs/schedule.js';
-import { personalView } from '../library/personal.js';
+import { follows } from '../library/follows.js';
 import { feedKey, heldShow } from '../requests/podcasts/held.js';
 import { requestStanding } from '../requests/standing.js';
 import { itunesArtUrl } from '../routes/art.js';
 import type { Db } from '../store/connection.js';
+import type { AbsAccess } from '../upstream/reach.js';
 
 const SEARCH_LIMIT_MS = 3_000;
 const MOST_KEPT = 500;
@@ -197,10 +198,25 @@ export function showCatalogue(deps: ShowCatalogueDeps): ShowCatalogue {
   };
 }
 
+/** Whether the household holds any of the shows found. */
+export function holdsAny(db: Db, shows: readonly FoundShow[]): boolean {
+  return shows.some(
+    (show) =>
+      heldShow(db, {
+        feedUrl: show.feedUrl,
+        ...(show.itunesId === null ? {} : { itunesId: show.itunesId }),
+      }) !== null,
+  );
+}
+
 /** The rows a person sees for the shows found, in their order; one a request cannot take is left out. */
-export function showRows(db: Db, userId: string, shows: readonly FoundShow[]): SearchShow[] {
+export function showRows(
+  db: Db,
+  userId: string,
+  shows: readonly FoundShow[],
+  own: Pick<AbsAccess, 'begun'> | null,
+): SearchShow[] {
   if (shows.length === 0) return [];
-  const view = personalView(db, userId);
   return shows.flatMap((show) => {
     const ids = {
       feedUrl: show.feedUrl,
@@ -228,7 +244,7 @@ export function showRows(db: Db, userId: string, shows: readonly FoundShow[]): S
         art: show.itunesId === null || show.art === null ? null : itunesArtUrl(show.itunesId),
         status,
         item,
-        following: item !== null && view.holds(item),
+        following: item !== null && follows(db, userId, item, own),
       },
     ];
   });

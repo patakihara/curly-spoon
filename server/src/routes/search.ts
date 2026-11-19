@@ -50,13 +50,16 @@ import { bookRows, type BookCatalogue } from '../requests/books/catalogue.js';
 import { clientGone, Refusal, serve, serveStream } from '../route.js';
 import { librarySource } from '../search/library.js';
 import { playlistRows, type SpotifyPlaylistSource } from '../search/playlists.js';
-import { isFeedAddress, showRows, type ShowCatalogue } from '../search/podcasts.js';
+import { holdsAny, isFeedAddress, showRows, type ShowCatalogue } from '../search/podcasts.js';
 import { rank, type SearchSource } from '../search/sources.js';
 import { suggest } from '../search/suggest.js';
 import type { Db } from '../store/connection.js';
 import { recordSearch } from '../store/recentSearches.js';
 import { requestsListed } from '../store/requests.js';
+import type { User } from '../store/users.js';
+import { Reach } from '../upstream/reach.js';
 import { signedIn } from './auth.js';
+import type { UpstreamAccess } from './play.js';
 
 /** The kinds that name someone or a series, not an item. */
 const NAME_KINDS: readonly SearchKind[] = ['artist', 'author', 'series'];
@@ -76,9 +79,12 @@ export function searchRoutes(
     spotify?: { source: SpotifyPlaylistSource; importable: () => boolean } | null;
     /** The shows iTunes finds, while shows can be requested. */
     shows?: ShowCatalogue;
+    /** The person's own Audiobookshelf, which says what shows they have begun. */
+    upstreams?: UpstreamAccess | null;
   },
 ): void {
   const { db, now, catalogue, albumCatalogue, shows } = options;
+  const reach = new Reach(db, options.upstreams ?? null);
   const music = options.music ?? null;
   const spotify = options.spotify ?? null;
   const sources: readonly SearchSource[] = [librarySource(db)];
@@ -152,13 +158,15 @@ export function searchRoutes(
     request: FastifyRequest,
     q: string,
     kinds: readonly SearchKind[] | undefined,
-    userId: string,
+    user: User,
     gone: AbortSignal,
   ): Promise<SearchShow[]> => {
     if (shows === undefined || (kinds !== undefined && !kinds.includes('show'))) return [];
     try {
       const found = isFeedAddress(q) ? await shows.pasted(q, gone) : await shows.search(q, gone);
-      return showRows(db, userId, found);
+      // A held show they have begun on their own Audiobookshelf is followed, as its page says.
+      const own = holdsAny(db, found) ? await reach.ownAbs(user).catch(() => null) : null;
+      return showRows(db, user.id, found, own);
     } catch (err) {
       request.log.warn({ err: err instanceof Error ? err.message : 'unknown' }, 'no show rows');
       return [];
@@ -199,7 +207,7 @@ export function searchRoutes(
         results: [],
         books: [],
         albums: [],
-        podcasts: await podcasts(request, query.q, query.kinds, user.id, gone),
+        podcasts: await podcasts(request, query.q, query.kinds, user, gone),
         songs: [],
         playlists: [],
         streaming:
@@ -211,7 +219,7 @@ export function searchRoutes(
       Promise.all(sources.map((source) => source.search(asked, gone))),
       books(request, query.q, query.kinds, user.id, gone),
       albums(request, query.q, query.kinds, user.id, gone),
-      podcasts(request, query.q, query.kinds, user.id, gone),
+      podcasts(request, query.q, query.kinds, user, gone),
       songs(request, query.q, query.kinds, user, gone),
     ]);
     // A recent search is a convenience: failing to keep one never costs the results.

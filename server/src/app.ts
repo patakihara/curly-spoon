@@ -332,6 +332,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
   const cover = spotify?.cover?.bind(spotify);
   searchRoutes(app, {
     db,
+    upstreams,
     now: options.now ?? Date.now,
     music: options.music ?? null,
     // A playlist row is listed only while importing could take its tap.

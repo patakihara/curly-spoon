@@ -19,8 +19,8 @@ import { buildApp } from './app.js';
 import { type IndexRow } from './libraryIndex/rows.js';
 import { applyRow, emptyCounts } from './libraryIndex/store.js';
 import { stepsRegistry } from './requests/steps.js';
-import { showCatalogue, type ShowCatalogue } from './search/podcasts.js';
-import { claimsOf, followShow } from './store/claims.js';
+import { type FoundShow, showCatalogue, type ShowCatalogue, showRows } from './search/podcasts.js';
+import { claimsOf, followShow, unfollowShow } from './store/claims.js';
 import { openDatabase, type Db } from './store/connection.js';
 import { createDevice } from './store/devices.js';
 import { getRequest } from './store/requests.js';
@@ -192,6 +192,25 @@ describe('[M3.podcasts] podcast rows in Search', () => {
     followShow(db, user.id, { source: 'abs', id: 'show-1' }, T0);
     const [followed] = (await search('maintenance phase')).podcasts;
     expect(followed).toMatchObject({ item: { source: 'abs', id: 'show-1' }, following: true });
+  });
+
+  it('[M3.podcasts] a show the person has begun on Audiobookshelf reads as followed, as its page says, until they unfollow it', async () => {
+    const { db, user } = await server();
+    indexedShow(db, 'show-1', 'Maintenance Phase', { feed_url: MAINTENANCE_FEED });
+    const found: FoundShow = {
+      itunesId: MAINTENANCE_PHASE,
+      title: 'Maintenance Phase',
+      host: null,
+      feedUrl: MAINTENANCE_FEED,
+      episodes: null,
+      art: null,
+    };
+    const begun = { begun: ['show-1'] };
+
+    expect(showRows(db, user.id, [found], null)[0]?.following).toBe(false);
+    expect(showRows(db, user.id, [found], begun)[0]?.following).toBe(true);
+    unfollowShow(db, user.id, { source: 'abs', id: 'show-1' }, T0);
+    expect(showRows(db, user.id, [found], begun)[0]?.following).toBe(false);
   });
 
   it('[M3.podcasts] a show held by its feed alone is found by its feed', async () => {

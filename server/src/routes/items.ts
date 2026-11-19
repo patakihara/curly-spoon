@@ -33,7 +33,6 @@ import {
   type ItemEpisode,
   type ItemTrack,
   mediaArt,
-  type MediaRef,
   parseMediaRefKey,
   type PlaybackChapter,
 } from '@auralis/schema';
@@ -50,8 +49,7 @@ import { signedIn } from './auth.js';
 import { entry } from './library.js';
 import { type Music, TrackRefused } from '../music/index.js';
 import { refusalFor, type UpstreamAccess } from './play.js';
-import { personalView } from '../library/personal.js';
-import { unfollowed } from '../store/claims.js';
+import { follows } from '../library/follows.js';
 
 /** Pixel widths the art route asks the upstream for, by size. */
 export const ART_WIDTH: Record<ArtSize, number> = { small: 192, medium: 512, large: 1024 };
@@ -121,15 +119,6 @@ function episodes(
       absent,
     };
   });
-}
-
-/**
- * Whether a person follows a show: it is in their own library, or their own Audiobookshelf says
- * they have begun it and they have not unfollowed it (the next library read claims it).
- */
-function follows(db: Db, userId: string, show: MediaRef, own: AbsAccess | null): boolean {
-  if (personalView(db, userId).holds(show)) return true;
-  return (own?.begun.includes(show.id) ?? false) && !unfollowed(db, userId, show);
 }
 
 function tracks(db: Db, album: StoredRow): ItemTrack[] {
