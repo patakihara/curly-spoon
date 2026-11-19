@@ -214,6 +214,23 @@ describe('[M3.podcasts] podcast rows in Search', () => {
     expect(after?.status).not.toBeNull();
   });
 
+  it('[M3.podcasts] a show the person asked for is never listed in Requests, nor leads Search there', async () => {
+    const { app, headers, search } = await server();
+    const [row] = (await search('maintenance phase')).podcasts;
+    const asked = await app.inject({
+      method: 'POST',
+      url: '/api/requests',
+      headers,
+      payload: { ref: row!.ref },
+    });
+    expect(asked.statusCode).toBeLessThan(300);
+    expect((asked.json() as { status: string }).status).not.toBe('inLibrary');
+    const listed = await app.inject({ method: 'GET', url: '/api/requests', headers });
+    expect(listed.statusCode).toBe(200);
+    expect(JSON.stringify(listed.json())).not.toContain('podcast');
+    expect((await search('maintenance phase')).hasRequests).toBe(false);
+  });
+
   it('[M3.podcasts] a pasted feed address answers that show alone, once its feed is read', async () => {
     const { search, itunesHosts } = await server();
     const answer = await search(PASTED);

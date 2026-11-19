@@ -993,6 +993,7 @@ describe('[M3.spotify] a pasted Spotify playlist link in Search', () => {
       results: [],
       books: [],
       albums: [],
+      podcasts: [],
       songs: [],
       playlists,
       streaming: 'ok',
