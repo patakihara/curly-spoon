@@ -299,7 +299,8 @@ class PageWriter extends KotlinValues {
           | 'act'
           | 'toggle'
           | 'retry'
-          | 'import';
+          | 'import'
+          | 'follow';
       }
     >,
     scope: Scope,
@@ -374,6 +375,10 @@ class PageWriter extends KotlinValues {
       // Android imports nothing until M5. A control importing nothing would seem to work, so the
       // prop is left out and Sonora draws the control disabled.
       case 'import':
+        return undefined;
+      // Android follows no show until M5. A subscribe control doing nothing would seem to work, so
+      // the prop is left out and Sonora draws the control disabled.
+      case 'follow':
         return undefined;
       case 'literal':
         return this.value(type, value.value, where);

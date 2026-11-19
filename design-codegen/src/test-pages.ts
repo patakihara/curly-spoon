@@ -40,7 +40,8 @@ export function bindings(tree: PageTree, into: string[] = []): string[] {
       v.kind === 'request' ||
       v.kind === 'play' ||
       v.kind === 'choose' ||
-      v.kind === 'import'
+      v.kind === 'import' ||
+      v.kind === 'follow'
     )
       Object.values(v.params).forEach((path) => into.push(path.join('.')));
   };

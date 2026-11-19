@@ -1,6 +1,6 @@
 ---
 page: search
-pageHash: 3e04f0bcf6d89704310f5af6878bbfc0f77014428791bd960a2c540ac747c0b2
+pageHash: af970050f6c78a192aa9ffc117ca0b01217fc429887d57f1daa8be8d88f3cf07
 sonora: [kit:desktop/search, kit:mobile/search]
 spotify: [S03, S04, S32]
 ---
@@ -60,7 +60,9 @@ search; here it draws disabled, as the web serves no search draft yet.
   play from YouTube Music, an `ExpanderRow` "More releases of Salt", a book already requested
   (ring on the art, "Downloading · 42%" in the progress tone and nothing else at its end; on the
   phone the pill keeps "42%"), a book a request brought, "In library" in the library tone, its art playing it, a book with
-  "Request", and a podcast with "Subscribe".
+  "Request", a show the household lacks with "Subscribe", which requests it, and a show the
+  household holds, opening its page, with a small `FollowButton` "Subscribed" that follows or
+  unfollows it for you alone.
 
 **Suggestions** are the page's `suggest` state, while typing before results come in, drawn under
 `<When state="suggest">`; the results above are its `full` state. The canvas draws them on their

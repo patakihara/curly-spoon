@@ -6,6 +6,7 @@ import { PLATFORM, useLayout, type Chrome, type LayoutId, type PageFrame } from 
 import type { ShellNav } from '../../shell-nav';
 import { usePlay, type Playing } from '../../player';
 import { useChoose } from '../../choose';
+import { useFollow } from '../../follow';
 import { BackLayer, BottomNav, EpisodeRow, ExpandableText, FollowButton, IconButton, MediaCard, MediaHeader, MiniPlayer, NavRail, OverflowMenu, PageBody, Section, Shelf, SortFilterBar } from '../ui/index.js';
 
 const placeholder = {
@@ -368,6 +369,7 @@ export default function Show({ data = placeholder, state = 'full' }: ShowProps) 
   const navigate = useNavigate();
   const play = usePlay();
   const choose = useChoose();
+  const follow = useFollow();
   return (
     <PageBody width="list" platform={platform}>
       <Section platform={platform}>
@@ -376,7 +378,7 @@ export default function Show({ data = placeholder, state = 'full' }: ShowProps) 
           subtitle={data.host}
           meta={data.meta}
           image={data.image}
-          actions={<FollowButton following={data.following} labels={data.subscribe} platform={platform} />}
+          actions={<FollowButton following={data.following} labels={data.subscribe} onChange={follow(data.ref)} platform={platform} />}
           menu={<OverflowMenu items={data.menu} onSelect={choose(data.ref)} platform={platform} />}
           platform={platform}
         />

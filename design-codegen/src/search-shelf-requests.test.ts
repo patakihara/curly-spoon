@@ -269,15 +269,18 @@ describe('Search', () => {
   });
 
   it('[M0.canvas] plays outside music straight away, and gives outside books Request and podcasts Subscribe', () => {
-    const outside = data.outside as { podcasts: Row[] };
+    const outside = data.outside as { podcasts: { asking: Row[] }[] };
     const action = (of: string) =>
       found.filter((r) => r.of === of).map(({ row }) => slotted(row, 'trailing')?.component);
     // One row is drawn for each list, whatever its length.
     expect(action('song.plays')).toEqual([undefined]);
     expect(action('song.follows')).toEqual(['Button']);
     expect(action('book.asking')).toEqual(['Button']);
-    expect(action('data.outside.podcasts')).toEqual(['Button']);
-    for (const show of outside.podcasts) expect(show.action).toBe('Subscribe');
+    expect(action('show.asking')).toEqual(['Button']);
+    expect(action('show.follows')).toEqual(['FollowButton']);
+    for (const show of outside.podcasts.flatMap((s) => s.asking)) {
+      expect(show.action).toBe('Subscribe');
+    }
   });
 
   describe('[M3.ytmusic] a song from outside the library', () => {
@@ -362,11 +365,6 @@ describe('Search', () => {
       expect(shown('arrived')).toHaveLength(1);
       expect(shown('arrived')[0]).toMatchObject({ status: 'In library', tone: 'library' });
     });
-  });
-
-  it('[M3.books] leaves a podcast’s Subscribe unbound: only books can be requested from here', () => {
-    const { row } = found.find((r) => r.of === 'data.outside.podcasts')!;
-    expect(slotted(row, 'trailing')?.props.onClick).toBeUndefined();
   });
 
   it('[M3.requests] opens Requests from "Your requests", outside every one of its states', () => {

@@ -20,6 +20,8 @@ import net.develivarr.auralis.generated.ui.ButtonGroupProps
 import net.develivarr.auralis.generated.ui.ButtonProps
 import net.develivarr.auralis.generated.ui.ButtonVariant
 import net.develivarr.auralis.generated.ui.ExpanderRowProps
+import net.develivarr.auralis.generated.ui.FollowButtonLabels
+import net.develivarr.auralis.generated.ui.FollowButtonProps
 import net.develivarr.auralis.generated.ui.FrontLayerHeaderProps
 import net.develivarr.auralis.generated.ui.LayoutGridProps
 import net.develivarr.auralis.generated.ui.MiniPlayerProps
@@ -44,6 +46,7 @@ import net.develivarr.auralis.ui.sonora.BottomNav
 import net.develivarr.auralis.ui.sonora.Button
 import net.develivarr.auralis.ui.sonora.ButtonGroup
 import net.develivarr.auralis.ui.sonora.ExpanderRow
+import net.develivarr.auralis.ui.sonora.FollowButton
 import net.develivarr.auralis.ui.sonora.FrontLayerHeader
 import net.develivarr.auralis.ui.sonora.LayoutGrid
 import net.develivarr.auralis.ui.sonora.MiniPlayer
@@ -558,8 +561,10 @@ fun SearchPage(navController: NavController, actions: PageActions) {
                                         ResultRow(
                                             ResultRowProps(
                                                 title = "Salt & Signal",
-                                                meta = "Podcast · 212 episodes · PodcastIndex",
-                                                image = "/art/the-long-read.jpg",
+                                                meta = "Podcast · Mira Holt · 212 episodes",
+                                                status = null,
+                                                tone = null,
+                                                image = "/art/signal-noise.jpg",
                                                 platform = Platform.MOBILE,
                                                 divider = true,
                                                 trailing = {
@@ -569,6 +574,33 @@ fun SearchPage(navController: NavController, actions: PageActions) {
                                                             size = SizeSmMdLg.SM,
                                                             platform = Platform.MOBILE,
                                                             children = { BasicText("Subscribe") },
+                                                        ),
+                                                    )
+                                                },
+                                            ),
+                                        )
+                                        ResultRow(
+                                            ResultRowProps(
+                                                title = "The Long Read",
+                                                meta = "Podcast · Nadia Berg · 212 episodes",
+                                                status = null,
+                                                tone = null,
+                                                image = "/art/the-long-read.jpg",
+                                                platform = Platform.MOBILE,
+                                                onClick = {
+                                                    navController.navigate(Route.Show(ref = "the-long-read"))
+                                                },
+                                                divider = true,
+                                                trailing = {
+                                                    FollowButton(
+                                                        FollowButtonProps(
+                                                            following = true,
+                                                            labels = FollowButtonLabels(
+                                                                off = "Subscribe",
+                                                                on = "Subscribed",
+                                                            ),
+                                                            platform = Platform.MOBILE,
+                                                            size = SizeSmMdLg.SM,
                                                         ),
                                                     )
                                                 },

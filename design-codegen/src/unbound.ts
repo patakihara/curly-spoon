@@ -50,6 +50,7 @@ export const UNBOUND: Readonly<Record<string, string>> = {
   'album/ExpanderRow.onToggle': 'M5.screens',
   'books/TabBar.onChange': 'M5.screens',
   'music/TabBar.onChange': 'M5.screens',
+  'show/FollowButton.onChange': 'M5.screens',
   'show/SortFilterBar.onSelect': 'M5.screens',
   // Search, and the context menus.
   'album/OverflowMenu.onSelect': 'M5.searchui',
@@ -106,8 +107,7 @@ export const UNBOUND: Readonly<Record<string, string>> = {
   // Search's outside results.
   'search/Button.onClick': 'M5.searchui',
   'search/ExpanderRow.onToggle': 'M5.searchui',
-  // Following podcasts.
-  'show/FollowButton.onChange': 'M3.podcasts',
+  'search/FollowButton.onChange': 'M5.searchui',
   // Saving a song.
   'nowPlaying/NowPlayingPage.onFavourite': 'M3.keep',
   // Browse's filter, feature cards and previews.

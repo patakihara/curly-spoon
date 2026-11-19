@@ -95,6 +95,14 @@ handed, `useImport()` in `web/src/import`, which send `POST /api/lists/import {f
 playlist page with the list the answer names; with none, as on the canvas, the control draws
 disabled. Android leaves it unbound until M5 and it draws disabled too.
 
+`onChange={<Follow ref={data.ref} />}` follows or unfollows the show its ref binds, for the person
+alone, by the state a `FollowButton` hands its `onChange`: the show page's subscribe control and
+Search's row for a show the household holds. It takes `ref` alone, bound from the data, and goes
+only on a `FollowButton`'s `onChange`. The web gives it to the follows the page is handed,
+`useFollow()` in `web/src/follow`, which send `PUT` or `DELETE /api/subscriptions/{ref}` and fetch
+the page again; with none, as on the canvas, the control draws disabled. Android leaves it unbound
+until M5 and it draws disabled too. A show the household lacks is subscribed through a `<Request>`.
+
 `onClick={<Act ref={request.id} verb={request.verb} />}` does a request's verb to the request its
 ref binds: `retry`, `cancel`, `choose` or `pickAnother`, written or bound from the data, which the
 check holds to those four. `candidate={candidate.id}` binds the release `choose` and `pickAnother`

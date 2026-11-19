@@ -9,7 +9,8 @@ import { useQuery } from '../../query';
 import { useChoose } from '../../choose';
 import { useRequest } from '../../request';
 import { useImport } from '../../import';
-import { AccountButton, BackLayer, BottomNav, Button, ButtonGroup, EmptyState, ExpanderRow, FrontLayerHeader, LayoutGrid, MiniPlayer, NavRail, OverflowMenu, PageBody, ResultRow, SearchField, Section, SortFilterBar, StatusBanner } from '../ui/index.js';
+import { useFollow } from '../../follow';
+import { AccountButton, BackLayer, BottomNav, Button, ButtonGroup, EmptyState, ExpanderRow, FollowButton, FrontLayerHeader, LayoutGrid, MiniPlayer, NavRail, OverflowMenu, PageBody, ResultRow, SearchField, Section, SortFilterBar, StatusBanner } from '../ui/index.js';
 
 const placeholder = {
   "errors": [
@@ -304,10 +305,36 @@ const placeholder = {
     ],
     "podcasts": [
       {
-        "title": "Salt & Signal",
-        "meta": "Podcast · 212 episodes · PodcastIndex",
-        "image": "/art/the-long-read.jpg",
-        "action": "Subscribe"
+        "asking": [
+          {
+            "title": "Salt & Signal",
+            "ref": "salt-and-signal",
+            "meta": "Podcast · Mira Holt · 212 episodes",
+            "image": "/art/signal-noise.jpg",
+            "status": null,
+            "tone": null,
+            "action": "Subscribe"
+          }
+        ],
+        "follows": []
+      },
+      {
+        "asking": [],
+        "follows": [
+          {
+            "title": "The Long Read",
+            "item": "the-long-read",
+            "meta": "Podcast · Nadia Berg · 212 episodes",
+            "image": "/art/the-long-read.jpg",
+            "status": null,
+            "tone": null,
+            "following": true,
+            "subscribe": {
+              "on": "Subscribed",
+              "off": "Subscribe"
+            }
+          }
+        ]
       }
     ]
   }
@@ -552,6 +579,7 @@ export default function Search({ data = placeholder, state = 'full' }: SearchPro
   const choose = useChoose();
   const askFor = useRequest();
   const importFrom = useImport();
+  const follow = useFollow();
   return (
     <PageBody width="list" platform={platform}>
       {data.errors.map((error, i) => (
@@ -743,18 +771,39 @@ export default function Search({ data = placeholder, state = 'full' }: SearchPro
               ))}
               {data.outside.podcasts.map((show, i) => (
                 <Fragment key={i}>
-                  <ResultRow
-                    title={show.title}
-                    meta={show.meta}
-                    image={show.image}
-                    divider={true}
-                    trailing={
-                      <Button variant="secondary" size="sm" platform={platform}>
-                        {show.action}
-                      </Button>
-                    }
-                    platform={platform}
-                  />
+                  {show.asking.map((asking, i) => (
+                    <Fragment key={i}>
+                      <ResultRow
+                        title={asking.title}
+                        meta={asking.meta}
+                        image={asking.image}
+                        status={asking.status}
+                        tone={asking.tone as Exclude<ComponentProps<typeof ResultRow>['tone'], undefined>}
+                        divider={true}
+                        trailing={
+                          <Button variant="secondary" size="sm" onClick={askFor(asking.ref)} platform={platform}>
+                            {asking.action}
+                          </Button>
+                        }
+                        platform={platform}
+                      />
+                    </Fragment>
+                  ))}
+                  {show.follows.map((follows, i) => (
+                    <Fragment key={i}>
+                      <ResultRow
+                        title={follows.title}
+                        meta={follows.meta}
+                        image={follows.image}
+                        status={follows.status}
+                        tone={follows.tone as Exclude<ComponentProps<typeof ResultRow>['tone'], undefined>}
+                        onClick={follows.item ? () => navigate(generatePath('/podcasts/:ref', { ref: follows.item })) : undefined}
+                        divider={true}
+                        trailing={<FollowButton size="sm" following={follows.following} labels={follows.subscribe} onChange={follow(follows.item)} platform={platform} />}
+                        platform={platform}
+                      />
+                    </Fragment>
+                  ))}
                 </Fragment>
               ))}
             </Section>

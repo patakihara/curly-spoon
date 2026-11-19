@@ -1,6 +1,6 @@
 ---
 page: show
-pageHash: 0fb6b64588c973a5c890689ca897f43b53a406f1b7bbd9cbe42d65b81e6608a8
+pageHash: c5d88af69227c56499807a5a2ddb08ca3268627694de7e26ef68523396273040
 sonora: [card:episode-rows]
 spotify: [S01, S02]
 ---
@@ -29,7 +29,7 @@ and Album pages as the detail pattern.
 The heading is the show's name, bound from its data, led by the close control and ending in the
 local search's button, "Search this show's episodes". A `MediaHeader` with the show's art,
 "PODCAST", the host, "Weekly · 212 episodes · 5 unplayed", and in place of queue buttons a
-`FollowButton` reading "Subscribed", then the menu (Mark all as played, Add to a digest, New digest, Add to Weekend reads, New
+`FollowButton` reading "Subscribed", which follows or unfollows the show for you alone, then the menu (Mark all as played, Add to a digest, New digest, Add to Weekend reads, New
 listening list), whose verbs act on the show. Then
 "Episodes": a `SortFilterBar` "Newest first" and five `EpisodeRow`s newest first, the first
 part-played with its rule and "31 min left", two "Finished", each opening its Episode page, its art's
