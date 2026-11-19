@@ -5,7 +5,8 @@
  *
  * A pasted feed address is read through the feed guard (`feedFetch`): every hop must resolve to
  * public addresses only, so a private one answers no row, having connected nowhere. Its failure is
- * logged without the address, which a client named.
+ * logged without the address, which a client named. At most `MOST_PASTED_READS` run at once, and a
+ * read still running when Search answers is stopped.
  *
  * A row names the household's show when the index holds one with its feed or iTunes id; it then
  * says whether the person follows it, as their own library counts it. A cover comes from the
@@ -31,6 +32,8 @@ import type { Db } from '../store/connection.js';
 import type { AbsAccess } from '../upstream/reach.js';
 
 const SEARCH_LIMIT_MS = 3_000;
+/** Pasted feeds read at once; another meanwhile answers no row. */
+const MOST_PASTED_READS = 4;
 const MOST_KEPT = 500;
 const ART_LIMIT_MS = 5_000;
 const MAX_ART_BYTES = 2 * 1024 * 1024;
@@ -109,6 +112,7 @@ export function showCatalogue(deps: ShowCatalogueDeps): ShowCatalogue {
   const { itunes, feed, fetchArt, log } = deps;
   const limitMs = deps.limitMs ?? SEARCH_LIMIT_MS;
   const covers = new Map<string, string>();
+  let pastedReading = 0;
 
   const remember = (itunesId: string, art: string) => {
     covers.delete(itunesId);
@@ -134,19 +138,26 @@ export function showCatalogue(deps: ShowCatalogueDeps): ShowCatalogue {
     },
 
     async pasted(address, gone) {
-      const read = readNamedFeed(feed, address).then(({ feed: show, url }): FoundShow[] =>
-        show.title === null
-          ? []
-          : [
-              {
-                itunesId: null,
-                title: show.title,
-                host: null,
-                feedUrl: url,
-                episodes: show.episodes.length,
-                art: null,
-              },
-            ],
+      if (pastedReading >= MOST_PASTED_READS) {
+        log.error({ reason: 'busy' }, 'no row for a pasted feed');
+        return [];
+      }
+      pastedReading += 1;
+      const answered = new AbortController();
+      const read = readNamedFeed(feed, address, { stop: answered.signal }).then(
+        ({ feed: show, url }): FoundShow[] =>
+          show.title === null
+            ? []
+            : [
+                {
+                  itunesId: null,
+                  title: show.title,
+                  host: null,
+                  feedUrl: url,
+                  episodes: show.episodes.length,
+                  art: null,
+                },
+              ],
       );
       try {
         return await within(read, limitMs, gone);
@@ -160,6 +171,10 @@ export function showCatalogue(deps: ShowCatalogueDeps): ShowCatalogue {
             : 'unread';
         log.error({ reason }, 'no row for a pasted feed');
         return [];
+      } finally {
+        // Search has answered: a read still running is stopped, and frees its place.
+        answered.abort();
+        pastedReading -= 1;
       }
     },
 

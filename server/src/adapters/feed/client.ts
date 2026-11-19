@@ -120,15 +120,16 @@ export async function readFeed(fetch: FetchLike, url: string): Promise<Feed> {
 
 /**
  * Reads a feed address a client named, through `feedFetch`: at most `FEED_MAX_BYTES`, within
- * `FEED_TIMEOUT_MS`. Gives the feed and its address after permanent redirects.
+ * `FEED_TIMEOUT_MS`, or until `stop` aborts. Gives the feed and its address after permanent redirects.
  */
 export async function readNamedFeed(
   fetch: FeedFetch,
   url: string,
-  { timeoutMs = FEED_TIMEOUT_MS }: { timeoutMs?: number } = {},
+  { timeoutMs = FEED_TIMEOUT_MS, stop }: { timeoutMs?: number; stop?: AbortSignal } = {},
 ): Promise<{ feed: Feed; url: string }> {
   const call = 'GET feed';
-  const signal = AbortSignal.timeout(timeoutMs);
+  const timeout = AbortSignal.timeout(timeoutMs);
+  const signal = stop === undefined ? timeout : AbortSignal.any([timeout, stop]);
   let read: { bytes: Uint8Array | null; url: string; status: number };
   try {
     const { response, url: named } = await fetch(url, {

@@ -81,6 +81,16 @@ function indexedShow(db: Db, id: string, title: string, ids: Record<string, stri
   applyRow(db, row, T0, emptyCounts());
 }
 
+/** A catalogue whose only use here is a pasted feed, read through `feed` within `limitMs`. */
+const pastedCatalogue = (feed: FeedFetch, limitMs: number) =>
+  showCatalogue({
+    itunes: new ItunesClient({ baseUrl: 'https://itunes.apple.com', fetch: replayFetch([]) }),
+    feed,
+    fetchArt: async () => new Response(null, { status: 500 }),
+    log: { error: () => undefined },
+    limitMs,
+  });
+
 let apps: FastifyInstance[] = [];
 afterEach(async () => {
   await Promise.all(apps.map((app) => app.close()));
@@ -292,6 +302,43 @@ describe('[M3.podcasts] podcast rows in Search', () => {
     expect(answer.statusCode).toBeLessThan(300);
     expect((answer.json() as { status: string }).status).not.toBe('inLibrary');
     expect(claimsOf(db, user.id)).toEqual([]);
+  });
+
+  it('[M3.podcasts] a pasted feed read still running when Search answers is stopped', async () => {
+    const signals: AbortSignal[] = [];
+    const hung: FeedFetch = (_url, init) => {
+      signals.push(init!.signal!);
+      return new Promise(() => undefined);
+    };
+    const catalogue = pastedCatalogue(hung, 20);
+
+    expect(await catalogue.pasted(PASTED, new AbortController().signal)).toEqual([]);
+    expect(signals).toHaveLength(1);
+    expect(signals[0]!.aborted).toBe(true);
+  });
+
+  it('[M3.podcasts] reads at most four pasted feeds at once; another meanwhile answers no show, reading nothing', async () => {
+    let reads = 0;
+    const hung: FeedFetch = (_url, init) => {
+      reads += 1;
+      return new Promise((_, fail) =>
+        init!.signal!.addEventListener('abort', () => fail(new Error('stopped'))),
+      );
+    };
+    const catalogue = pastedCatalogue(hung, 60_000);
+    const gone = new AbortController();
+
+    const running = [1, 2, 3, 4].map(() => catalogue.pasted(PASTED, gone.signal));
+    expect(await catalogue.pasted(PASTED, new AbortController().signal)).toEqual([]);
+    expect(reads).toBe(4);
+
+    gone.abort();
+    await Promise.all(running);
+    const later = new AbortController();
+    const after = catalogue.pasted(PASTED, later.signal);
+    expect(reads).toBe(5);
+    later.abort();
+    await after;
   });
 
   it('[M3.podcasts] a pasted feed address answers that show alone, once its feed is read', async () => {
