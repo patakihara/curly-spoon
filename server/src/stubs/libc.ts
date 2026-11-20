@@ -75,6 +75,7 @@ const c = {
   ),
   removexattr: libc.func('int removexattr(const char *path, const char *name)'),
   fallocate: libc.func('int fallocate(int fd, int mode, int64_t offset, int64_t len)'),
+  utimensat: libc.func('int utimensat(int dirfd, const char *path, const void *times, int flags)'),
 };
 
 function check(call: string, result: number | bigint): number {
@@ -205,4 +206,17 @@ export function punchHole(fd: number, offset: number, length: number): void {
       BigInt(length),
     ) as number,
   );
+}
+
+/**
+ * Sets a path's access and modification times to the nanosecond, as `os.utime(ns=...)` did in the
+ * old daemon: Node's own `utimes` goes through a double and loses the last digits.
+ */
+export function setTimesNs(path: string, atimeNs: bigint, mtimeNs: bigint): void {
+  const times = Buffer.alloc(32);
+  times.writeBigInt64LE(atimeNs / 1_000_000_000n, 0);
+  times.writeBigInt64LE(atimeNs % 1_000_000_000n, 8);
+  times.writeBigInt64LE(mtimeNs / 1_000_000_000n, 16);
+  times.writeBigInt64LE(mtimeNs % 1_000_000_000n, 24);
+  check('utimensat', c.utimensat(AT_FDCWD, path, times, 0) as number);
 }

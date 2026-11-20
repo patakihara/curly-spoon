@@ -1,0 +1,116 @@
+{
+  "source": "Audiobookshelf 2.38.0's own PodcastEpisodeDownload.setData, run in a throwaway container of the household's image with no mounts and no network, on 20 Nov 2026; the old stubgen.py's abs_episode_filename on mediaserver gave the same name for every row but those carrying oldStubgen.",
+  "vectors": [
+    {
+      "title": "Bullshit Jobs",
+      "enclosureUrl": "https://example.org/ep/bullshit-jobs.mp3",
+      "filename": "Bullshit Jobs.mp3"
+    },
+    {
+      "title": "7.05: Risorgimento",
+      "enclosureUrl": "https://example.org/rev/705.mp3",
+      "filename": "7.05 - Risorgimento.mp3"
+    },
+    {
+      "title": "7.05- Risorgimento",
+      "enclosureUrl": "https://example.org/rev/705b.mp3",
+      "filename": "7.05- Risorgimento.mp3"
+    },
+    {
+      "title": "Episode 12: Part 1: The Start",
+      "enclosureUrl": "https://example.org/e12.mp3",
+      "filename": "Episode 12 - Part 1 The Start.mp3"
+    },
+    {
+      "title": "What is \"AI\"? / Why <now>* | maybe\\",
+      "enclosureUrl": "https://example.org/ai.mp3",
+      "filename": "What is AI Why now maybe.mp3"
+    },
+    {
+      "title": "  Leading and trailing spaces  ",
+      "enclosureUrl": "https://example.org/sp.mp3",
+      "filename": "Leading and trailing spaces.mp3"
+    },
+    {
+      "title": "Tabs\tand\nnewlines   collapse",
+      "enclosureUrl": "https://example.org/tab.mp3",
+      "filename": "Tabsandnewlines collapse.mp3"
+    },
+    {
+      "title": "Ends with dots...",
+      "enclosureUrl": "https://example.org/dots.mp3",
+      "filename": "Ends with dots....mp3"
+    },
+    {
+      "title": "con",
+      "enclosureUrl": "https://example.org/con.mp3",
+      "filename": ""
+    },
+    {
+      "title": "Café Society",
+      "enclosureUrl": "https://example.org/cafe.mp3",
+      "filename": "Café Society.mp3"
+    },
+    {
+      "title": "Controlchar\u0007here",
+      "enclosureUrl": "https://example.org/ctl.mp3",
+      "filename": "Controlcharhere.mp3"
+    },
+    {
+      "title": "[TEASER] The Next Season",
+      "enclosureUrl": "https://example.org/teaser.mp3",
+      "filename": "[TEASER] The Next Season.mp3"
+    },
+    {
+      "title": "Upper ext",
+      "enclosureUrl": "https://example.org/ep/UPPER.M4A?token=abc.mp3",
+      "filename": "Upper ext.m4a"
+    },
+    {
+      "title": "Php enclosure",
+      "enclosureUrl": "https://example.org/download.php?id=3",
+      "filename": "Php enclosure.mp3"
+    },
+    {
+      "title": "No extension",
+      "enclosureUrl": "https://example.org/download",
+      "filename": "No extension.mp3"
+    },
+    {
+      "title": "Encoded space",
+      "enclosureUrl": "https://example.org/ep%20one.ogg",
+      "filename": "Encoded space.ogg"
+    },
+    {
+      "title": "Raw space",
+      "enclosureUrl": "https://example.org/a b.flac",
+      "filename": "Raw space.flac"
+    },
+    {
+      "title": "Unsupported ext",
+      "enclosureUrl": "https://example.org/ep.mp3.torrent",
+      "filename": "Unsupported ext.mp3"
+    },
+    {
+      "title": "",
+      "enclosureUrl": "https://example.org/empty.mp3",
+      "filename": ".mp3"
+    },
+    {
+      "title": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "enclosureUrl": "https://example.org/long.mp3",
+      "filename": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.mp3"
+    },
+    {
+      "title": "🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧 headphones",
+      "enclosureUrl": "https://example.org/emoji.mp3",
+      "filename": "🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧🎧.mp3"
+    },
+    {
+      "title": "Space at the cut AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA BBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+      "enclosureUrl": "https://example.org/cut.mp3",
+      "filename": "Space at the cut AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.mp3",
+      "oldStubgen": "Space at the cut AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA .mp3"
+    }
+  ]
+}
