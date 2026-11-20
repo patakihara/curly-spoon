@@ -1,4 +1,4 @@
-/** What the request log keeps: never a sign-in's one-time code or state. */
+/** What the request log keeps: never a sign-in's one-time code or state, nor what a person searched. */
 import { afterEach, describe, expect, it } from 'vitest';
 import { type FastifyInstance } from 'fastify';
 import { buildApp } from './app.js';
@@ -33,6 +33,15 @@ describe('the request log', () => {
     const log = await logged('/api/auth/login?return_to=/private-path&device_id=d-1');
     expect(log).toContain('/api/auth/login');
     expect(log).not.toContain('private-path');
+  });
+
+  it('[M3.podcasts] leaves out the query of a search, where a pasted feed address can be private', async () => {
+    const search = await logged('/api/search?q=http%3a%2f%2f10.0.0.5%2ffeed.xml&kinds=show');
+    expect(search).toContain('/api/search?<redacted>');
+    expect(search).not.toMatch(/10\.0\.0\.5|kinds/);
+    const suggest = await logged('/api/search/suggest?q=http%3a%2f%2f10.0.0.5%2f');
+    expect(suggest).toContain('/api/search/suggest?<redacted>');
+    expect(suggest).not.toContain('10.0.0.5');
   });
 
   it('keeps the query of other routes', async () => {

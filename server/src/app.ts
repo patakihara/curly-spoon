@@ -118,14 +118,18 @@ export interface BuildAppOptions {
   logger?: boolean | { stream: { write(line: string): void } };
 }
 
+/** The routes whose query the log leaves out. */
+const UNLOGGED_QUERIES = ['/api/auth', '/api/search'];
+
 /**
  * Every `/api/auth` route's query is left out of the log: the callback's carries the one-time code and
- * state, and the others say where a person was going.
+ * state, and the others say where a person was going. Every `/api/search` route's is too: it is what a
+ * person searched, and a pasted feed address can name a private one.
  */
 export function loggedUrl(url: string): string {
   const q = url.indexOf('?');
   const path = q === -1 ? url : url.slice(0, q);
-  return q !== -1 && (path === '/api/auth' || path.startsWith('/api/auth/'))
+  return q !== -1 && UNLOGGED_QUERIES.some((root) => path === root || path.startsWith(`${root}/`))
     ? `${path}?<redacted>`
     : url;
 }
