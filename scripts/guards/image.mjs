@@ -3,7 +3,8 @@
  * Dockerfile's final stage copies from the build context, less what `.dockerignore` keeps out
  * (Docker's rules: patterns anchored at the root, `**` across folders, `!` letting a path back
  * in, the last match winning, a match on a folder covering all of it). `runtimeFiles` is what
- * the server runs: `server/src/main.ts` and everything it imports, with the package manifests.
+ * the image runs: its two entries, `server/src/main.ts` (the server) and `server/src/stubs/main.ts`
+ * (the stubs sidecar), everything they import, and the package manifests.
  *
  * `node scripts/guards/image.mjs` prints what the image must hold, `runtimeFiles`, one per line.
  * CI's container job compares that with the files in the built image, so a test or recording let
@@ -134,13 +135,16 @@ export function testOnly(file) {
   );
 }
 
+/** The commands the image runs: the server's default, and the stubs sidecar's (compose names it). */
+const ENTRIES = ['server/src/main.ts', 'server/src/stubs/main.ts'];
+
 const WORKSPACE = { '@auralis/schema': 'schema/src/index.ts' };
 const IMPORT = /\bfrom\s*['"]([^'"]+)['"]|\bimport\s*\(?\s*['"]([^'"]+)['"]/g;
 
-/** `server/src/main.ts`, every repo file it imports, transitively, and both package manifests. */
+/** The image's entries, every repo file they import, transitively, and both package manifests. */
 export function runtimeFiles(root) {
   const seen = new Set();
-  const queue = ['server/src/main.ts'];
+  const queue = [...ENTRIES];
   while (queue.length > 0) {
     const file = queue.pop();
     if (seen.has(file)) continue;

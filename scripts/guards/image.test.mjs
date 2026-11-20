@@ -17,7 +17,7 @@ import {
   undeclaredGlobalArgs,
 } from './image.mjs';
 
-test('the image copies exactly the files server/src/main.ts runs, and their package manifests', () => {
+test('the image copies exactly the files its two entries run, and their package manifests', () => {
   assert.deepEqual(imageFiles(REPO_ROOT), runtimeFiles(REPO_ROOT));
 });
 
@@ -88,7 +88,7 @@ test('a test, a recording, a fixture, the test key, the recorder and the harness
   }
 });
 
-test('`node scripts/guards/image.mjs` prints what the image must hold: the files main.ts runs', () => {
+test('`node scripts/guards/image.mjs` prints what the image must hold: the files its entries run', () => {
   const printed = execFileSync(process.execPath, [join(REPO_ROOT, 'scripts/guards/image.mjs')], {
     encoding: 'utf8',
   });

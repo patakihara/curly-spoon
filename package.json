@@ -28,7 +28,8 @@
       "esbuild"
     ],
     "ignoredBuiltDependencies": [
-      "better-sqlite3"
+      "better-sqlite3",
+      "koffi"
     ]
   },
   "devDependencies": {

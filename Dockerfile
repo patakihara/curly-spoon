@@ -85,5 +85,8 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
 
 # Node itself is PID 1, with tsx as its loader, so docker stop's SIGTERM reaches main.ts, which
 # closes the database before it exits. The tsx CLI would relay it and SIGKILL a slow child.
+# The image's second entry is the stubs sidecar, which compose runs as root with CAP_SYS_ADMIN, no
+# port and the media mounted: `node --import tsx src/stubs/main.ts`. Its fanotify, xattr and
+# fallocate calls go through koffi's prebuilt musl binary (server/src/stubs/libc.ts).
 WORKDIR /app/server
 CMD ["node", "--import", "tsx", "src/main.ts"]

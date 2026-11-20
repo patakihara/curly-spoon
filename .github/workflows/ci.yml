@@ -124,6 +124,41 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @auralis/web build
 
+  stubs:
+    name: Stubs sidecar arms fanotify in the image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: docker build --build-arg AURALIS_COMMIT=${{ github.sha }} -t auralis:ci .
+      # koffi's musl binary loads in the image, and fanotify works from Node as root with
+      # CAP_SYS_ADMIN on a tmpfs: a permission mark holds a child's open until it is allowed. The
+      # image carries no tests and no vitest, so the one node:test file is mounted in.
+      - name: libc.privileged.test.ts in the image, privileged
+        run: |
+          docker run --rm --user root --cap-add SYS_ADMIN --tmpfs /media -e STUBS_TEST_ROOT=/media \
+            -v "$PWD/server/src/stubs/libc.privileged.test.ts:/app/server/src/stubs/libc.privileged.test.ts:ro" \
+            --entrypoint node auralis:ci --import tsx --test src/stubs/libc.privileged.test.ts
+      # The image's second entry arms on the media root, answers every open, and exits 0 on stop.
+      - name: The stubs entry arms, allows opens and stops cleanly
+        run: |
+          docker run -d --name auralis-stubs --no-healthcheck --user root --cap-add SYS_ADMIN --tmpfs /media \
+            --entrypoint node auralis:ci --import tsx src/stubs/main.ts
+          for _ in $(seq 1 30); do
+            docker logs auralis-stubs 2>&1 | grep -q 'stubs: armed on /media' && break
+            sleep 1
+          done
+          docker logs auralis-stubs 2>&1 | grep 'stubs: armed on /media'
+          [ "$(docker exec auralis-stubs sh -c 'echo audio > /media/episode.mp3 && cat /media/episode.mp3')" = audio ]
+          docker stop auralis-stubs
+          docker logs auralis-stubs 2>&1
+          [ "$(docker inspect -f '{{.State.ExitCode}}' auralis-stubs)" = 0 ]
+          docker logs auralis-stubs 2>&1 | grep -E 'stubs: stopped after [1-9][0-9]* opens'
+      # Without the capability the entry refuses to start rather than run unarmed.
+      - name: Without CAP_SYS_ADMIN the stubs entry fails
+        run: |
+          ! docker run --rm --user root --tmpfs /media --entrypoint node auralis:ci --import tsx src/stubs/main.ts
+
   container:
     name: Docker image builds & answers /api/health
     runs-on: ubuntu-latest

@@ -11,8 +11,9 @@ export default defineConfig({
       'server/e2e/**/*.test.ts',
       'web/src/**/*.test.{ts,tsx}',
     ],
-    // Timing tests run on their own, after these (vitest.timing.config.ts).
-    exclude: [...configDefaults.exclude, '**/*.timing.test.ts'],
+    // Timing tests run on their own, after these (vitest.timing.config.ts). Privileged tests need
+    // root and CAP_SYS_ADMIN, so they run in CI's privileged job, inside the image (node:test).
+    exclude: [...configDefaults.exclude, '**/*.timing.test.ts', '**/*.privileged.test.ts'],
     environment: 'node',
     globals: false,
   },
