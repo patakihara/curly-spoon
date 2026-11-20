@@ -119,6 +119,12 @@
  * private address, the show made and made again, and the item read back, 3 s apart, the folder
  * written as `/data/Podcasts` (record-podcasts.ts). It needs ABS_API_KEY and ABS_PROVISION_KEY.
  *
+ * `--only abs-stubs --abs <url> --abs-folder <path> --abs-version <v> --show <id> --show-folder <path>`
+ * records what M3.stubs' job reads, on the same throwaway: the test feed's two oldest enclosures
+ * read as a stub's first read, two stubs written from them, then the show's scan, the libraries,
+ * the Podcasts library's shows and the show's episodes (record-podcasts.ts). It needs
+ * ABS_PROVISION_KEY.
+ *
  * `--only albums-live --log <file> --pick <call=line,..>` turns the lines named of a live album
  * run's proxy log into recordings of qBittorrent, Prowlarr and Jellyfin, and asks the Cover Art
  * Archive for The Slip's release-group front (record-albums-live.ts). Nothing goes on stdin.
@@ -170,7 +176,7 @@ import {
 import { MUSICBRAINZ_URL } from './musicbrainz/client.js';
 import { COVERART_URL } from './coverart/client.js';
 import { ITUNES_URL } from './itunes/client.js';
-import { recordAbsPodcasts, recordItunes } from './record-podcasts.js';
+import { recordAbsPodcasts, recordAbsStubs, recordItunes } from './record-podcasts.js';
 
 /**
  * The index calls record one page of two items from each library. The fifth page holds the
@@ -195,7 +201,7 @@ Records Audiobookshelf's and Jellyfin's calls into server/src/adapters/*/recordi
   --only <name>      record only abs, jellyfin, index, play, episode, jfplay, progress,
                      sessions, shell, lyrics, lists, played, books, albums, shelf, qbit, ytmusic,
                      extractor, musicbrainz, albums-musicbrainz, albums-qbit, albums-live, spotify,
-                     spotify-ytmusic, spotify-misfires, coverart, keep, itunes or abs-podcasts; or
+                     spotify-ytmusic, spotify-misfires, coverart, keep, itunes, abs-podcasts or abs-stubs; or
                      oidc, a sign-in and its links
   --lrclib <url>     LRCLIB's base URL, for --only lyrics
   --prowlarr <url>   Prowlarr's base URL, for --only books and albums
@@ -738,6 +744,8 @@ export async function runRecord(io: RecordIo): Promise<number> {
       feed: { type: 'string' },
       'abs-version': { type: 'string' },
       'itunes-id': { type: 'string' },
+      show: { type: 'string' },
+      'show-folder': { type: 'string' },
       qbittorrent: { type: 'string' },
       torrent: { type: 'string' },
       'long-track': { type: 'string' },
@@ -797,10 +805,11 @@ export async function runRecord(io: RecordIo): Promise<number> {
       'spotify-misfires',
       'itunes',
       'abs-podcasts',
+      'abs-stubs',
     ].includes(only)
   ) {
     io.err(
-      `--only is abs, jellyfin, index, play, episode, jfplay, progress, sessions, shell, lyrics, lists, played, household, books, albums, shelf, qbit, ytmusic, extractor, github, musicbrainz, albums-musicbrainz, albums-qbit, albums-live, coverart, keep, oidc, spotify, spotify-ytmusic, spotify-misfires, itunes or abs-podcasts, not ${only}`,
+      `--only is abs, jellyfin, index, play, episode, jfplay, progress, sessions, shell, lyrics, lists, played, household, books, albums, shelf, qbit, ytmusic, extractor, github, musicbrainz, albums-musicbrainz, albums-qbit, albums-live, coverart, keep, oidc, spotify, spotify-ytmusic, spotify-misfires, itunes, abs-podcasts or abs-stubs, not ${only}`,
     );
     return 2;
   }
@@ -838,6 +847,7 @@ export async function runRecord(io: RecordIo): Promise<number> {
   if (only === 'coverart') return runCoverArt(io, root);
   if (only === 'itunes') return runItunes(io, root);
   if (only === 'abs-podcasts') return runAbsPodcasts(io, values, parseKeys(io.stdin), root);
+  if (only === 'abs-stubs') return runAbsStubs(io, values, parseKeys(io.stdin), root);
   if (only === 'keep') return runKeep(io, values, parseKeys(io.stdin), root);
   const wantIndex = only === undefined || only === 'index';
   const wantAbs = only !== 'jellyfin';
@@ -1458,6 +1468,41 @@ async function runAbsPodcasts(
     absVersion: values['abs-version'] as string,
   });
   return scanWritten(io, written, [keys.ABS_API_KEY as string, keys.ABS_PROVISION_KEY as string]);
+}
+
+async function runAbsStubs(
+  io: RecordIo,
+  values: Record<string, string | boolean | undefined>,
+  keys: Record<string, string>,
+  root: string,
+): Promise<number> {
+  const need = {
+    '--abs': values.abs,
+    '--abs-folder': values['abs-folder'],
+    '--abs-version': values['abs-version'],
+    '--show': values.show,
+    '--show-folder': values['show-folder'],
+    'ABS_PROVISION_KEY on stdin': keys.ABS_PROVISION_KEY,
+  };
+  const missing = Object.entries(need)
+    .filter(([, v]) => typeof v !== 'string' || v === '')
+    .map(([k]) => k);
+  if (missing.length > 0) {
+    io.err(`missing ${missing.join(', ')}\n\n${USAGE}`);
+    return 2;
+  }
+  const { written } = await recordAbsStubs({
+    fetch: io.fetch,
+    out: io.out,
+    root,
+    absUrl: values.abs as string,
+    provisionKey: keys.ABS_PROVISION_KEY as string,
+    folder: values['abs-folder'] as string,
+    absVersion: values['abs-version'] as string,
+    showId: values.show as string,
+    showFolder: values['show-folder'] as string,
+  });
+  return scanWritten(io, written, [keys.ABS_PROVISION_KEY as string]);
 }
 
 async function runAlbumGroups(io: RecordIo, root: string): Promise<number> {

@@ -70,6 +70,7 @@ ENV EXTRACTOR_PATH=/opt/yt-dlp/${YTDLP_VERSION}/yt-dlp
 ARG AURALIS_COMMIT
 ENV AURALIS_COMMIT=${AURALIS_COMMIT} \
     NODE_ENV=production \
+    UV_THREADPOOL_SIZE=8 \
     PORT=8787 \
     DATA_DIR=/data \
     WEB_DIST_DIR=/app/web/dist
@@ -86,7 +87,9 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
 # Node itself is PID 1, with tsx as its loader, so docker stop's SIGTERM reaches main.ts, which
 # closes the database before it exits. The tsx CLI would relay it and SIGKILL a slow child.
 # The image's second entry is the stubs sidecar, which compose runs as root with CAP_SYS_ADMIN, no
-# port and the media mounted: `node --import tsx src/stubs/main.ts`. Its fanotify, xattr and
+# port and the media mounted: `node --import tsx src/stubs/main.ts`. Its fanotify reader holds one
+# libuv thread while it waits for events, so the image runs 8 (UV_THREADPOOL_SIZE above), not 4:
+# libuv reads it once, before any thread starts, so it is set here and not in code. Its fanotify, xattr and
 # fallocate calls go through koffi's prebuilt musl binary (server/src/stubs/libc.ts).
 WORKDIR /app/server
 CMD ["node", "--import", "tsx", "src/main.ts"]

@@ -23,7 +23,7 @@ import {
   FAN_MARK_ADD,
   FAN_MARK_FILESYSTEM,
   FAN_NONBLOCK,
-  FAN_OPEN_PERM,
+  FAN_ACCESS_PERM,
   fanotifyInit,
   fanotifyMark,
   fanotifyRespond,
@@ -59,7 +59,7 @@ function armed() {
     FAN_CLOEXEC | FAN_NONBLOCK | FAN_CLASS_CONTENT,
     O_RDWR | O_LARGEFILE | O_CLOEXEC,
   );
-  fanotifyMark(group, FAN_MARK_ADD | FAN_MARK_FILESYSTEM, FAN_OPEN_PERM, root!);
+  fanotifyMark(group, FAN_MARK_ADD | FAN_MARK_FILESYSTEM, FAN_ACCESS_PERM, root!);
   const hydrator = new Hydrator({
     ownPid: process.pid,
     respond: (fd, answer) => fanotifyRespond(group, fd, answer),

@@ -1,0 +1,26 @@
+{
+  "upstream": "audiobookshelf",
+  "upstreamVersion": "2.37.2",
+  "call": "stubs-scan",
+  "request": {
+    "method": "POST",
+    "path": "/api/items/bcb80cce-6c45-4a55-9a09-847b6f19ac35/scan",
+    "query": {},
+    "headers": {
+      "accept": "application/json",
+      "authorization": "Bearer <token>"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "result": "UPDATED"
+      }
+    }
+  }
+}

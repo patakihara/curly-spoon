@@ -5,7 +5,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
-import { episodeFilename } from './filename.js';
+import { episodeFilename, episodeFilenames } from './filename.js';
 
 const Vectors = z.object({
   source: z.string(),
@@ -35,5 +35,20 @@ describe('[M3.stubs/b] an episode’s file name is the one Audiobookshelf gives 
     expect(cut?.oldStubgen).toMatch(/ \.mp3$/);
     expect(episodeFilename(cut?.title, cut?.enclosureUrl ?? '')).toBe(cut?.filename);
     expect(cut?.filename).toMatch(/A\.mp3$/);
+  });
+
+  it('[M3.stubs/a] the names looked for on disk are ABS’s, then the old stubgen’s cut with its space', () => {
+    const cut = vectors.find((v) => v.oldStubgen !== undefined);
+    expect(episodeFilenames(cut?.title, cut?.enclosureUrl ?? '')).toEqual([
+      cut?.filename,
+      cut?.oldStubgen,
+    ]);
+    expect(episodeFilenames('Bullshit Jobs', 'https://example.org/a.mp3')).toEqual([
+      'Bullshit Jobs.mp3',
+    ]);
+  });
+
+  it('[M3.stubs/a] a title that sanitizes to nothing has no name', () => {
+    expect(episodeFilenames('con', 'https://example.org/a.mp3')).toEqual([]);
   });
 });

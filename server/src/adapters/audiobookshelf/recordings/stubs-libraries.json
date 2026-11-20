@@ -1,0 +1,55 @@
+{
+  "upstream": "audiobookshelf",
+  "upstreamVersion": "2.37.2",
+  "call": "stubs-libraries",
+  "request": {
+    "method": "GET",
+    "path": "/api/libraries",
+    "query": {},
+    "headers": {
+      "accept": "application/json",
+      "authorization": "Bearer <token>"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "libraries": [
+          {
+            "id": "274cab4e-7bca-4862-93d1-20abd911fc98",
+            "name": "Podcasts",
+            "folders": [
+              {
+                "id": "f3a7c559-e131-4db5-89ee-6fa2d9470f48",
+                "fullPath": "/data/Podcasts",
+                "libraryId": "274cab4e-7bca-4862-93d1-20abd911fc98",
+                "addedAt": 1795152780675
+              }
+            ],
+            "displayOrder": 1,
+            "icon": "database",
+            "mediaType": "podcast",
+            "provider": "google",
+            "settings": {
+              "coverAspectRatio": 1,
+              "disableWatcher": false,
+              "autoScanCronExpression": null,
+              "podcastSearchRegion": "us",
+              "markAsFinishedPercentComplete": null,
+              "markAsFinishedTimeRemaining": 10
+            },
+            "lastScan": null,
+            "lastScanVersion": null,
+            "createdAt": 1795152780672,
+            "lastUpdate": 1795152780672
+          }
+        ]
+      }
+    }
+  }
+}

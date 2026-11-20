@@ -31,7 +31,8 @@ server/src/adapters/*/recordings
 server/src/**/fixtures
 server/src/adapters/oidc
 server/src/adapters/record-*.ts
-# Nothing the sidecar runs imports the file name port until the stubbing job does (M3.stubs, part D).
+# The stubbing job and the file name port it imports join the image when main.ts schedules the job (M3.stubs, part E).
+server/src/stubs/job.ts
 server/src/stubs/filename.ts
 server/src/adapters/http/*
 !server/src/adapters/http/entities.ts

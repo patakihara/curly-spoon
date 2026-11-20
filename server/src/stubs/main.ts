@@ -1,8 +1,10 @@
 /**
  * The stubs sidecar's entry: the image's second command, run as root with CAP_SYS_ADMIN and no
- * port (`node --import tsx src/stubs/main.ts`). It arms fanotify on the media root, logging
- * `armed` once it holds the mark, and hands every open to the hydrator (hydrator.ts): a stub's open
- * waits until its enclosure fills it, every other open is allowed at once. The job and dehydration
+ * port (`node --import tsx src/stubs/main.ts`). The image sets `UV_THREADPOOL_SIZE=8`: the reader
+ * holds one libuv thread while it waits for events, and the job's file work needs the rest. It arms fanotify on the media root, logging
+ * `armed` once it holds the mark (`FAN_ACCESS_PERM`, as the old daemon ran), and hands every read to
+ * the hydrator (hydrator.ts): a stub's read waits until its enclosure fills it, every other read
+ * is allowed at once; an open that never reads raises nothing. The job and dehydration
  * arrive in later parts of M3.stubs.
  *
  * The reader waits for events off the main thread (`pollReadable`), so the main thread is always
@@ -23,7 +25,7 @@ import {
   FAN_MARK_ADD,
   FAN_MARK_FILESYSTEM,
   FAN_NONBLOCK,
-  FAN_OPEN_PERM,
+  FAN_ACCESS_PERM,
   FAN_UNLIMITED_MARKS,
   FAN_UNLIMITED_QUEUE,
   fanotifyInit,
@@ -45,7 +47,7 @@ const group = fanotifyInit(
   FAN_CLOEXEC | FAN_NONBLOCK | FAN_CLASS_CONTENT | FAN_UNLIMITED_QUEUE | FAN_UNLIMITED_MARKS,
   O_RDWR | O_LARGEFILE | O_CLOEXEC,
 );
-fanotifyMark(group, FAN_MARK_ADD | FAN_MARK_FILESYSTEM, FAN_OPEN_PERM, root);
+fanotifyMark(group, FAN_MARK_ADD | FAN_MARK_FILESYSTEM, FAN_ACCESS_PERM, root);
 process.stdout.write(`stubs: armed on ${root}\n`);
 
 let stopped = false;

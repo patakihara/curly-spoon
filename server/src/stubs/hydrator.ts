@@ -1,7 +1,9 @@
 /**
- * Hydration on open, ported from the old podcast-stubs daemon (fanotify_daemon.py): every open on
- * the media filesystem waits for an answer, and a stub's open is answered only once its enclosure's
- * audio fills the file.
+ * Hydration on read, ported from the old podcast-stubs daemon (fanotify_daemon.py), which marked
+ * `FAN_ACCESS_PERM`: every read on the media filesystem waits for an answer, and a stub's first read
+ * is answered only once its enclosure's audio fills the file. An open that never reads (a directory
+ * walk, a stat through a descriptor) raises no event, so it never hydrates. "Open" below means
+ * that first read.
  *
  * The decision, per open, allowing at the first match:
  *

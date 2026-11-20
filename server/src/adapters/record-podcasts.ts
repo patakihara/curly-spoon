@@ -8,10 +8,11 @@
  * it is a public catalogue, so nothing else is scrubbed. Each answer is scanned before it is
  * written, and checked to be what it was asked for.
  */
+import { readFileSync, writeFileSync } from 'node:fs';
 import { join, posix } from 'node:path';
 import { AbsClient } from './audiobookshelf/client.js';
 import { AbsProvisioner, newPodcastMetadata } from './audiobookshelf/provision.js';
-import { readFeed } from './feed/client.js';
+import { parseFeed, readFeed } from './feed/client.js';
 import { type FetchLike } from './http/fetch.js';
 import { createRecorder } from './http/record.js';
 import { type Recording } from './http/recording.js';
@@ -20,6 +21,9 @@ import { trimFeedExchange } from './record-sessions.js';
 import { type RawExchange } from './http/scrub.js';
 import { type Clock, ItunesClient } from './itunes/client.js';
 import { PODCAST_SCHEDULE, podcastFolderName } from '../requests/podcasts/place.js';
+import { episodeFilenames } from '../stubs/filename.js';
+import { DEFAULT_PREFIX, type RangeAnswer, writeStub } from '../stubs/format.js';
+import { oldestFirst } from '../stubs/job.js';
 
 /** iTunes names no version of its search; the recording names the route it read. */
 export const ITUNES_VERSION = 'iTunes Search API, media=podcast entity=podcast';
@@ -317,5 +321,156 @@ export async function recordAbsPodcasts(
     (found) => check(found.mediaType === 'podcast', 'podcasts-item: not a show'),
   );
   for (const call of ABS_PODCAST_CALLS) input.out(`${call}: recorded`);
+  return { written };
+}
+
+/**
+ * `abs-stubs`: what the stubbing job reads, on the throwaway Audiobookshelf `abs-podcasts` set up,
+ * never the household's. The test feed's two oldest enclosures are read as a stub's first read
+ * (`Range: bytes=0-131071`, `stubs-range-1` and `-2`, each body a committed stand-in beside the
+ * recording); the two stubs are written from them into the show's folder; then, 3 s apart, with
+ * the provisioning key: the show is scanned (`stubs-scan`), and once ABS has probed the stubs, the
+ * libraries (`stubs-libraries`), the Podcasts library's shows (`stubs-shows`: the test show and a
+ * show standing in for a channel, whose feed is `/feeds/youtube/`), and the test show's episodes
+ * (`stubs-episodes`). The throwaway folder is written as `/data/Podcasts`.
+ */
+export const ABS_STUBS_CALLS = [
+  'stubs-scan',
+  'stubs-libraries',
+  'stubs-shows',
+  'stubs-episodes',
+] as const;
+
+export interface AbsStubsRecordInput {
+  fetch: FetchLike;
+  out: (line: string) => void;
+  root: string;
+  absUrl: string;
+  provisionKey: string;
+  folder: string;
+  absVersion: string;
+  /** The test show's item id, and its folder on this machine. */
+  showId: string;
+  showFolder: string;
+  clock?: Clock;
+  /** How long ABS gets to probe the new stubs before they are read back. */
+  probeWaitMs?: number;
+}
+
+export async function recordAbsStubs(input: AbsStubsRecordInput): Promise<{ written: string[] }> {
+  const clock = input.clock ?? realClock;
+  const written: string[] = [];
+  const feedDir = join(input.root, 'feed', 'recordings');
+  const feed = parseFeed(
+    (
+      JSON.parse(readFileSync(join(feedDir, 'subscribe-feed.json'), 'utf8')) as {
+        response: { body: { text: string } };
+      }
+    ).response.body.text,
+  );
+  const oldest = oldestFirst(feed.episodes).slice(0, 2);
+  const answers = new Map<string, RangeAnswer>();
+  for (const [n, episode] of oldest.entries()) {
+    const url = episode.enclosureUrl!;
+    const call = `stubs-range-${n + 1}`;
+    const file = `${call}.mp3`;
+    const rec = createRecorder({
+      fetch: input.fetch,
+      dir: feedDir,
+      upstream: 'feed',
+      upstreamVersion: 'RSS 2.0',
+      secrets: [],
+      baseUrl: new URL(url).origin,
+    });
+    await clock.sleep(ITUNES_RECORD_GAP_MS);
+    const answer = await rec.capture(
+      call,
+      async () => {
+        const response = await rec.fetch(url, {
+          headers: { range: `bytes=0-${DEFAULT_PREFIX - 1}`, 'user-agent': 'auralis-stubs' },
+        });
+        const body = new Uint8Array(await response.arrayBuffer());
+        writeFileSync(join(feedDir, file), body);
+        return {
+          status: response.status,
+          contentRange: response.headers.get('content-range'),
+          body,
+        };
+      },
+      {
+        standIn: {
+          bytes: file,
+          synthesized: 'none: the enclosure’s own first 128 KB, public audio from the test feed',
+        },
+        verify: (found, recording) => {
+          check(found.status === 206, `${call}: answered ${found.status}, not 206`);
+          scanned(recording);
+        },
+      },
+    );
+    answers.set(url, answer);
+    written.push(join(feedDir, `${call}.json`));
+    input.out(`${call}: ${answer.status} ${answer.contentRange ?? ''}`);
+    await writeStub({
+      path: join(input.showFolder, episodeFilenames(episode.title, url)[0]!),
+      url,
+      declaredLength: episode.enclosureLength,
+      rangeGet: async (asked) => answers.get(asked)!,
+    });
+  }
+
+  const dir = join(input.root, 'audiobookshelf', 'recordings');
+  const rec = createRecorder({
+    fetch: input.fetch,
+    dir,
+    upstream: 'audiobookshelf',
+    upstreamVersion: input.absVersion,
+    secrets: [input.provisionKey],
+    baseUrl: input.absUrl,
+    prepare: folderAs(input.folder),
+  });
+  const provisioner = new AbsProvisioner({
+    baseUrl: input.absUrl,
+    provisionKey: input.provisionKey,
+    fetch: rec.fetch,
+  });
+  const step = async <T>(call: string, fn: () => Promise<T>, verify: (found: T) => void) => {
+    await clock.sleep(ITUNES_RECORD_GAP_MS);
+    const found = await rec.capture(call, fn, {
+      verify: (result, recording) => {
+        verify(result);
+        scanned(recording);
+      },
+    });
+    written.push(join(dir, `${call}.json`));
+    return found;
+  };
+  await step(
+    'stubs-scan',
+    () => provisioner.scanItem(input.showId),
+    () => {},
+  );
+  await clock.sleep(input.probeWaitMs ?? 30_000);
+  const [library] = await step(
+    'stubs-libraries',
+    () => provisioner.podcastLibraryIds(),
+    (ids) => check(ids.length === 1, 'stubs-libraries: not one Podcasts library'),
+  );
+  await step(
+    'stubs-shows',
+    () => provisioner.podcastShowsIn(library!),
+    (shows) =>
+      check(
+        shows.some((s) => s.feedUrl?.includes('/feeds/youtube/')) && shows.length === 2,
+        'stubs-shows: not the test show and the channel',
+      ),
+  );
+  await step(
+    'stubs-episodes',
+    () => provisioner.showEpisodes(input.showId),
+    (episodes) =>
+      check(episodes.length === 2, `stubs-episodes: ${episodes.length} episodes, not the 2 stubs`),
+  );
+  for (const call of ABS_STUBS_CALLS) input.out(`${call}: recorded`);
   return { written };
 }

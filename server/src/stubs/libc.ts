@@ -21,7 +21,8 @@ export const FAN_UNLIMITED_MARKS = 0x20;
 export const FAN_MARK_ADD = 0x01;
 export const FAN_MARK_REMOVE = 0x02;
 export const FAN_MARK_FILESYSTEM = 0x100;
-export const FAN_OPEN_PERM = 0x10000;
+/** A read of a marked file waits for an answer; an open that never reads raises nothing. */
+export const FAN_ACCESS_PERM = 0x20000;
 
 /** A permission event's answers. */
 export const FAN_ALLOW = 0x01;

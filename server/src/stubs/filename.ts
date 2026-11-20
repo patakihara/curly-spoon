@@ -39,8 +39,15 @@ const WINDOWS_RESERVED = /^(con|prn|aux|nul|com[0-9]|lpt[0-9])(\..*)?$/i;
 const WINDOWS_TRAILING = /[. ]+$/;
 const LINE_BREAKS = /[\n\r]/g;
 
-/** ABS's `sanitizeFilename`: the first colon becomes ` - `, and the name fits 255 UTF-16 bytes. */
-export function sanitizeFilename(filename: string, colonReplacement = ' - '): string {
+/**
+ * ABS's `sanitizeFilename`: the first colon becomes ` - `, and the name fits 255 UTF-16 bytes.
+ * `trimCut: false` is the old stubgen's cut, which kept a space left at the end of a cut title.
+ */
+export function sanitizeFilename(
+  filename: string,
+  colonReplacement = ' - ',
+  { trimCut = true }: { trimCut?: boolean } = {},
+): string {
   const sanitized = filename
     .normalize('NFC')
     .replace(':', colonReplacement)
@@ -65,7 +72,7 @@ export function sanitizeFilename(filename: string, colonReplacement = ' - '): st
     if (total > maxBaseBytes) break;
     trimmed += char;
   }
-  return trimmed.trim() + ext;
+  return (trimCut ? trimmed.trim() : trimmed) + ext;
 }
 
 /** The enclosure URL as ABS keeps it: encoded once, whether or not the feed encoded it. */
@@ -91,4 +98,17 @@ function fileExtension(enclosureUrl: string): string {
  */
 export function episodeFilename(title: string | null | undefined, enclosureUrl: string): string {
   return sanitizeFilename(`${(title ?? '').trim()}.${fileExtension(enclosureUrl)}`);
+}
+
+/**
+ * Every name this feed item's file may already have on disk: ABS's own (the one a new stub is
+ * written under) first, then the old stubgen's when it differs (a long title cut just after a
+ * space, which kept the space: `… .mp3`). Empty when the sanitized name is empty.
+ */
+export function episodeFilenames(title: string | null | undefined, enclosureUrl: string): string[] {
+  const raw = `${(title ?? '').trim()}.${fileExtension(enclosureUrl)}`;
+  const name = sanitizeFilename(raw);
+  if (name === '' || name.startsWith('.')) return [];
+  const old = sanitizeFilename(raw, ' - ', { trimCut: false });
+  return old === name ? [name] : [name, old];
 }

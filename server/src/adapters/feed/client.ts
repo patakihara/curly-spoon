@@ -23,7 +23,15 @@ export type EpisodeOrder = 'serial' | 'episodic';
 
 export interface FeedEpisode {
   guid: string | null;
+  /** The item's own title, which names its file (stubs/filename.ts). */
+  title: string | null;
+  description: string | null;
   enclosureUrl: string | null;
+  /** The enclosure's declared `length` in bytes; null when absent or not a number. */
+  enclosureLength: number | null;
+  enclosureType: string | null;
+  /** Seconds, from `itunes:duration` (`hh:mm:ss`, `mm:ss` or seconds). */
+  duration: number | null;
   /** Milliseconds since the epoch, from `pubDate`. */
   publishedAt: number | null;
 }
@@ -58,17 +66,42 @@ const textOf = z
 
 const present = (v: string | undefined): string | null => (v === undefined || v === '' ? null : v);
 
+/** `itunes:duration` as seconds: `1:02:03`, `62:03` or `3723`; null when it is none of them. */
+export function durationSeconds(value: string | null | undefined): number | null {
+  if (value == null || !/^\d+(\.\d+)?(:\d+(\.\d+)?){0,2}$/.test(value.trim())) return null;
+  return value
+    .trim()
+    .split(':')
+    .reduce((total, part) => total * 60 + Number(part), 0);
+}
+
+const attribute = z.string().optional().catch(undefined);
+
 const itemSchema = z
   .object({
     guid: textOf,
+    title: textOf,
+    description: textOf,
     pubDate: textOf,
-    enclosure: z.preprocess(firstOf, z.object({ '@_url': z.string() }).optional()).catch(undefined),
+    'itunes:duration': textOf,
+    enclosure: z
+      .preprocess(
+        firstOf,
+        z.object({ '@_url': z.string(), '@_length': attribute, '@_type': attribute }).optional(),
+      )
+      .catch(undefined),
   })
   .transform((item): FeedEpisode => {
     const at = item.pubDate === undefined ? NaN : Date.parse(item.pubDate);
+    const length = Number(item.enclosure?.['@_length']?.trim());
     return {
       guid: present(item.guid),
+      title: present(item.title),
+      description: present(item.description),
       enclosureUrl: present(item.enclosure?.['@_url'].trim()),
+      enclosureLength: Number.isSafeInteger(length) && length > 0 ? length : null,
+      enclosureType: present(item.enclosure?.['@_type']?.trim()),
+      duration: durationSeconds(item['itunes:duration']),
       publishedAt: Number.isNaN(at) ? null : at,
     };
   });

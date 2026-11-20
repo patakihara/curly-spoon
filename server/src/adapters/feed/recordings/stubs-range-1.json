@@ -1,0 +1,26 @@
+{
+  "upstream": "feed",
+  "upstreamVersion": "RSS 2.0",
+  "call": "stubs-range-1",
+  "request": {
+    "method": "GET",
+    "path": "/notwhatyouthought/drfernriddells-notwhatyouthought/media.mp3",
+    "query": {},
+    "headers": {
+      "range": "bytes=0-131071",
+      "user-agent": "auralis-stubs"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 206,
+    "headers": {
+      "content-range": "bytes 0-131071/613432",
+      "content-type": "audio/mpeg"
+    },
+    "body": {
+      "bytes": "stubs-range-1.mp3",
+      "synthesized": "none: the enclosure’s own first 128 KB, public audio from the test feed"
+    }
+  }
+}

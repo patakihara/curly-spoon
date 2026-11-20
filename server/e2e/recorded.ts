@@ -46,7 +46,7 @@ import { replayFetch, standInsBeside } from '../src/adapters/http/replay.js';
 import { PLACEHOLDER, PLACEHOLDER_ORIGIN } from '../src/adapters/http/scrub.js';
 import { decodePart, signWithTestKey } from '../src/adapters/http/testSigningKey.js';
 import { parseFeed } from '../src/adapters/feed/client.js';
-import { ABS_PODCAST_CALLS } from '../src/adapters/record-podcasts.js';
+import { ABS_PODCAST_CALLS, ABS_STUBS_CALLS } from '../src/adapters/record-podcasts.js';
 import { JellyfinClient } from '../src/adapters/jellyfin/client.js';
 import { type BuildAppOptions } from '../src/app.js';
 import { loadConfig } from '../src/config.js';
@@ -480,6 +480,8 @@ export async function recordedServer(options: RecordedServerOptions = {}): Promi
     'bookmark-delete-missing',
     // A throwaway Audiobookshelf's subscribe calls, which answer for another library.
     ...ABS_PODCAST_CALLS,
+    // The same throwaway's Podcasts library, as the stubbing job reads it.
+    ...ABS_STUBS_CALLS,
   ]);
   const absRecorded = recordingsOf('audiobookshelf');
   const replayed = absRecorded.filter((r) => !notReplayed.has(r.call));

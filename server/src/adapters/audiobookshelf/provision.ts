@@ -130,6 +130,62 @@ export interface NewPodcast {
 /** ABS's answer, word for word, when an item already sits at the path (recorded, 400). */
 export const PODCAST_EXISTS = 'Podcast already exists';
 
+/** `GET /api/libraries`, as far as the stubs read it. */
+export const absLibrariesSchema = z.object({
+  libraries: z.array(z.object({ id: z.string(), mediaType: z.string() }).passthrough()),
+});
+
+/** `GET /api/libraries/{id}/items` on a Podcasts library (recorded): each show's folder and feed. */
+export const absPodcastItemsSchema = z.object({
+  results: z.array(
+    z.object({
+      id: z.string(),
+      path: z.string(),
+      mediaType: z.literal('podcast'),
+      media: z.object({ metadata: z.object({ title: text, feedUrl: text }).passthrough() }),
+    }),
+  ),
+});
+
+/** A show the stubbing job walks: its item, its folder as ABS names it, and its feed. */
+export interface PodcastShow {
+  id: string;
+  title: string | null;
+  path: string;
+  feedUrl: string | null;
+}
+
+/** `GET /api/items/{id}?expanded=1` on a show (recorded): what each episode holds on disk. */
+export const absShowEpisodesSchema = z.object({
+  media: z.object({
+    episodes: z.array(
+      z
+        .object({
+          title: text,
+          pubDate: text,
+          audioFile: z
+            .object({
+              duration: z.number().nullish().catch(null),
+              metadata: z.object({ filename: z.string() }).passthrough(),
+            })
+            .passthrough()
+            .nullish()
+            .catch(null),
+        })
+        .passthrough(),
+    ),
+  }),
+});
+
+/** An episode ABS already holds, as the Patreon duplicate rule compares it. */
+export interface HeldEpisode {
+  title: string | null;
+  pubDate: string | null;
+  /** Seconds. */
+  duration: number | null;
+  filename: string | null;
+}
+
 export interface AbsProvisionerOptions {
   baseUrl: string;
   provisionKey: string;
@@ -261,6 +317,71 @@ export class AbsProvisioner {
     const parsed = absPodcastCreatedSchema.safeParse(await response.json());
     if (!parsed.success) throw new AdapterError('parse', call, 'not a library item');
     return { id: parsed.data.id };
+  }
+
+  /** Every show in every Podcasts library, with its folder and feed. */
+  async podcastShows(): Promise<PodcastShow[]> {
+    const shows: PodcastShow[] = [];
+    for (const library of await this.podcastLibraryIds()) {
+      shows.push(...(await this.podcastShowsIn(library)));
+    }
+    return shows;
+  }
+
+  /** The ids of the Podcasts libraries this key reaches. */
+  async podcastLibraryIds(): Promise<string[]> {
+    const { libraries } = await requestJson(
+      this.opts.fetch,
+      this.url('api/libraries'),
+      { headers: this.headers },
+      absLibrariesSchema,
+    );
+    return libraries.filter((l) => l.mediaType === 'podcast').map((l) => l.id);
+  }
+
+  /** The shows in one Podcasts library. */
+  async podcastShowsIn(libraryId: string): Promise<PodcastShow[]> {
+    const { results } = await requestJson(
+      this.opts.fetch,
+      this.url(`api/libraries/${encodeURIComponent(libraryId)}/items`),
+      { headers: this.headers },
+      absPodcastItemsSchema,
+    );
+    return results.map((item) => ({
+      id: item.id,
+      title: item.media.metadata.title ?? null,
+      path: item.path,
+      feedUrl: item.media.metadata.feedUrl ?? null,
+    }));
+  }
+
+  /** The episodes a show already holds, with each one's file name and length. */
+  async showEpisodes(itemId: string): Promise<HeldEpisode[]> {
+    const { media } = await requestJson(
+      this.opts.fetch,
+      this.url(`api/items/${encodeURIComponent(itemId)}?expanded=1`),
+      { headers: this.headers },
+      absShowEpisodesSchema,
+    );
+    return media.episodes.map((episode) => ({
+      title: episode.title ?? null,
+      pubDate: episode.pubDate ?? null,
+      duration: episode.audioFile?.duration ?? null,
+      filename: episode.audioFile?.metadata.filename ?? null,
+    }));
+  }
+
+  /**
+   * Rescans one show's folder, never the library: a library scan re-probes every episode of every
+   * show. ABS answers at once and probes on its own after.
+   */
+  async scanItem(itemId: string): Promise<void> {
+    await requestJson(
+      this.opts.fetch,
+      this.url(`api/items/${encodeURIComponent(itemId)}/scan`),
+      { method: 'POST', headers: this.headers },
+      z.unknown(),
+    );
   }
 
   /** Deletes a key, as the provisioning key; one that is already gone is fine. */

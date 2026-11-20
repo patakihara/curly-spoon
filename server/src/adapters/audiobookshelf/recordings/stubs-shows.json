@@ -1,0 +1,132 @@
+{
+  "upstream": "audiobookshelf",
+  "upstreamVersion": "2.37.2",
+  "call": "stubs-shows",
+  "request": {
+    "method": "GET",
+    "path": "/api/libraries/274cab4e-7bca-4862-93d1-20abd911fc98/items",
+    "query": {},
+    "headers": {
+      "accept": "application/json",
+      "authorization": "Bearer <token>"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "results": [
+          {
+            "id": "bcb80cce-6c45-4a55-9a09-847b6f19ac35",
+            "ino": "2249754",
+            "oldLibraryItemId": null,
+            "libraryId": "274cab4e-7bca-4862-93d1-20abd911fc98",
+            "folderId": "f3a7c559-e131-4db5-89ee-6fa2d9470f48",
+            "path": "/data/Podcasts/Not What You Thought You Knew",
+            "relPath": "Not What You Thought You Knew",
+            "isFile": false,
+            "mtimeMs": 1795153108610,
+            "ctimeMs": 1795153108610,
+            "birthtimeMs": 1795152792398,
+            "addedAt": 1795152792406,
+            "updatedAt": 1795153111636,
+            "isMissing": false,
+            "isInvalid": false,
+            "mediaType": "podcast",
+            "media": {
+              "id": "64e82d4a-1040-4df8-8f50-5a805872d2ed",
+              "metadata": {
+                "title": "Not What You Thought You Knew",
+                "author": "HISTORY",
+                "description": "Cut by the recorder: show notes name third-party sites.",
+                "releaseDate": null,
+                "genres": [],
+                "feedUrl": "https://feeds.acast.com/public/shows/7db8dbf2-4b79-4d64-892a-d0d87f255834",
+                "imageUrl": null,
+                "itunesPageUrl": null,
+                "itunesId": null,
+                "itunesArtistId": null,
+                "explicit": true,
+                "language": "en",
+                "type": "serial",
+                "titleIgnorePrefix": "Not What You Thought You Knew"
+              },
+              "coverPath": null,
+              "tags": [],
+              "numEpisodes": 2,
+              "autoDownloadEpisodes": false,
+              "autoDownloadSchedule": "0 * * * *",
+              "lastEpisodeCheck": 1795152792404,
+              "maxEpisodesToKeep": 0,
+              "maxNewEpisodesToDownload": 3,
+              "size": 35331075
+            },
+            "numFiles": 2,
+            "size": 35331075
+          },
+          {
+            "id": "74665fbe-2c43-4703-9389-f3c8418786af",
+            "ino": "2249756",
+            "oldLibraryItemId": null,
+            "libraryId": "274cab4e-7bca-4862-93d1-20abd911fc98",
+            "folderId": "f3a7c559-e131-4db5-89ee-6fa2d9470f48",
+            "path": "/data/Podcasts/Test Channel",
+            "relPath": "Test Channel",
+            "isFile": false,
+            "mtimeMs": 1795152792413,
+            "ctimeMs": 1795152792413,
+            "birthtimeMs": 1795152792413,
+            "addedAt": 1795152792418,
+            "updatedAt": 1795153099912,
+            "isMissing": false,
+            "isInvalid": false,
+            "mediaType": "podcast",
+            "media": {
+              "id": "ab8df2f4-654f-4ae9-a601-9bcafada1b7e",
+              "metadata": {
+                "title": "Test Channel",
+                "author": null,
+                "description": null,
+                "releaseDate": null,
+                "genres": [],
+                "feedUrl": "https://upstream.invalid/feeds/youtube/UCtestchannel000000000000.xml",
+                "imageUrl": null,
+                "itunesPageUrl": null,
+                "itunesId": null,
+                "itunesArtistId": null,
+                "explicit": false,
+                "language": null,
+                "type": null,
+                "titleIgnorePrefix": "Test Channel"
+              },
+              "coverPath": null,
+              "tags": [],
+              "numEpisodes": 0,
+              "autoDownloadEpisodes": false,
+              "autoDownloadSchedule": "0 * * * *",
+              "lastEpisodeCheck": 1795152792416,
+              "maxEpisodesToKeep": 0,
+              "maxNewEpisodesToDownload": 3,
+              "size": 0
+            },
+            "numFiles": 0,
+            "size": 0
+          }
+        ],
+        "total": 2,
+        "limit": 0,
+        "page": 0,
+        "sortDesc": false,
+        "mediaType": "podcast",
+        "minified": false,
+        "collapseseries": false,
+        "include": "",
+        "offset": 0
+      }
+    }
+  }
+}

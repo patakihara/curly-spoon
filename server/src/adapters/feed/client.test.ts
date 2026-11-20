@@ -71,7 +71,18 @@ describe('reading a show’s feed', () => {
 
   it('keeps an item with no date, guid or enclosure, with each left unknown', () => {
     const feed = parseFeed(rss('<item><title>Only a title</title><pubDate>soon</pubDate></item>'));
-    expect(feed.episodes).toEqual([{ guid: null, enclosureUrl: null, publishedAt: null }]);
+    expect(feed.episodes).toEqual([
+      {
+        guid: null,
+        title: 'Only a title',
+        enclosureUrl: null,
+        publishedAt: null,
+        description: null,
+        enclosureLength: null,
+        enclosureType: null,
+        duration: null,
+      },
+    ]);
   });
 
   it('takes the first guid and the first enclosure of an item that has two', () => {
@@ -85,6 +96,11 @@ describe('reading a show’s feed', () => {
     expect(feed.episodes).toEqual([
       {
         guid: 'first',
+        title: null,
+        description: null,
+        enclosureLength: null,
+        enclosureType: null,
+        duration: null,
         enclosureUrl: 'https://a.invalid/1.mp3',
         publishedAt: Date.parse('2023-09-08T04:00:00Z'),
       },
@@ -98,7 +114,16 @@ describe('reading a show’s feed', () => {
         title: null,
         order: 'serial',
         episodes: [
-          { guid: 'g', enclosureUrl: null, publishedAt: Date.parse('2023-09-08T04:00:00Z') },
+          {
+            guid: 'g',
+            title: null,
+            description: null,
+            enclosureUrl: null,
+            enclosureLength: null,
+            enclosureType: null,
+            duration: null,
+            publishedAt: Date.parse('2023-09-08T04:00:00Z'),
+          },
         ],
       });
     }
@@ -128,6 +153,40 @@ describe('reading a show’s feed', () => {
       throw new Error('fetched');
     };
     await expect(readFeed(never, 'file:///etc/passwd')).rejects.toThrow(/http/);
+  });
+});
+
+describe('[M3.stubs/a] what a stub needs from a feed item', () => {
+  it('gives the recorded test feed’s items their title, enclosure length and type, and duration', () => {
+    const feed = parseFeed(text(recording('feed', 'subscribe-feed')));
+    expect(feed.episodes[0]).toMatchObject({
+      title: 'The Sacred Band of Thebes',
+      enclosureLength: 81783306,
+      enclosureType: 'audio/mpeg',
+      duration: 56 * 60 + 48,
+    });
+    for (const episode of feed.episodes) {
+      expect(episode.title).not.toBeNull();
+      expect(episode.enclosureLength).toBeGreaterThan(0);
+    }
+  });
+
+  it('reads a duration given as hours, minutes or seconds, and none from anything else', () => {
+    const durations = ['1:02:03', '62:03', '3723', '3723.5', 'about an hour', ''].map(
+      (d) =>
+        parseFeed(rss(`<item><itunes:duration>${d}</itunes:duration></item>`)).episodes[0]
+          ?.duration,
+    );
+    expect(durations).toEqual([3723, 3723, 3723, 3723.5, null, null]);
+  });
+
+  it('leaves a length that is not a positive number unknown', () => {
+    const lengths = ['0', '-5', 'big', '12'].map(
+      (l) =>
+        parseFeed(rss(`<item><enclosure url="https://a.invalid/1.mp3" length="${l}"/></item>`))
+          .episodes[0]?.enclosureLength,
+    );
+    expect(lengths).toEqual([null, null, null, 12]);
   });
 });
 

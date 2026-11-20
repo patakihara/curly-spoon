@@ -21,7 +21,7 @@ import {
   FAN_MARK_ADD,
   FAN_MARK_FILESYSTEM,
   FAN_NONBLOCK,
-  FAN_OPEN_PERM,
+  FAN_ACCESS_PERM,
   type FanotifyEvent,
   fanotifyInit,
   fanotifyMark,
@@ -37,7 +37,7 @@ import {
 const root = process.env.STUBS_TEST_ROOT;
 
 test(
-  '[M3.stubs] a permission mark holds a child’s open until it is allowed',
+  '[M3.stubs] a permission mark holds a child’s read until it is allowed, and an open that never reads passes untouched',
   { skip: !root },
   async () => {
     const file = join(root!, 'stub.mp3');
@@ -49,7 +49,12 @@ test(
       O_RDWR | O_LARGEFILE | O_CLOEXEC,
     );
     try {
-      fanotifyMark(group, FAN_MARK_ADD | FAN_MARK_FILESYSTEM, FAN_OPEN_PERM, root!);
+      fanotifyMark(group, FAN_MARK_ADD | FAN_MARK_FILESYSTEM, FAN_ACCESS_PERM, root!);
+
+      // Nobody answers this group yet: an open that never reads must still return.
+      const opener = spawn('sh', ['-c', `exec 3< '${file}'; exec 3<&-`], { stdio: 'inherit' });
+      assert.equal(await new Promise((done) => opener.on('exit', done)), 0);
+      assert.deepEqual(readFanotifyEvents(group), [], 'an open that never reads raises no event');
 
       const child = spawn('cat', [file], { stdio: ['ignore', 'pipe', 'inherit'] });
       let output = '';
@@ -67,12 +72,12 @@ test(
         }
         if (event === undefined) await sleep(5);
       }
-      assert.ok(event, 'the child’s open arrives as an event');
-      assert.equal(event.mask & FAN_OPEN_PERM, FAN_OPEN_PERM);
+      assert.ok(event, 'the child’s read arrives as an event');
+      assert.equal(event.mask & FAN_ACCESS_PERM, FAN_ACCESS_PERM);
       assert.equal(fgetxattr(event.fd, 'user.absstub.url'), 'https://example.org/episode.mp3');
 
       await sleep(300);
-      assert.equal(child.exitCode, null, 'the open waits for the answer');
+      assert.equal(child.exitCode, null, 'the read waits for the answer');
 
       fanotifyRespond(group, event.fd, FAN_ALLOW);
       closeSync(event.fd);
