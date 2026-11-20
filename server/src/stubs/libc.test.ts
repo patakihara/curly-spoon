@@ -5,13 +5,16 @@
  */
 import {
   closeSync,
+  constants,
   mkdtempSync,
   openSync,
   readFileSync,
   rmSync,
   statSync,
   writeFileSync,
+  writeSync,
 } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -21,6 +24,7 @@ import {
   fsetxattr,
   getxattr,
   LibcError,
+  pollReadable,
   punchHole,
   removexattr,
   setxattr,
@@ -103,5 +107,25 @@ describe('[M3.stubs] punching a hole', () => {
     const read = readFileSync(file);
     expect(read.subarray(0, prefix).equals(bytes.subarray(0, prefix))).toBe(true);
     expect(read.subarray(prefix).every((b) => b === 0)).toBe(true);
+  });
+});
+
+describe('[M3.stubs] waiting for something to read', () => {
+  it('[M3.stubs] answers false after the timeout when nothing comes, and true once it does', async () => {
+    const fifo = join(dir, 'events');
+    execFileSync('mkfifo', [fifo]);
+    // Read-write, so the open never waits for a writer.
+    const fd = openSync(fifo, constants.O_RDWR | constants.O_NONBLOCK);
+    try {
+      const started = Date.now();
+      expect(await pollReadable(fd, 50)).toBe(false);
+      expect(Date.now() - started).toBeGreaterThanOrEqual(40);
+
+      const waiting = pollReadable(fd, 5000);
+      writeSync(fd, 'x');
+      expect(await waiting).toBe(true);
+    } finally {
+      closeSync(fd);
+    }
   });
 });

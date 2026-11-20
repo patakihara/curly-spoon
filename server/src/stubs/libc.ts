@@ -42,6 +42,7 @@ const ENODATA = 61;
 const FANOTIFY_METADATA_VERSION = 3;
 const EVENT_METADATA_LEN = 24;
 const ERANGE = 34;
+const EINTR = 4;
 
 /** A libc call answered -1. */
 export class LibcError extends Error {
@@ -76,6 +77,7 @@ const c = {
   removexattr: libc.func('int removexattr(const char *path, const char *name)'),
   fallocate: libc.func('int fallocate(int fd, int mode, int64_t offset, int64_t len)'),
   utimensat: libc.func('int utimensat(int dirfd, const char *path, const void *times, int flags)'),
+  poll: libc.func('int poll(_Inout_ void *fds, unsigned long nfds, int timeout)'),
 };
 
 function check(call: string, result: number | bigint): number {
@@ -219,4 +221,28 @@ export function setTimesNs(path: string, atimeNs: bigint, mtimeNs: bigint): void
   times.writeBigInt64LE(mtimeNs / 1_000_000_000n, 16);
   times.writeBigInt64LE(mtimeNs % 1_000_000_000n, 24);
   check('utimensat', c.utimensat(AT_FDCWD, path, times, 0) as number);
+}
+
+const POLLIN = 0x01;
+
+/**
+ * Waits, off the main thread, until `fd` has something to read or `timeoutMs` passes: true when it
+ * is readable. The main thread stays free, so the sidecar's own opens (answered by this same
+ * process) never wait on it.
+ */
+export function pollReadable(fd: number, timeoutMs: number): Promise<boolean> {
+  const fds = Buffer.alloc(8);
+  fds.writeInt32LE(fd, 0);
+  fds.writeInt16LE(POLLIN, 4);
+  return new Promise((resolve, reject) => {
+    c.poll.async(fds, 1, timeoutMs, (error: unknown, result: number) => {
+      if (error) reject(error instanceof Error ? error : new Error(String(error)));
+      else if (result < 0) {
+        const errno = koffi.errno();
+        // A signal woke it: nothing to read yet.
+        if (errno === EINTR) resolve(false);
+        else reject(new LibcError('poll', errno));
+      } else resolve(result > 0 && (fds.readInt16LE(6) & POLLIN) !== 0);
+    });
+  });
 }

@@ -31,6 +31,8 @@ server/src/adapters/*/recordings
 server/src/**/fixtures
 server/src/adapters/oidc
 server/src/adapters/record-*.ts
+# Nothing the sidecar runs imports the file name port until the stubbing job does (M3.stubs, part D).
+server/src/stubs/filename.ts
 server/src/adapters/http/*
 !server/src/adapters/http/entities.ts
 !server/src/adapters/http/fetch.ts

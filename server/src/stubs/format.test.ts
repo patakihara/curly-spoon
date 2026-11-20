@@ -341,12 +341,12 @@ describe('[M3.stubs/b] a hydrated file returns to a stub after 7 days unplayed',
     );
   }
 
-  it('[M3.stubs/b] 7 days and 1 s after hydration, with no open file and no recent unfinished listen: size and prefix kept, blocks freed, attributes flipped, times kept', () => {
+  it('[M3.stubs/b] 7 days and 1 s after hydration, with no open file and no recent unfinished listen: size and prefix kept, blocks freed, attributes flipped, times kept', async () => {
     const path = seedHydrated();
     const bytes = readFileSync(path);
     const before = statSync(path, { bigint: true });
 
-    expect(dehydrateIfDue(path, { now: due, progress: [] })).toBe('dehydrated');
+    expect(await dehydrateIfDue(path, { now: due, progress: [] })).toBe('dehydrated');
 
     const after = statSync(path, { bigint: true });
     expect(after.size).toBe(before.size);
@@ -367,46 +367,46 @@ describe('[M3.stubs/b] a hydrated file returns to a stub after 7 days unplayed',
     expect(isStub(path)).toBe(true);
   });
 
-  it('[M3.stubs/b] 6 days after hydration it stays whole', () => {
+  it('[M3.stubs/b] 6 days after hydration it stays whole', async () => {
     const path = seedHydrated();
     const before = snapshot(path);
-    expect(dehydrateIfDue(path, { now: hydratedAt * 1000 + 6 * DAY, progress: [] })).toBe(
+    expect(await dehydrateIfDue(path, { now: hydratedAt * 1000 + 6 * DAY, progress: [] })).toBe(
       'too-recent',
     );
     expect(snapshot(path)).toEqual(before);
   });
 
-  it('[M3.stubs/b] a kept file stays whole', () => {
+  it('[M3.stubs/b] a kept file stays whole', async () => {
     const path = seedHydrated({ [XATTR.keep]: '' });
     const before = snapshot(path);
-    expect(dehydrateIfDue(path, { now: due, progress: [] })).toBe('kept');
+    expect(await dehydrateIfDue(path, { now: due, progress: [] })).toBe('kept');
     expect(snapshot(path)).toEqual(before);
   });
 
-  it('[M3.stubs/b] a file some process holds open stays whole', () => {
+  it('[M3.stubs/b] a file some process holds open stays whole', async () => {
     const path = seedHydrated();
     const before = snapshot(path);
     const fd = openSync(path, 'r');
     try {
-      expect(dehydrateIfDue(path, { now: due, progress: [] })).toBe('open');
+      expect(await dehydrateIfDue(path, { now: due, progress: [] })).toBe('open');
     } finally {
       closeSync(fd);
     }
     expect(snapshot(path)).toEqual(before);
   });
 
-  it('[M3.stubs/b] an unfinished listen updated within 7 days pins it; one older than 7 days does not', () => {
+  it('[M3.stubs/b] an unfinished listen updated within 7 days pins it; one older than 7 days does not', async () => {
     const path = seedHydrated();
     const before = snapshot(path);
     const recent = { isFinished: false, currentTime: 75, updatedAt: due - 6 * DAY };
-    expect(dehydrateIfDue(path, { now: due, progress: [recent] })).toBe('in-progress');
+    expect(await dehydrateIfDue(path, { now: due, progress: [recent] })).toBe('in-progress');
     expect(snapshot(path)).toEqual(before);
 
     const stale = { isFinished: false, currentTime: 75, updatedAt: due - 8 * DAY };
-    expect(dehydrateIfDue(path, { now: due, progress: [stale] })).toBe('dehydrated');
+    expect(await dehydrateIfDue(path, { now: due, progress: [stale] })).toBe('dehydrated');
   });
 
-  it('[M3.stubs/b] only a part-way listen pins: finished, not started, or of unknown age', () => {
+  it('[M3.stubs/b] only a part-way listen pins: finished, not started, or of unknown age', async () => {
     const now = 1_800_000_000_000;
     expect(progressPins([{ isFinished: true, currentTime: 10, updatedAt: now }], now)).toBe(false);
     expect(progressPins([{ isFinished: false, currentTime: 0, updatedAt: now }], now)).toBe(false);
@@ -416,14 +416,14 @@ describe('[M3.stubs/b] a hydrated file returns to a stub after 7 days unplayed',
     ).toBe(true);
   });
 
-  it('[M3.stubs/b] a stub or a file without orig_* is never punched', () => {
+  it('[M3.stubs/b] a stub or a file without orig_* is never punched', async () => {
     const stub = seedStub('Stub.mp3', size, DEFAULT_PREFIX);
-    expect(dehydrateIfDue(stub, { now: due, progress: [] })).toBe('not-hydrated');
+    expect(await dehydrateIfDue(stub, { now: due, progress: [] })).toBe('not-hydrated');
     const partial = seed('Partial.mp3', episodeBytes(size), {
       [XATTR.hydratedAt]: String(hydratedAt),
     });
     const before = snapshot(partial);
-    expect(dehydrateIfDue(partial, { now: due, progress: [] })).toBe('missing-orig');
+    expect(await dehydrateIfDue(partial, { now: due, progress: [] })).toBe('missing-orig');
     expect(snapshot(partial)).toEqual(before);
   });
 });

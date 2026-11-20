@@ -1,6 +1,6 @@
 /**
  * An episode's file name, against names Audiobookshelf itself gave the same feed items
- * (filename-vectors.json says how they were taken).
+ * (fixtures/filename-vectors.json says how they were taken).
  */
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
@@ -19,7 +19,7 @@ const Vectors = z.object({
   ),
 });
 const { vectors } = Vectors.parse(
-  JSON.parse(readFileSync(new URL('./filename-vectors.json', import.meta.url), 'utf8')),
+  JSON.parse(readFileSync(new URL('./fixtures/filename-vectors.json', import.meta.url), 'utf8')),
 );
 
 describe('[M3.stubs/b] an episode’s file name is the one Audiobookshelf gives its own download', () => {

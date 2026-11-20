@@ -13,18 +13,15 @@
  * Writing an attribute never moves a file's mtime or atime: Audiobookshelf's watcher would take it
  * for a change, rescan, and the stub would hydrate and dehydrate for ever.
  */
+import { open } from 'node:fs/promises';
 import {
-  closeSync,
   mkdirSync,
-  openSync,
   readdirSync,
   readlinkSync,
   realpathSync,
   renameSync,
   rmSync,
   statSync,
-  writeSync,
-  ftruncateSync,
 } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 import { getxattr, punchHole, removexattr, setTimesNs, setxattr } from './libc.js';
@@ -184,14 +181,15 @@ export async function writeStub(options: WriteStubOptions): Promise<StubWritten>
   mkdirSync(dirname(options.path), { recursive: true });
   const partial = partialPath(options.path);
   try {
-    const fd = openSync(partial, 'w');
+    // Opened off the main thread: in the sidecar, this process answers its own opens.
+    const file = await open(partial, 'w');
     try {
       for (let at = 0; at < body.byteLength;) {
-        at += writeSync(fd, body, at, body.byteLength - at);
+        at += (await file.write(body, at, body.byteLength - at)).bytesWritten;
       }
-      if (length > body.byteLength) ftruncateSync(fd, length);
+      if (length > body.byteLength) await file.truncate(length);
     } finally {
-      closeSync(fd);
+      await file.close();
     }
     setxattr(partial, XATTR.url, options.url);
     setxattr(partial, XATTR.length, String(length));
@@ -301,9 +299,12 @@ export type DehydrateOutcome =
  * Returns a hydrated file to a stub once it has been whole 7 days, unless it is kept, open, or
  * someone listened part-way within 7 days: the blocks after `orig_prefix` are freed (the size and
  * the prefix stay), `url` and `length` come back, `hydrated_at` goes, and the times are restored.
- * The caller holds the file's inode lock, shared with hydration.
+ * The caller holds the file's inode lock, shared with hydration (`InodeLocks` in hydrator.ts).
  */
-export function dehydrateIfDue(path: string, check: DehydrateCheck): DehydrateOutcome {
+export async function dehydrateIfDue(
+  path: string,
+  check: DehydrateCheck,
+): Promise<DehydrateOutcome> {
   const isOpen = check.hasOpenFd ?? hasOpenFd;
   const hydratedAtRaw = getxattr(path, XATTR.hydratedAt);
   const hydratedAt = hydratedAtRaw === null ? NaN : Number(hydratedAtRaw);
@@ -324,11 +325,12 @@ export function dehydrateIfDue(path: string, check: DehydrateCheck): DehydrateOu
   // A player may have opened it since the first look; looking again narrows that window.
   if (isOpen(path)) return 'open';
 
-  const fd = openSync(path, 'r+');
+  // Opened off the main thread: in the sidecar, this process answers its own opens.
+  const file = await open(path, 'r+');
   try {
-    if (size > origPrefix) punchHole(fd, origPrefix, size - origPrefix);
+    if (size > origPrefix) punchHole(file.fd, origPrefix, size - origPrefix);
   } finally {
-    closeSync(fd);
+    await file.close();
   }
   setxattr(path, XATTR.url, origUrl);
   setxattr(path, XATTR.length, String(origLength));

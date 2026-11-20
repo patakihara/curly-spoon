@@ -243,3 +243,31 @@ export async function readCapped(response: Response, cap: number): Promise<Uint8
     chunks.push(value);
   }
 }
+
+/** What an enclosure read asks: the client's `Range`, if any, and a way to stop it. */
+export interface EnclosureInit {
+  readonly range?: string | null;
+  readonly signal?: AbortSignal;
+}
+
+/** An episode's audio from its feed's enclosure address. */
+export type EnclosureFetch = (url: string, init?: EnclosureInit) => Promise<Response>;
+
+/**
+ * Reads an enclosure as `feedFetch` reads a feed (http or https, every hop's every address public,
+ * pinned, redirects by hand, no credentials), passing on a `Range` and streaming the body: nothing
+ * is buffered or capped, so a whole episode flows straight to its reader. A server that ignores
+ * `Range` answers 200, passed on as is.
+ */
+export function enclosureFetch(options: FeedFetchOptions): EnclosureFetch {
+  const fetchFeed = feedFetch(options);
+  return async (url, init = {}) => {
+    const headers: Record<string, string> = { 'user-agent': 'auralis-stubs' };
+    if (init.range != null) headers['range'] = init.range;
+    const { response } = await fetchFeed(url, {
+      headers,
+      ...(init.signal ? { signal: init.signal } : {}),
+    });
+    return response;
+  };
+}

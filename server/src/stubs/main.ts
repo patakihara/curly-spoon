@@ -1,15 +1,23 @@
 /**
  * The stubs sidecar's entry: the image's second command, run as root with CAP_SYS_ADMIN and no
- * port (`node --import tsx src/stubs/main.ts`). For now it arms fanotify on the media root and
- * allows every open, logging `armed` once it holds the mark: the proof that the binding runs in the
- * image. Hydration, the job and dehydration arrive in later parts of M3.stubs.
+ * port (`node --import tsx src/stubs/main.ts`). It arms fanotify on the media root, logging
+ * `armed` once it holds the mark, and hands every open to the hydrator (hydrator.ts): a stub's open
+ * waits until its enclosure fills it, every other open is allowed at once. The job and dehydration
+ * arrive in later parts of M3.stubs.
  *
- * Every open is allowed: an error answering one never fails a reader. SIGTERM closes the group,
- * which allows anything still waiting, and exits 0.
+ * The reader waits for events off the main thread (`pollReadable`), so the main thread is always
+ * free to answer, including this process's own opens. Event descriptors are read-write: hydration
+ * writes through them. SIGTERM closes the group, which allows anything still waiting, and exits 0.
+ *
+ * Switches: `STUBS_ROOT` (default `/media`), `STUBS_MODE=passive` (allow every open, hydrate
+ * nothing), `STUBS_CONTROL` (default `/control`, where the job's pause marker lives).
  */
 import { closeSync } from 'node:fs';
+import { lookup } from 'node:dns/promises';
+import { join } from 'node:path';
+import { enclosureFetch } from '../adapters/http/publicFetch.js';
+import { Hydrator } from './hydrator.js';
 import {
-  FAN_ALLOW,
   FAN_CLASS_CONTENT,
   FAN_CLOEXEC,
   FAN_MARK_ADD,
@@ -23,39 +31,53 @@ import {
   fanotifyRespond,
   O_CLOEXEC,
   O_LARGEFILE,
-  O_RDONLY,
+  O_RDWR,
+  pollReadable,
   readFanotifyEvents,
 } from './libc.js';
 
 const root = process.env.STUBS_ROOT ?? '/media';
-/** How long the reader sleeps when nothing waits; part C replaces the poll with a blocking reader. */
-const IDLE_MS = 5;
+const control = process.env.STUBS_CONTROL ?? '/control';
+/** How long one wait for events lasts before the reader looks at `stopped` again. */
+const WAIT_MS = 1000;
 
 const group = fanotifyInit(
   FAN_CLOEXEC | FAN_NONBLOCK | FAN_CLASS_CONTENT | FAN_UNLIMITED_QUEUE | FAN_UNLIMITED_MARKS,
-  O_RDONLY | O_LARGEFILE | O_CLOEXEC,
+  O_RDWR | O_LARGEFILE | O_CLOEXEC,
 );
 fanotifyMark(group, FAN_MARK_ADD | FAN_MARK_FILESYSTEM, FAN_OPEN_PERM, root);
 process.stdout.write(`stubs: armed on ${root}\n`);
 
 let stopped = false;
 let answered = 0;
-const buffer = Buffer.alloc(64 * 1024);
+const hydrator = new Hydrator({
+  ownPid: process.pid,
+  respond: (fd, answer) => {
+    fanotifyRespond(group, fd, answer);
+    answered += 1;
+  },
+  fetchEnclosure: enclosureFetch({
+    lookup: async (host) => (await lookup(host, { all: true })).map(({ address }) => address),
+  }),
+  mode: process.env.STUBS_MODE,
+  pauseMarker: join(control, 'pause-hydration'),
+  log: (line) => process.stdout.write(`${line}\n`),
+});
 
-function drain(): void {
-  if (stopped) return;
-  const events = readFanotifyEvents(group, buffer);
-  for (const event of events) {
+async function read(): Promise<void> {
+  const buffer = Buffer.alloc(64 * 1024);
+  while (!stopped) {
     try {
-      fanotifyRespond(group, event.fd, FAN_ALLOW);
-      answered += 1;
-    } finally {
-      closeSync(event.fd);
+      if (!(await pollReadable(group, WAIT_MS)) || stopped) continue;
+      for (const event of readFanotifyEvents(group, buffer)) hydrator.handle(event);
+    } catch (error) {
+      if (stopped) return;
+      process.stdout.write(`stubs: reading events failed: ${String(error)}\n`);
+      await new Promise((done) => setTimeout(done, 100));
     }
   }
-  setTimeout(drain, events.length > 0 ? 0 : IDLE_MS);
 }
-drain();
+void read();
 
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {
   process.once(signal, () => {

@@ -139,6 +139,15 @@ jobs:
           docker run --rm --user root --cap-add SYS_ADMIN --tmpfs /media -e STUBS_TEST_ROOT=/media \
             -v "$PWD/server/src/stubs/libc.privileged.test.ts:/app/server/src/stubs/libc.privileged.test.ts:ro" \
             --entrypoint node auralis:ci --import tsx --test src/stubs/libc.privileged.test.ts
+      # A child's open of a fixture stub on the tmpfs returns only once the recorded enclosure, served
+      # locally, fills it; a stalled hydration holds up none of 500 other opens.
+      - name: hydrator.privileged.test.ts in the image, privileged
+        run: |
+          docker run --rm --user root --cap-add SYS_ADMIN --tmpfs /media -e STUBS_TEST_ROOT=/media \
+            -e STUBS_TEST_ENCLOSURE=/enclosure.mp3 \
+            -v "$PWD/server/src/adapters/audiobookshelf/recordings/multi-file.mp3:/enclosure.mp3:ro" \
+            -v "$PWD/server/src/stubs/hydrator.privileged.test.ts:/app/server/src/stubs/hydrator.privileged.test.ts:ro" \
+            --entrypoint node auralis:ci --import tsx --test src/stubs/hydrator.privileged.test.ts
       # The image's second entry arms on the media root, answers every open, and exits 0 on stop.
       - name: The stubs entry arms, allows opens and stops cleanly
         run: |
